@@ -349,3 +349,38 @@ silent, to be confirmed by an observation test against other implementations.
   trip, which the bits share.
 - **Test**: `tests/protection.rs`, `an_event_state_is_off_on_or_invalid_as_the_mapping_says`,
   `the_state_is_written_and_the_other_bits_are_kept`, `an_inverted_attribute_is_named_by_its_condition`.
+
+### D-025 — A real value must be finite
+
+- **Decision**: a single-precision value that is NaN or an infinity is refused when it is read from MMS, for every
+  floating-point type of the model (the measurements, the real set points, the real quality types). The generator
+  refuses it with the format error "a real value must be finite".
+- **Why**: a NaN reads back as a value that is not equal to itself, so a value read from a peer could not be written
+  and read back the same. A point value or a set point that is not a number has no meaning in TASE.2.
+- **Sources**: IEC 60870-6-802 §6.2 (the real types), and the single-precision reading of D-013. The text read here
+  does not allow a non-finite value for a data point; this is a reading of the type, to be confirmed by the interop
+  tests of the link (B-tasks).
+- **Confidence**: medium.
+- **Test**: `tests/properties.rs`, `every_value_that_is_read_is_read_back_after_writing` (the failing case found by
+  the property, kept in `tests/properties.proptest-regressions`), and `tests/conversions.rs`, `a_real_that_is_not_single_precision_is_refused`.
+
+### D-026 — The property tests and the fuzz target of M6
+
+- **Decision**: the strategies of the valid values are in `src/strategy.rs`, behind the feature `strategy` (off by
+  default: the library does not depend on the test framework). The properties are in `tests/properties.rs`, 25 properties
+  of 10 000 cases each: random data is read by every type without a panic; an accepted value is read back after
+  writing; a valid value round-trips through its MMS data and its BER encoding; data close to a valid value (one
+  component replaced, or the last one dropped) is read without a panic. The fuzz target `fuzz/fuzz_targets/read_types.rs`
+  reads random bytes as BER data, then as each type, and asserts that an accepted value is read back after writing. It
+  is a separate workspace, so the libfuzzer runtime is not a dependency of the library.
+- **Known limit**: writing a real rounds it to single precision (`to_mms` casts to `f32`); a value that is not
+  representable is rounded, not refused. A value read from MMS is always representable, so the round trip from MMS is
+  exact. The strategies do not generate reals that are not single precision.
+- **Why**: a property states what holds for every valid value; a generator of random data finds the values that the
+  refusals miss (here a NaN). The fuzz target runs the same checks on the bytes a peer could send.
+- **Sources**: the design of the tasks (M6 of `IMPLEMENTATION.md`); the codec's strategies of the MMS stack
+  (`igs_iso9506_mms_codec::strategy`) for the random data.
+- **Confidence**: high for the design; the fuzzing result is recorded in `docs/ai-log/M6.md`.
+- **Test**: `tests/properties.rs` (25 properties). The fuzz target builds and runs; the long run required by M6 (at least
+  eight hours) is set aside at the maintainer's request, see `docs/ai-log/M6.md`.
+
