@@ -203,3 +203,58 @@ silent, to be confirmed by an observation test against other implementations.
 - **Confidence**: medium: the 503 text does not list the characters; the decision follows the ASN.1 type.
 - **Test**: `tests/conversions.rs`, `a_character_that_is_not_visible_is_refused`, `a_string_longer_than_its_type_is_refused`.
 
+### D-015 — Every structure, bit string, enumeration, octet string and array converts to MMS
+
+- **Decision**: the generator emits the conversions to and from MMS data for every generated type that is a structure
+  (component by component, in order), a bit string, an enumeration, an octet string or an array (element by element), in
+  addition to the scalars of M1. The only exception is `TimeStampExtended`, written by hand (D-011): its milliseconds are
+  checked there.
+- **Why**: the indication variants of 802 §6.2.1 are structures of scalars, flags and time stamps; converting each one by
+  its components keeps the types of the data files as the only source of their layout.
+- **Sources**: IEC 60870-6-802 §6.2.1 (the structures of the variants), §6.2.1 with the flags (bit strings).
+- **Confidence**: high; the layouts are the data files', and the round trips test each variant.
+- **Test**: `crates/igs-iec-tase2-model/tests/indication.rs`, `each_variant_of_a_real_point_round_trips` and the two
+  others of the same kind (the sixteen variants).
+
+### D-016 — The length of a flag string in MMS
+
+- **Decision**: a bit string converts to a flag type of `BIT_COUNT` bits when it holds at least that many bits, and no
+  bit beyond them is set. The first bit of the string is bit 0 of the type (the most significant bit of the first octet).
+  Unused bits at the end of the string are not flags. A string shorter than the type is refused.
+- **Why**: a later edition could add bits to a flag string; a bit that the type does not know must not be read as a flag,
+  but a longer string with those bits clear is the same value. The refusal of a short string keeps a truncated value from
+  being read as a complete one.
+- **Sources**: IEC 60870-6-802 §6.2.1 (the bits of each flag string, with their positions).
+- **Confidence**: medium: the standard does not say how a longer string is treated; the choice keeps the value and refuses
+  what the type cannot hold.
+- **Test**: `tests/indication.rs`, `a_bit_string_shorter_than_the_flags_or_with_a_bit_beyond_them_is_refused`,
+  `the_flags_of_a_mms_bit_string_map_to_the_bits_in_order`.
+
+### D-017 — The two-bit codes: states, tags and expected states
+
+- **Decision**: a state of a point (`State_hi`, `State_lo`), a tag and an expected state are two-bit codes, kept as the
+  values 0 to 3 with the type `TwoBitCode`. Their meaning depends on the device: the table of 802 §8.2 gives, for each device
+  kind, what code 00, 01, 10 and 11 mean (for instance a breaker and a disconnector do not share their names). The model
+  does not name the codes. The tag codes of the control points (NO-TAG = 0, OPEN-AND-CLOSEINHIBIT = 1, CLOSE-ONLY-INHIBIT
+  = 2, 802 §7.1.2) are not assumed for the supplemental tag: the bits are kept as codes.
+- **Why**: a name that the text does not give for a code would be an invention; the device tables are the authority of the
+  meaning, and they belong to the application that knows the device.
+- **Sources**: IEC 60870-6-802 §8.2 (the code table of the states), §7.1.2 (the tags of the control points), §5.2.2 (the
+  expected state and its use).
+- **Confidence**: high for the bit positions; medium for the supplemental tag, which the standard does not map to the
+  control point codes in these words.
+- **Test**: `tests/indication.rs`, `the_state_of_a_point_is_bits_zero_and_one_and_keeps_its_quality`,
+  `a_supplemental_state_has_its_state_its_tag_and_its_expected_state`.
+
+### D-018 — The quality flags and their bit positions
+
+- **Decision**: validity on bits 2 and 3 (VALID 0, HELD 1, SUSPECT 2, NOTVALID 3); current source on bits 4 and 5
+  (TELEMETERED 0, CALCULATED 1, ENTERED 2, ESTIMATED 3); normal value on bit 6 (NORMAL 0, ABNORMAL 1); time stamp quality on
+  bit 7 (VALID 0, INVALID 1). The same positions in `Data_Flags` and `Data_State`. The accessors write only their bits.
+- **Why**: the positions and the values are those of the mapping of 802 §7.1.1, which the data files confirm (the flag
+  strings of §6.2.1 name the same positions).
+- **Sources**: IEC 60870-6-802 §5.2.2 (the attributes and their values), §6.2.1 (the flag strings), §7.1.1 (the mapping).
+- **Confidence**: high.
+- **Test**: `tests/indication.rs`, the validity, current source, normal value and time stamp quality tests, and the
+  64 combinations.
+
