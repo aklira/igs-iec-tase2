@@ -1,0 +1,32 @@
+# pytest -v bench/tests/test_t3_client_matrix.py, run against the bench (device-tase2, client-tase2), 2026-11-07
+
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/aklira/Dev/igs-iec-tase2/bench
+configfile: pyproject.toml
+plugins: anyio-4.14.2, typeguard-4.4.4
+collecting ... collected 19 items
+
+tests/test_t3_client_matrix.py::test_association_is_established_and_points_are_read PASSED [  5%]
+tests/test_t3_client_matrix.py::test_an_ap_title_without_a_table_is_refused_with_status_1 PASSED [ 10%]
+tests/test_t3_client_matrix.py::test_a_table_identifier_that_differs_is_concluded_with_status_1 PASSED [ 15%]
+tests/test_t3_client_matrix.py::test_a_point_that_does_not_exist_is_an_item_error PASSED [ 21%]
+tests/test_t3_client_matrix.py::test_a_permitted_write_is_applied_and_read_back PASSED [ 26%]
+tests/test_t3_client_matrix.py::test_a_write_the_table_does_not_permit_is_refused_per_item PASSED [ 31%]
+tests/test_t3_client_matrix.py::test_the_type_of_a_point_is_described PASSED [ 36%]
+tests/test_t3_client_matrix.py::test_the_members_of_a_data_set_are_listed PASSED [ 42%]
+tests/test_t3_client_matrix.py::test_a_data_set_is_read_member_by_member PASSED [ 47%]
+tests/test_t3_client_matrix.py::test_a_data_set_write_answers_each_member PASSED [ 52%]
+tests/test_t3_client_matrix.py::test_a_data_set_the_client_creates_can_be_read_and_deleted PASSED [ 57%]
+tests/test_t3_client_matrix.py::test_a_data_set_the_table_does_not_show_is_refused_with_status_1 PASSED [ 63%]
+tests/test_t3_client_matrix.py::test_a_data_set_that_does_not_exist_cannot_be_deleted PASSED [ 68%]
+tests/test_t3_client_matrix.py::test_a_transfer_set_reports_each_change_of_its_data_set PASSED [ 73%]
+tests/test_t3_client_matrix.py::test_an_interval_transfer_set_reports_at_its_interval PASSED [ 78%]
+tests/test_t3_client_matrix.py::test_a_report_by_exception_names_only_the_changed_members PASSED [ 84%]
+tests/test_t3_client_matrix.py::test_a_stop_of_a_transfer_set_that_is_not_active_is_refused PASSED [ 89%]
+tests/test_t3_client_matrix.py::test_a_transfer_set_on_a_data_set_that_does_not_exist_is_refused PASSED [ 94%]
+tests/test_t3_client_matrix.py::test_every_test_the_client_matrix_names_exists_here PASSED [100%]
+
+============================= 19 passed in 22.44s ==============================
+exit=0
