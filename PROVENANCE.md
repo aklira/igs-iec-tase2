@@ -110,3 +110,27 @@ silent, to be confirmed by an observation test against other implementations.
 - **Confidence**: high (`--check` was tested on a stale file: it fails, and passes once restored).
 - **Test**: the generated files are checked by `cargo xtask codegen --check` in the gate.
 
+### D-009 — The scope of 1.0 (task F3)
+
+- **Decision**: 1.0 implements the block **Basic Services** of IEC 60870-6-702 (mandatory, base `m`), with the MMS
+  services, PDUs and parameter CBBs that the conformance tables mark as required for it:
+  - services (9): GetNameList, Identify, Read, Write, InformationReport (unconfirmed), GetVariableAccessAttributes,
+    DefineNamedVariableList, GetNamedVariableListAttributes, DeleteNamedVariableList;
+  - PDUs (7): Initiate request, response and error, Conclude request, response and error, Reject;
+  - parameter CBBs (4): `str1`, `str2`, `vnam`, `vlis` (base `m`).
+  These are the services and CBBs that the MMS stack of `igs-iso9506-mms` already serves; no MMS feature is added here.
+- **Criterion 2 is open**: the other blocks (Extended Conditions, Blocked Transfers, Information Message, SBO Device
+  Control: base `o`; Programs, Events, Accounts, Time Series: base `i`) are added to 1.0 only if the reference peer
+  implements them, observed as a black box at task F4 (rule 1: no reading of its source). F4 records the result as a
+  new decision, and section 6 follows it. Until then the blocks other than Basic Services are later.
+- **Why**: the criteria of the plan (F3) are applied to the conformance data of 702, which is exact. The second one
+  needs the reference peer, which F4 sets up.
+- **Sources**: IEC 60870-6-702 §6 and annex A (the conformance tables), read through the data file
+  `conformance_702.yaml` produced by `extract_conformance_702.py`, whose disagreements with the printed text are decided
+  in `conformance_702_decisions.yaml` (the typographic errors of the table A.28 and A.29, which do not change the
+  scope of the blocks).
+- **Confidence**: high for the mandatory set (the data give the scope of each service, PDU and CBB directly); medium
+  for the choice of the other blocks, which waits for F4.
+- **Test**: to be written with the blocks themselves (task B5 and the tests of the services in the link and client
+  tasks); the scope itself is checked by `docs/capabilities.md` in X1.
+
