@@ -162,6 +162,7 @@ fn data_error(code: ErrorCode) -> DataAccessError {
             DataAccessError::OBJECT_ATTRIBUTE_INCONSISTENT
         }
         ErrorCode::HardwareFault => DataAccessError::HARDWARE_FAULT,
+        ErrorCode::TemporarilyUnavailable => DataAccessError::TEMPORARILY_UNAVAILABLE,
         ErrorCode::TypeInconsistent => DataAccessError::TYPE_INCONSISTENT,
         ErrorCode::ObjectExists | ErrorCode::MemoryUnavailable => {
             DataAccessError::OBJECT_VALUE_INVALID

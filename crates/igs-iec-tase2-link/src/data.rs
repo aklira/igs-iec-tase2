@@ -55,6 +55,9 @@ pub enum ErrorCode {
     TypeInconsistent,
     /// The object does not support the attribute of the write.
     ObjectAttributeUnsupported,
+    /// The object cannot serve the operation now: a device is selected by another client, is busy, or is tagged against it
+    /// (503 §7.2.6.2.3, §7.2.6.3.3).
+    TemporarilyUnavailable,
     /// Another error code, as the peer sent it: its value, kept without a meaning of its own.
     Other(i64),
 }
@@ -73,6 +76,7 @@ impl ErrorCode {
             | Self::HardwareFault
             | Self::TypeInconsistent
             | Self::ObjectAttributeUnsupported
+            | Self::TemporarilyUnavailable
             | Self::Other(_) => ErrorClass::Access,
         }
     }

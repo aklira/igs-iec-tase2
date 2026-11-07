@@ -93,6 +93,8 @@ fn code_of(error: DataAccessError) -> ErrorCode {
         ErrorCode::ObjectUndefined
     } else if error == DataAccessError::OBJECT_ATTRIBUTE_INCONSISTENT {
         ErrorCode::ObjectAttributeInconsistent
+    } else if error == DataAccessError::TEMPORARILY_UNAVAILABLE {
+        ErrorCode::TemporarilyUnavailable
     } else if error == DataAccessError::HARDWARE_FAULT {
         ErrorCode::HardwareFault
     } else if error == DataAccessError::TYPE_INCONSISTENT {
