@@ -17,11 +17,12 @@ use crate::generated::iso503::{
     DSTransferSetCritical, DSTransferSetRBE, DSTransferSetStatus, MMSObjectName,
     MMSObjectNameScope, TimeStampExtended,
 };
+use crate::generated::iso802::clause_6_4::{Number, ReferenceNum};
 use crate::generated::iso802::{
     ControlConfig, ControlConfigControlPointType, ControlConfigDeviceClass,
-    ControlConfigSetPointType, ControlConfigTagClass, EventFlags, PackedFlags,
-    PackedProtectionEvent, SelectState, SingleFlags, SingleProtectionEvent, TagFlags, TagValue,
-    TextString, SBO,
+    ControlConfigSetPointType, ControlConfigTagClass, EventFlags, InfoBufXX, InfoMessHeader,
+    PackedFlags, PackedProtectionEvent, SelectState, SingleFlags, SingleProtectionEvent, TagFlags,
+    TagValue, TextString, SBO,
 };
 
 /// Integers of 16 bits, in their range.
@@ -131,6 +132,35 @@ pub fn select_state() -> BoxedStrategy<SelectState> {
 pub fn tag_value() -> BoxedStrategy<TagValue> {
     (tag_flags(), text_string())
         .prop_map(|(flags, reason)| TagValue { flags, reason })
+        .boxed()
+}
+
+/// An information message header: its three references and its size, each within its range.
+pub fn info_mess_header() -> BoxedStrategy<InfoMessHeader> {
+    (
+        (ReferenceNum::MIN..=ReferenceNum::MAX),
+        (ReferenceNum::MIN..=ReferenceNum::MAX),
+        (ReferenceNum::MIN..=ReferenceNum::MAX),
+        (Number::MIN..=Number::MAX),
+    )
+        .prop_filter_map(
+            "each component within its range",
+            |(reference, local, message, size)| {
+                Some(InfoMessHeader {
+                    info_reference: ReferenceNum::new(reference).ok()?,
+                    localreference: ReferenceNum::new(local).ok()?,
+                    message_id: ReferenceNum::new(message).ok()?,
+                    size: Number::new(size).ok()?,
+                })
+            },
+        )
+        .boxed()
+}
+
+/// An information message buffer: any octets.
+pub fn info_buf_xx() -> BoxedStrategy<InfoBufXX> {
+    prop::collection::vec(any::<u8>(), 0..512)
+        .prop_map(InfoBufXX)
         .boxed()
 }
 

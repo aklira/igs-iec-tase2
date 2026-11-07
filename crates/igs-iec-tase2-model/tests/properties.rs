@@ -223,6 +223,8 @@ round_trip_property!(event_flags_round_trip, strat::event_flags());
 round_trip_property!(packed_flags_round_trip, strat::packed_flags());
 round_trip_property!(tag_flags_round_trip, strat::tag_flags());
 round_trip_property!(select_state_round_trips, strat::select_state());
+round_trip_property!(info_mess_header_round_trips, strat::info_mess_header());
+round_trip_property!(info_buf_xx_round_trips, strat::info_buf_xx());
 round_trip_property!(tag_value_round_trips, strat::tag_value());
 round_trip_property!(sbo_round_trips, strat::sbo());
 round_trip_property!(control_config_round_trips, strat::control_config());
