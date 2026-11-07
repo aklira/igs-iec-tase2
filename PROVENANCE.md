@@ -899,3 +899,56 @@ silent, to be confirmed by an observation test against other implementations.
 - **Confidence**: medium: the list is local. The numbers of the names are the only thing a peer can see.
 - **Test**: `buffer_name` and `the_greatest_stream_is_the_greatest_buffer` in `crates/igs-iec-tase2-link/tests/information.rs`.
 
+### D-063 — The CheckBackID is an integer of 16 bits, as its MMS type gives it (correction of B1)
+
+- **Decision**: the CheckBackID of a device in the bilateral table has the type SBO_CheckBackName, an integer of 16 bits. B1 had
+  stored it as a string, without a recorded decision; this entry corrects it, and the table, its tests and the server's test use
+  the integer.
+- **Why**: the data file of 802 gives SBO_CheckBackName as `integer { width 16 }` (§6.2.2), and the PDF confirms it on page 27. The
+  Select of 503 §7.2.6.2 reads the CheckBackID as an MMS variable of that type (`<Device_Name>_SBO`, §6.15 maps it so). The text of
+  802 §5.2 calls the CheckBackName "a symbolic description", which disagrees with the type; the typed value is the one a peer reads,
+  so it prevails (rule 4 and the PDF-authority rule of section 3).
+- **Confidence**: high for the type (the data file and the page agree); medium for the disagreement with §5.2's text, which is a
+  known ambiguity of the published text. Check it with a real peer before R1 (task R1 of the plan).
+- **Test**: `the_check_back_id_is_returned_for_a_selectable_device_only` (`crates/igs-iec-tase2-link/tests/bilateral.rs`), and the
+  Select tests of `crates/igs-iec-tase2-link/tests/device.rs`.
+
+### D-064 — The device control cycle: the states, the refusals and the choices the standard leaves open (task C4)
+
+- **Decision**: the device of `crates/igs-iec-tase2-link/src/device.rs` holds IDLE or ARMED, the client that selected it, the operation
+  in progress, its Tag and its owner.
+  - **Select** (503 §5.3.12.3, §7.2.6.2): checks the Select permission of the client's table; refuses a non-SBO device (with
+    OBJECT-ACCESS-DENIED, the standard only says "fail"); refuses a device ARMED, busy, or tagged OPEN-AND-CLOSE-INHIBIT (with
+    TEMPORARILY-UNAVAILABLE, the codes 054 §7.2.6.2.3 gives). It returns the CheckBackID of the table, and arms the device with the
+    Timeout of the table.
+  - **Operate** (503 §5.3.12.4, §7.2.6.3): checks the Operate permission. An SBO device must be ARMED by this client; a device busy
+    with another operation refuses. OPEN-AND-CLOSE-INHIBIT refuses every command; CLOSE-ONLY-INHIBIT refuses the commands that close or
+    raise (the caller says which they are, `close_or_raise`: the standard does not map commands to their meaning). The caller executes
+    the command and reports its outcome with `complete`: Success or Failure; the device returns to IDLE and the action is signalled. The
+    client of a Failure receives HARDWARE-FAULT (503 §7.2.6.3.3). A non-SBO device is operated without a selection; it accepts one
+    operation at a time (a choice: the standard does not say).
+  - **Timeout**: the timer runs from the Select, with the Timeout of the selecting client's table, and expires when the elapsed time
+    reaches the Timeout (054 §7.2.6.2.1). It stops while an Operate is in progress, because the Operate cancels the timer (§7.2.6.3.1).
+    The expiry returns the device to IDLE and signals the Timeout action.
+  - **Local Reset** (503 §5.3.12.8, 054 §7.2.6.5): returns the device to IDLE, ends an operation in progress, and signals the action;
+    it may set the tag, with no owner.
+  - **Set Tag** (503 §5.3.12.5): checks the Set Tag permission. For a VCC-specific device (the VMD scope), a tagged device is changed
+    only by the client that tagged it; a domain-specific device is changed by any client. A reason of more than 255 octets (the
+    TextString of 802 §6.2.2) is refused with TYPE-INCONSISTENT.
+  - **Tag codes** (802 §7.1): NO-TAG = 0, OPEN-AND-CLOSE-INHIBIT = 1, CLOSE-ONLY-INHIBIT = 2, in the bits Tag_hi and Tag_lo; the bit
+    Tag_state is 1 for ARMED. The server maps them to the MMS type Tag_Value (task C7); the link keeps the values, not the bits.
+  - **The Operate names its permission**: 054 §7.2.6.3.1 says that the Operate fails without the "Select access permission", which is
+    read as a copy error of the Select text; the Operate checks its own permission, as 503 §5.3.12.2 gives it.
+  - **The CheckBackID of the Operate**: 503 §5.3.12.4 says that the client gives the CheckBackID in the Operate; the MMS mapping
+    (054 §7.2.6.3.2) writes only the command, and 054 §7.2.6.2.2 leaves the use of the CheckBackID to the client. The link follows the
+    mapping and does not check it: the Operate has no CheckBackID to check on the wire. The check, if any, is the client's.
+  - **Action signalled on each outcome**: Success and Failure are signalled for a non-SBO device too (503 §5.3.12.9, 5.3.12.10), since
+    the device returns to IDLE on either outcome.
+- **Why**: the rules are those of 503 §5.3.12 and §7.2.6, and the state machine follows their text; the choices above are where the text
+  is silent, or where it disagrees with itself.
+- **Confidence**: high for the states, the timeout and the tag codes (the clauses are explicit); medium for the error codes chosen where
+  the text names none (non-SBO Select, reason length), and for the reading of the Operate permission. The CheckBackID of the Operate is
+  a gap to note in the matrix (C8): the link does not check it.
+- **Test**: `crates/igs-iec-tase2-link/tests/device.rs`, 23 tests: one per transition, the timeout, the local reset, the tags, and the
+  owner of a VCC-specific device.
+
