@@ -472,3 +472,68 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: `tests/association.rs`: the release of the transfer sets and the devices, and a second release, which has
   nothing left.
 
+### D-033 — The reads and writes of data values, item by item
+
+- **Decision**: Get Data Value and Set Data Value answer per item. An object that the table does not contain, or that is not
+  visible to the client, is `OBJECT-NON-EXISTENT` (class ACCESS); a visible object whose operation is not permitted is
+  `OBJECT-ACCESS-DENIED`. A write to an object the server does not hold is `OBJECT-NON-EXISTENT`; a write that the server
+  cannot make is the error the store gives (`HARDWARE-FAULT`, `TYPE-INCONSISTENT`, `OBJECT-ATTRIBUTE-UNSUPPORTED`). A failed
+  item writes nothing. The type of a data value is read with the Permitted Access `Get Data Value Type`.
+- **Why**: the standard gives these codes per operation (503 §7.2.3.2.3, §7.2.3.3.3, §7.2.3.5.3), and the visibility rule
+  of §7.2.3.1 gives the non-existent answer for an invisible object.
+- **Sources**: IEC 60870-6-503 §7.2.3.1 (the visibility rule), §7.2.3.2.3, §7.2.3.3.3, §7.2.3.5.3.
+- **Confidence**: high.
+- **Test**: `crates/igs-iec-tase2-link/tests/data.rs`, the `get_data_value…`, `set_data_value…` and `get_data_value_type…`
+  tests.
+
+### D-034 — The element reads and writes of a data set, item by item, with access denied for every refused member
+
+- **Decision**: for Get and Set Data Set Element Values, a data set that the table does not contain, or does not show, is
+  `OBJECT-NON-EXISTENT` for the operation as a whole; a data set without the operation's permission is
+  `OBJECT-ACCESS-DENIED`. Each member is then answered on its own: a member that the table does not let the client read (or
+  write), an invisible one included, is `FAILURE` with `OBJECT-ACCESS-DENIED`; so is a special identifier
+  (`Transfer_Set_Name`, `DSConditions_Detected`, `Event_Code_Detected`, `Transfer_Set_Time_Stamp`). The other members are
+  read or written.
+- **Why**: the standard answers `OBJECT-ACCESS-DENIED` for a member without read or write access (§7.2.4.4.3, §7.2.4.5.3),
+  and the visibility rule (§7.2.4.1) applies to the data set itself, not to its members.
+- **Sources**: IEC 60870-6-503 §7.2.4.1, §7.2.4.4.3, §7.2.4.5.3 (the special identifiers of §7.2.4.2.3).
+- **Confidence**: high for the members; medium for the data-set-level answer, which the standard gives only for the
+  visibility of the data set.
+- **Test**: `tests/data.rs`, the `get_data_set_element_values…` and `set_data_set_element_values…` tests.
+
+### D-035 — Creating a data set: the checks in the order of the standard, and the create permission of the table
+
+- **Decision**: a client creates a data set only if the table grants it (`with_data_set_creation`, the Create Data Set
+  permission, which is not in the list of an object because the object does not exist yet). Then the checks come in the
+  order of the standard, and the first failure is the answer: the access to each member (at least Read: any refusal,
+  invisible included, is `OBJECT-ACCESS-DENIED`), the uniqueness of the name (`OBJECT-EXISTS`), the existence of each
+  member except the special identifiers (`OBJECT-UNDEFINED`), the ICC-specific scope of the name
+  (`OBJECT-ATTRIBUTE-INCONSISTENT`), and the room for the data set (`MEMORY-UNAVAILABLE`).
+- **Why**: the standard lists the checks and their codes in this order (§7.2.4.2.3); the table flag keeps the permission
+  visible in the model.
+- **Sources**: IEC 60870-6-503 §7.2.4.2.1, §7.2.4.2.3.
+- **Confidence**: high for the order and the codes; medium for the table flag, which is the model's, not the standard's.
+- **Test**: `tests/data.rs`, the `create_data_set…` tests.
+
+### D-036 — Deleting data sets: each name on its own
+
+- **Decision**: each name of a Delete Data Set request is checked on its own, in the order of the standard: its existence
+  (`OBJECT-UNDEFINED`), the access of the client (`OBJECT-ACCESS-DENIED`), the absence of an active transfer set that
+  references it (`OBJECT-ACCESS-UNSUPPORTED`, the caller supplies the set of names in use), and the ICC-specific scope
+  (`OBJECT-ATTRIBUTE-INCONSISTENT`). A name that fails is not deleted; the others are.
+- **Why**: the standard says the failing object is not deleted (§7.2.4.3.3); it does not say the others are not, so they
+  are deleted as the request asks.
+- **Sources**: IEC 60870-6-503 §7.2.4.3.2, §7.2.4.3.3.
+- **Confidence**: medium for the other names: a reading that deletes all or none would also fit the sentence.
+- **Test**: `tests/data.rs`, the `delete_data_set…` tests.
+
+### D-037 — A list of values of another length than the members is refused
+
+- **Decision**: Set Data Set Element Values with a list of values that is not one value per member is refused as an
+  attribute inconsistency of the data set (`OBJECT-ATTRIBUTE-INCONSISTENT`, class DEFINITION), before any write.
+- **Why**: the standard gives the list of data in the order of the variables (§7.2.4.5.2) and does not give the case of a
+  different length; refusing it is the only answer that writes nothing.
+- **Sources**: IEC 60870-6-503 §7.2.4.5.2. The code is the model's choice, not the standard's.
+- **Confidence**: low: the standard does not say; to be confirmed by the interop tests (T3).
+- **Test**: `tests/data.rs`, `set_data_set_element_values_refuses_a_list_of_another_length`.
+

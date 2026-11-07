@@ -294,7 +294,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | M6 Property tests and fuzzing | [ ] |
 | B1 Bilateral table | [x] |
 | B2 Association | [x] |
-| B3 Data values and data sets | [ ] |
+| B3 Data values and data sets | [x] |
 | B4 Transfer sets | [ ] |
 | B5 Controls and messages of the chosen blocks | [ ] |
 | T1 Client API | [ ] |
