@@ -282,7 +282,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 
 | Task | Status |
 | --- | --- |
-| F1 Workspace skeleton | [ ] |
+| F1 Workspace skeleton | [x] |
 | F2 Code generation | [ ] |
 | F3 Scope of 1.0 | [ ] |
 | F4 Interop bench skeleton | [ ] |

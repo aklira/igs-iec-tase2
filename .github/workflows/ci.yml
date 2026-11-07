@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 The igs-iec-tase2 contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Runs the standard gate of IMPLEMENTATION.md section 1. The MMS stack is a sibling repository (rule 9):
+# it is checked out next to this one, at the same layout as on the maintainer's machine. The licensed
+# standards are not present in CI.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: standard gate (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout the MMS stack (path dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: aklira/igs-iso9506-mms
+          path: ../igs-iso9506-mms
+
+      - name: Install cargo tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Tests
+        run: cargo test --workspace --all-features
+
+      - name: Deny
+        run: cargo deny check

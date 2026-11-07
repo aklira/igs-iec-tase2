@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 The igs-iec-tase2 contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[workspace]
+resolver = "3"
+members = [
+    "crates/igs-iec-tase2-model",
+    "crates/igs-iec-tase2-link",
+    "crates/igs-iec-tase2",
+    "xtask",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.85"
+license = "Apache-2.0"
+repository = "https://github.com/aklira/igs-iec-tase2"
+
+# Rule 8 of IMPLEMENTATION.md. Inherited by the three library crates, not by xtask.
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+arithmetic_side_effects = "deny"
+
+# The MMS stack is a sibling repository, a path dependency until it is published (rule 9).
+[workspace.dependencies]
+igs-iso9506-mms = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms" }
