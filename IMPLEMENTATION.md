@@ -286,7 +286,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | F2 Code generation | [x] |
 | F3 Scope of 1.0 | [x] |
 | F4 Interop bench skeleton | [x] |
-| M1 Scalars and time | [ ] |
+| M1 Scalars and time | [x] |
 | M2 Indication points | [ ] |
 | M3 Control points and device outage | [ ] |
 | M4 Transfer sets, conditions, data set types | [ ] |

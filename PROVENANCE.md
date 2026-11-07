@@ -63,7 +63,7 @@ silent, to be confirmed by an observation test against other implementations.
 - **Sources**: IEC 60870-6-802 §6.2, §6.3 (the definitions of the strings), and the data files.
 - **Confidence**: medium. A fixed-length reading would refuse shorter strings; to be confirmed at M1 against the
   encoding rules of the MMS string types.
-- **Test**: to be written with the conversions (task M1); the generated `MAX_LEN` constants are in the model.
+- **Test**: `crates/igs-iec-tase2-model/tests/conversions.rs` (the maximum length and the visible characters of each string).
 
 ### D-005 — A plain INTEGER is a 32-bit integer
 
@@ -153,4 +153,53 @@ silent, to be confirmed by an observation test against other implementations.
   the authors' own statement.
 - **Test**: `bench/tests/test_f4_peer_association.py`: the peer associates with `igsmms-server` and identifies it; the
   capture decodes with no error in tshark.
+
+### D-011 — The milliseconds of a time stamp are the part of a second
+
+- **Decision**: a time stamp with milliseconds (IEC 60870-6-503 §8.2.5, `TimeStampExtended`) is the GMT seconds and a
+  `TimeIntervalL16` component whose value is the milliseconds of that second: 0 to 999. The type `TimeIntervalL16`
+  itself accepts any 16-bit value; the stamp refuses 1000 and above.
+- **Why**: a time stamp names an instant; a value above 999 would name the instant of another second, which the seconds
+  component already gives. The data files give the component a 16-bit width only.
+- **Sources**: IEC 60870-6-503 §8.2.5 (the component), §8.2.6 (the interval types).
+- **Confidence**: medium: the standard does not state the range in the text read; the decision is the reading that keeps
+  the seconds and the milliseconds from overlapping. To confirm against an observation of the reference peer (F4).
+- **Test**: `tests/conversions.rs`, `a_time_stamp_of_thousand_milliseconds_is_refused`.
+
+### D-012 — The GMT seconds, and their conversion to a system time
+
+- **Decision**: a GMT time is a 32-bit integer of seconds since 1 January 1970 at 00:00:00 GMT (IEC 60870-6-503 §8.2.4).
+  A system time is converted to it by rounding down to the millisecond and to the second, so that a time before 1970 has a
+  negative second: `-0.5 s` is second `-1` with `500` milliseconds. The range is that of 32 bits: 1901-12-13T20:45:52Z to
+  2038-01-19T03:14:07Z; a time outside it is refused, not wrapped.
+- **Sources**: IEC 60870-6-503 §8.2.4 (the base date and the unit).
+- **Confidence**: high for the base and the unit (the text states them); medium for the rounding of the times before 1970,
+  which the text does not discuss.
+- **Test**: `tests/conversions.rs`, `a_gmt_time_counts_seconds_from_1970_as_the_standard_says`,
+  `the_limits_of_the_gmt_seconds_are_the_dates_of_32_bits`, `a_time_before_1970_is_rounded_down_to_the_millisecond`.
+
+### D-013 — A real is single precision on the wire
+
+- **Decision**: every floating-point type of the data files is 32 bits with an 8-bit exponent (the data files give the
+  format of each: all eleven). It is converted to the MMS floating-point value of the codec: the exponent width 8, then the
+  four octets of the IEEE single precision number. A value in Rust is an `f64`; the conversion rounds it to single
+  precision, so only a single-precision value survives a round trip.
+- **Why**: the wire format is the one the data files and the codec describe; a double precision value on the wire would be
+  a different type.
+- **Sources**: the data files (the format and the exponent width of each floating-point definition); the codec's own
+  description of the floating-point form (`igs-iso9506-mms-codec`, `floating.rs`, the form of ISO 9506-2 §14.4.2.2).
+- **Confidence**: high.
+- **Test**: `tests/conversions.rs`, `a_real_is_the_ieee_single_precision_octets_with_exponent_width_eight`.
+
+### D-014 — The characters of a visible string
+
+- **Decision**: a visible string holds the graphic characters and the space: the characters from space (0x20) to tilde
+  (0x7E). A string with another character (a tab, an accented letter) is refused, and so is a string longer than the
+  width of its type (D-004).
+- **Why**: the MMS visible string is the ASN.1 VisibleString, whose characters are the graphic set of ISO 646 and the
+  space; the decision keeps the conversions to that set.
+- **Sources**: ISO/IEC 8824-1 (the VisibleString type, as the MMS encoding of visible strings uses it); IEC 60870-6-503
+  §8.2.2 (the visible strings of the model).
+- **Confidence**: medium: the 503 text does not list the characters; the decision follows the ASN.1 type.
+- **Test**: `tests/conversions.rs`, `a_character_that_is_not_visible_is_refused`, `a_string_longer_than_its_type_is_refused`.
 
