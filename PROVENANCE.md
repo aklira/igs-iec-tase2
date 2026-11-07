@@ -45,7 +45,7 @@ silent, to be confirmed by an observation test against other implementations.
   annex G describes the 2002 edition and is informative.
 - **Sources**: IEC 60870-6-503 §8.2, annex G.
 - **Confidence**: high.
-- **Test**: to be written (task M4).
+- **Test**: `tests/transfer.rs`, `the_main_text_names_prevail_over_the_annexes`.
 
 ## Third-party code and sources
 
@@ -274,3 +274,42 @@ silent, to be confirmed by an observation test against other implementations.
   whole type, not to one use: the data gives it on the type, and the clauses that use the type were not re-read here.
 - **Test**: `tests/control.rs`, `a_control_point_type_outside_its_range_is_refused_by_the_type_and_by_mms` and
   `a_control_configuration_round_trips_within_its_ranges`; `tests/generated.rs` checks the counts of the generated items.
+
+### D-020 — An enumeration whose base is Boolean is a Boolean
+
+- **Decision**: an enumeration whose base type is `Boolean` is the MMS Boolean. Its names stand for the values: `TRUE`
+  (non-zero) and `FALSE` (0) for the block data, the critical, RBE and all-changes-reported flags; `ENABLED` (1) and
+  `DISABLED` (0) for the status. The generated type is a `bool` newtype with the names as constants.
+- **Why**: the generator had written these as integers (only 0 and 1 accepted), so a Boolean value from the peer was
+  refused. The text gives the base as Boolean, and the values as the MMS Boolean.
+- **Sources**: IEC 60870-6-503 §8.2.7.1 (DSTransferSet) and §8.2.7.2 (TSTransferSet, TATransferSet): the component types
+  `Boolean {TRUE (non-zero), FALSE (0)}` and `Boolean {ENABLED(1), DISABLED(0)}`.
+- **Confidence**: high.
+- **Test**: `tests/transfer.rs`, `a_boolean_enumeration_is_a_boolean_with_the_names_of_the_standard` and
+  `a_status_is_enabled_or_disabled`.
+
+### D-021 — The reserved bits of a bit string have no name, and Block1 is not enforced
+
+- **Decision**: a bit named `reserved` has no constant and no accessor: its bit is kept as received, so every value of
+  the string round-trips. `SupportedFeatures` has eight reserved bits (2, 5 to 9): the generator had kept one of them
+  under the name `RESERVED`, which named only bit 2. `Block1` is always 1 in the text; the type does not refuse a
+  value with it cleared, since the peer's value is the one to report (the link decides what to do with it).
+- **Why**: a constant for one of several bits called `reserved` suggests a single meaning; the reserved bits have none.
+  Refusing a cleared `Block1` would decide a protocol behaviour in the type model.
+- **Sources**: IEC 60870-6-503 §8.2.9 (the bit positions of SupportedFeatures, and the note on Block1).
+- **Confidence**: high for the names and positions; medium for the choice not to refuse, to be confirmed by the
+  interop test of the link (B-tasks).
+- **Test**: `tests/transfer.rs`, `the_supported_features_keep_every_bit_of_their_twelve`.
+
+### D-022 — The main text is exported at the root of its file
+
+- **Decision**: a name defined in several clauses, with exactly one definition in the main text (not an annex), is also
+  exported at the root of its file: `iso503::TSTransferSet`, `TATransferSet`, `IMTransferSet`, `TSConditions` and
+  `SupportedFeatures` are the definitions of the main text. Names defined in several main clauses
+  (D-001), keep no root name; a name defined once, in the main text or in an annex, is at the root as before. The
+  generator exports only definitions that produce items: a reference to a type of the other file produces none.
+- **Why**: D-003 says the main text prevails; a name at the root reads as the current definition, and the annexes stay
+  reachable by their clause.
+- **Sources**: D-003; IEC 60870-6-503 §8.2 (main text) and annex G (earlier edition).
+- **Confidence**: high.
+- **Test**: `tests/transfer.rs`, `the_main_text_names_prevail_over_the_annexes`.
