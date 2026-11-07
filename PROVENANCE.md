@@ -849,3 +849,24 @@ silent, to be confirmed by an observation test against other implementations.
   clauses of IEC 60870-6-503, 6-802 and 6-702 (rule 4).
 - **Test**: the tasks C2 to C9 name their tests; `docs/capabilities.md` gets one row per operation of the three blocks.
 
+### D-060 — Which transfer-set conditions belong to block 2, and what is already implemented (task C2)
+
+- **Decision**: in the conformance table of IEC 60870-6-702 (the statuses of the transfer-set operations, A.2 of 702), the conditions
+  IntervalTimeOut, OperatorRequest, OtherExternalEvent and EventCodeRequested are required of a server for block 1 (`m1`), and the
+  conditions ObjectChange and IntegrityTimeout are required of a server for block 2 (`m2`). Block 2 (Extended Conditions) is therefore
+  the ObjectChange and IntegrityTimeout conditions, with their buffer and their RBE rules. Both are already implemented in the link
+  (B4: `an_object_change_without_a_buffer_is_reported_at_once`, `a_buffered_change_is_reported_at_the_end_of_the_buffer_with_the_last_value`,
+  `an_integrity_expiry_reports_the_entire_data_set_with_rbe`, `the_integrity_check_applies_only_with_rbe`), and the server reports
+  the ObjectChange condition (`a_change_of_a_monitored_value_is_reported_to_its_association`). The client requests them through the
+  transfer-set parameters.
+- **Why**: the statement "block 2 is not implemented" in the README, before D-059, was about the block as a set of operations; the
+  transfer-set conditions were already part of Basic Services in D-009's reading of 702, and are needed by it. The table settles which
+  condition is which block; the implementation is not to be duplicated.
+- **Consequence for C5**: the link and the server already cover block 2's conditions. C5 is reduced to checking, in the client and
+  the server, that a block-2 condition is requested and reported end to end (tests in `crates/igs-iec-tase2/tests/`), and to noting it in
+  the capabilities matrix.
+- **Confidence**: high for the reading of the table (its statuses are printed in the extracted conformance data); medium for the claim
+  that the block-2 set is exactly ObjectChange and IntegrityTimeout, since the block's own clause (the Extended Conditions block of 702)
+  was not re-read in this decision. Re-check it against the clause before R1.
+- **Test**: the tests named above; `crates/igs-iec-tase2-model/tests/information.rs` for the information types of C2.
+

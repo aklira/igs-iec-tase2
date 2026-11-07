@@ -287,7 +287,8 @@ out. Each task below names its clauses in its log; the behaviour is decided agai
 
 **C5 — Extended data set conditions (link)**
 - Depends: C2, B4.
-- Produce: the conditions of block 2 (Extended Conditions) on data set transfer sets, with their reports.
+- Produce: the conditions of block 2 (Extended Conditions) on data set transfer sets, with their reports. D-060: the link and the
+  server already implement them; this task checks the client and the server end to end, and records it in the matrix.
 - Done when: each condition has a test; a condition the server does not hold is refused per item.
 
 **C6 — Client API and `igstase2-client`**
@@ -363,7 +364,7 @@ out. Each task below names its clauses in its log; the behaviour is decided agai
 | S3 Server interop and load | [x] |
 | X1 Documentation and capabilities | [x] |
 | C1 Scope change (D-059) | [x] |
-| C2 Types of blocks 2, 4 and 5 | [ ] |
+| C2 Types of blocks 2, 4 and 5 | [x] |
 | C3 Information messages (link) | [ ] |
 | C4 Device control, SBO (link) | [ ] |
 | C5 Extended data set conditions (link) | [ ] |
