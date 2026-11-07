@@ -19,6 +19,8 @@ All notable changes to this project are recorded in this file. The format follow
 - `igstase2-server`: the demonstration server, with its configuration file and simulated changes (the device under test of the bench).
 - `igstase2-client`: the command-line client (get, set, type, members, read, write, create, delete, start, stop).
 - The interop bench (`bench/`): the device and the client in their containers, and the client interop matrix.
+- `igstase2-load`: the load driver (many associations, 10 000 points, latencies measured, the counters of errors and stray
+  reports), and the bench's load run (`bench/tests/test_s3_load.py`, `docs/load-test.md`).
 - The documentation: `docs/capabilities.md` (the blocks, the operations, the test of each row, the known gaps), the client
   and server documents, and the decisions of `PROVENANCE.md`.
 

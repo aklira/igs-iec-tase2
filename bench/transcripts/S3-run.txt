@@ -1,0 +1,19 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/aklira/Dev/igs-iec-tase2/bench
+configfile: pyproject.toml
+plugins: anyio-4.14.2, typeguard-4.4.4
+collecting ... collected 2 items
+
+tests/test_s3_load.py::test_many_associations_read_and_write_ten_thousand_points wrote /home/aklira/Dev/igs-iec-tase2/bench/device/load-10k.toml (10000 points)
+associate        n=8 p50=8.704ms p95=12.795ms p99=12.795ms max=12.795ms
+read             n=800 p50=8.824ms p95=9.656ms p99=11.379ms max=12.586ms
+write            n=80 p50=8.417ms p95=8.835ms p99=9.844ms max=9.844ms
+errors=0 stray_reports=0
+elapsed 1.096 s; server 172.31.110.12:102; points 10000; clients 8; rounds 1; chunk 100; writes 10
+
+PASSED
+tests/test_s3_load.py::test_the_driver_refuses_a_server_that_is_not_there PASSED
+
+============================== 2 passed in 15.07s ==============================

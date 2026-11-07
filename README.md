@@ -8,7 +8,8 @@ An industrial-grade IEC 60870-6 ICCP TASE.2 protocol stack for SCADA and telecon
 - **Link** (`igs-iec-tase2-link`): sans-I/O bilateral tables, association, data values and data sets, transfer sets, with a
   fake clock in the tests.
 - **Client and server** (`igs-iec-tase2`): `TaseClient` and `TaseServer` over `igs-iso9506-mms`.
-- **Binaries**: `igstase2-server` (a demonstration server, the bench's device) and `igstase2-client` (a command-line client).
+- **Binaries**: `igstase2-server` (a demonstration server, the bench's device), `igstase2-client` (a command-line client) and
+  `igstase2-load` (a load driver: many associations, latencies measured; see [`docs/load-test.md`](docs/load-test.md)).
 
 The standards are licensed and are not distributed with this repository. The references point to their clauses; no text of the
 standards is in the code or the documents.
