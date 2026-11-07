@@ -513,6 +513,102 @@ async fn a_report_by_exception_carries_the_changed_member_only() {
     server.shutdown().await;
 }
 
+/// The conditions of block 2 (Extended Conditions, decision D-060), end to end: the client requests them in the transfer set, the
+/// server monitors them, and the client receives the reports. The server's clock is the real one, so these tests wait for seconds.
+#[tokio::test]
+async fn an_integrity_check_reports_the_entire_data_set_with_rbe_when_nothing_changed() {
+    let server = serving("BT-2026-001").await;
+    let (client, mut events) = client(&server).await;
+    let mut set = transfer_set("DS1", DSConditions::INTEGRITY_TIME_OUT, true);
+    set.integrity_check = Integer32::new(1).unwrap();
+    let started = std::time::Instant::now();
+    assert_eq!(
+        client.start_transfer(&icc("TS1"), &set).await.unwrap(),
+        Item::Success(())
+    );
+    let report = next_report(&mut events).await;
+    assert!(
+        started.elapsed() >= Duration::from_millis(900),
+        "the check waits its interval"
+    );
+    assert_eq!(
+        report.values,
+        vec![
+            Item::Success(Data::Integer(5)),
+            Item::Success(Data::Integer(1))
+        ],
+        "the entire data set, though no value changed"
+    );
+    assert_eq!(
+        report.access,
+        igs_iec_tase2::ReportAccess::Names(vec![icc("Flow1"), icc("ReadOnly")]),
+        "with RBE the members are named"
+    );
+    // The check repeats at its interval.
+    let again = next_report(&mut events).await;
+    assert_eq!(again.values.len(), 2);
+    assert!(
+        started.elapsed() >= Duration::from_millis(1900),
+        "the check repeats"
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn a_buffered_object_change_is_reported_once_with_its_last_value_after_the_buffer_time() {
+    let server = serving("BT-2026-001").await;
+    let (client, mut events) = client(&server).await;
+    let mut set = transfer_set("DS1", DSConditions::OBJECT_CHANGE, false);
+    set.buffer_time = Integer32::new(1).unwrap();
+    assert_eq!(
+        client.start_transfer(&icc("TS1"), &set).await.unwrap(),
+        Item::Success(())
+    );
+    let started = std::time::Instant::now();
+    server
+        .set_value(icc("Flow1"), Data::Integer(43))
+        .await
+        .unwrap();
+    server
+        .set_value(icc("Flow1"), Data::Integer(44))
+        .await
+        .unwrap();
+    let report = next_report(&mut events).await;
+    assert!(
+        started.elapsed() >= Duration::from_millis(900),
+        "the change waits in the buffer: {:?}",
+        started.elapsed()
+    );
+    assert_eq!(
+        report.values[0],
+        Item::Success(Data::Integer(44)),
+        "the buffer reports the last value of the change"
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn a_report_within_its_tle_is_sent() {
+    let server = serving("BT-2026-001").await;
+    let (client, mut events) = client(&server).await;
+    let mut set = transfer_set("DS1", DSConditions::OBJECT_CHANGE, false);
+    set.tle = Integer32::new(5).unwrap();
+    assert_eq!(
+        client.start_transfer(&icc("TS1"), &set).await.unwrap(),
+        Item::Success(())
+    );
+    server
+        .set_value(icc("Flow1"), Data::Integer(43))
+        .await
+        .unwrap();
+    let report = next_report(&mut events).await;
+    assert_eq!(report.values[0], Item::Success(Data::Integer(43)));
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
 #[tokio::test]
 async fn a_change_the_store_refuses_is_neither_kept_nor_reported() {
     let server = serving("BT-2026-001").await;
