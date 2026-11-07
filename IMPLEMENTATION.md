@@ -257,6 +257,59 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 - Produce: bench scenarios; a load test with 10 000 points and several associations.
 - Done when: the matrix passes; latency measured; gaps recorded (rule 10).
 
+### Phase 6 — Blocks 2, 4 and 5 (decision D-059)
+
+Blocks 2 (Extended Conditions), 4 (Information Message) and 5 (SBO Device Control) join 1.0. Block 3 (Blocked Transfers) stays
+out. Each task below names its clauses in its log; the behaviour is decided against them (rule 4), and recorded.
+
+**C1 — Scope change**
+- Depends: F3, D-009, D-059.
+- Produce: D-059 (done with this plan), the README and `docs/capabilities.md` marked "in progress" for blocks 2, 4 and 5.
+- Done when: the scope is recorded, and no document still says that blocks 2, 4 and 5 are out of 1.0.
+
+**C2 — Types of blocks 2, 4 and 5**
+- Depends: C1, M3, M4, M5.
+- Produce: the types of the three blocks that M1–M5 do not yet cover (information message objects, their transfer-set model,
+  the extended conditions of data set transfer sets, the SBO types), generated from `mms_types.yaml` of 6-802 and 6-503.
+- Done when: every type of the three blocks round-trips; property tests cover them; no panic on any input.
+
+**C3 — Information messages (link)**
+- Depends: C2, B5.
+- Produce: the information message transfer set (its buffer, its writes, its reports) in `igs-iec-tase2-link`, sans I/O, with the
+  operations of IEC 60870-6-503 that the block names.
+- Done when: unit and property tests cover the operations; the link has no I/O.
+
+**C4 — Device control, SBO (link)**
+- Depends: C2, B1.
+- Produce: Select, Operate and Set Tag over the control points of M3, with the check-back identifier, the timeout and the select
+  state, as IEC 60870-6-503 §7.2.6 and 6-802 give them.
+- Done when: the state machine has tests for each transition, including the timeout and a second select.
+
+**C5 — Extended data set conditions (link)**
+- Depends: C2, B4.
+- Produce: the conditions of block 2 (Extended Conditions) on data set transfer sets, with their reports.
+- Done when: each condition has a test; a condition the server does not hold is refused per item.
+
+**C6 — Client API and `igstase2-client`**
+- Depends: C3, C4, C5, T2.
+- Produce: the client methods and commands for the three blocks (information messages, select/operate/set tag, the extended conditions).
+- Done when: each command has a test in `crates/igstase2-client/tests/cli.rs` or in `crates/igs-iec-tase2/tests/client.rs`.
+
+**C7 — Server**
+- Depends: C3, C4, C5, S2.
+- Produce: the server side of the three blocks, under the table of each client, with a simulated control point for the demonstration.
+- Done when: `crates/igs-iec-tase2/tests/server.rs` covers each operation; the demonstration file names one control point.
+
+**C8 — Bench and client matrix**
+- Depends: C6, C7, T3, S3.
+- Produce: one row per new operation in `docs/client-matrix.md` and `docs/capabilities.md`; one bench scenario per row; a transcript.
+- Done when: the bench passes; the matrix name check passes; the gaps are recorded (rule 10).
+
+**C9 — Documentation**
+- Depends: C8.
+- Produce: the README limits (blocks 2, 4 and 5 implemented; block 3 and blocks 6 to 9 not), `CHANGELOG.md`, the logs `docs/ai-log/C1.md`–`C9.md`.
+- Done when: `cargo doc --no-deps` has no warnings; every row names an existing test.
+
 ### Phase 5 — Documentation and release
 
 **X1 — Documentation and capabilities**
@@ -275,6 +328,8 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 ## 5. Definition of "ready to use" (1.0)
 
 - Client and server interoperate with the reference peer on the bench matrix.
+- The blocks of 1.0 are Basic Services (block 1), Extended Conditions (block 2), Information Message (block 4) and SBO Device
+  Control (block 5), as D-059 records; block 3 and blocks 6 to 9 are out.
 - Every type of the chosen blocks round-trips; no panic on any input.
 - Public API documented with examples; binaries usable.
 - Every non-trivial behaviour traceable to a clause or an entry of `PROVENANCE.md`.
@@ -307,6 +362,15 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | S2 `igstase2-server` binary | [x] |
 | S3 Server interop and load | [x] |
 | X1 Documentation and capabilities | [x] |
+| C1 Scope change (D-059) | [x] |
+| C2 Types of blocks 2, 4 and 5 | [ ] |
+| C3 Information messages (link) | [ ] |
+| C4 Device control, SBO (link) | [ ] |
+| C5 Extended data set conditions (link) | [ ] |
+| C6 Client API and `igstase2-client` | [ ] |
+| C7 Server | [ ] |
+| C8 Bench and client matrix | [ ] |
+| C9 Documentation | [ ] |
 | R1 Legal review and release ⛔ | [ ] |
 
-Suggested order: F1, F2, F3, M1–M6 (in parallel with the MMS plan), B1–B5, F4, T1–T3, S1–S3, X1, R1.
+Suggested order: F1, F2, F3, M1–M6 (in parallel with the MMS plan), B1–B5, F4, T1–T3, S1–S3, X1, C1–C9, R1.

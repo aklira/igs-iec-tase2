@@ -9,8 +9,9 @@ in the bench (`crates/igs-iec-tase2/tests/capabilities.rs` checks it).
 | Block | Base | In 1.0 | Reason |
 | --- | --- | --- | --- |
 | Basic Services | m | yes | Mandatory; the scope of 1.0 (decision D-009). |
-| Extended Conditions, Blocked Transfers, Information Message, SBO Device Control | o | no | Optional; left out by D-009, D-044. |
-| Programs, Events, Accounts, Time Series | i | no | Left out by D-009. |
+| Extended Conditions (2), Information Message (4), SBO Device Control (5) | o | in progress | Join 1.0 by decision D-059; tasks C2 to C9. Operations are listed when implemented. |
+| Blocked Transfers (3) | o | no | Left out of 1.0 (D-059). The server refuses blocked reports per item (D-049). |
+| Programs, Events, Accounts, Time Series | i | no | Left out of 1.0 (D-009). |
 
 The association mode is one role per association. The dual-use mode (one association for both directions) is not supported
 (decision D-054).

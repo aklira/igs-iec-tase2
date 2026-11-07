@@ -119,7 +119,8 @@ silent, to be confirmed by an observation test against other implementations.
   - PDUs (7): Initiate request, response and error, Conclude request, response and error, Reject;
   - parameter CBBs (4): `str1`, `str2`, `vnam`, `vlis` (base `m`).
   These are the services and CBBs that the MMS stack of `igs-iso9506-mms` already serves; no MMS feature is added here.
-- **Criterion 2 is open**: the other blocks (Extended Conditions, Blocked Transfers, Information Message, SBO Device
+- **Status (D-059)**: criterion 2 is superseded by the maintainer's choice recorded in D-059; the blocks 2, 4 and 5 join 1.0.
+- **Criterion 2 was open**: the other blocks (Extended Conditions, Blocked Transfers, Information Message, SBO Device
   Control: base `o`; Programs, Events, Accounts, Time Series: base `i`) are added to 1.0 only if the reference peer
   implements them, observed as a black box at task F4 (rule 1: no reading of its source). F4 records the result as a
   new decision, and section 6 follows it. Until then the blocks other than Basic Services are later.
@@ -832,4 +833,19 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: `bench/tests/test_s3_load.py` (10 000 points, 8 associations: zero errors, zero stray reports, the read count the
   workload implies; and a refused connection when no server answers). The report isolation is tested in
   `crates/igs-iec-tase2/tests/server.rs`, `a_report_reaches_only_the_association_that_started_its_transfer_set`.
+
+### D-059 — Blocks 2, 4 and 5 join 1.0; block 3 stays out (task C1)
+
+- **Decision**: 1.0 implements, in addition to Basic Services (block 1 of IEC 60870-6-702), the blocks **Extended Conditions**
+  (block 2, base `o`), **Information Message** (block 4, base `o`) and **SBO Device Control** (block 5, base `o`). **Blocked Transfers**
+  (block 3, base `o`) stays out of 1.0. The scope of the other blocks (6 to 9) is unchanged: out of 1.0.
+- **Why**: the maintainer's choice, made after D-009 left them out by default. D-009 made blocks 2 to 5 depend on the reference peer
+  (criterion 2), and the reference peer does not serve TASE.2 (D-010), so that criterion could never be met. The commercial
+  libraries of the field implement blocks 2, 4 and 5, which is the reason the maintainer gave for the change.
+- **Consequences**: the plan gets the tasks C2 to C9 (section 4, Phase 6), the definition of 1.0 (section 5) names the blocks, and
+  R1 remains the only human gate. Block 3 (Blocked Transfers) keeps its current behaviour: the server refuses the blocked reports
+  per item (D-049), and the client does not decode them. Adding block 3 later needs its own decision.
+- **Confidence**: high for the scope (the maintainer's choice); the behaviour of each block is to be decided in its task, from the
+  clauses of IEC 60870-6-503, 6-802 and 6-702 (rule 4).
+- **Test**: the tasks C2 to C9 name their tests; `docs/capabilities.md` gets one row per operation of the three blocks.
 

@@ -18,7 +18,9 @@ standards is in the code or the documents.
 
 - **Dual use is not supported.** An association has one role, client or server, as IEC 60870-6-503 §5.3.3.3 allows. The dual-use
   mode is outside 1.0 (decision D-054 in `PROVENANCE.md`).
-- The scope of 1.0 is the Basic Services block (`IMPLEMENTATION.md`, decision D-009). The other blocks are not implemented.
+- The scope of 1.0 is Basic Services (block 1), Extended Conditions (block 2), Information Message (block 4) and SBO Device
+  Control (block 5): decisions D-009 and D-059. Blocks 2, 4 and 5 are in progress (`IMPLEMENTATION.md`, tasks C2 to C9). Block 3
+  (Blocked Transfers) and blocks 6 to 9 are not implemented.
 - The full list of what is and is not served, with the test of each row: [`docs/capabilities.md`](docs/capabilities.md).
 
 ## Quick start
