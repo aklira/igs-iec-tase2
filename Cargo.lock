@@ -206,6 +206,7 @@ version = "0.1.0"
 dependencies = [
  "igs-iec-tase2-model",
  "igs-iso9506-mms-codec",
+ "proptest",
 ]
 
 [[package]]
