@@ -176,6 +176,9 @@ version = "0.1.0"
 [[package]]
 name = "igs-iec-tase2-model"
 version = "0.1.0"
+dependencies = [
+ "igs-iso9506-mms-codec",
+]
 
 [[package]]
 name = "igs-iso9506-mms"

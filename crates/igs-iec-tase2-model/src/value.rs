@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-//! Support types of the generated code: the metadata of the definitions, the range and length errors.
+//! Support types of the generated code: the metadata of the definitions, the range and string errors.
 
 /// One definition of a data file: its name, the standard, the clause and the page where it is defined, its kind,
 /// the number of components of a structure, and the number of bits of a bit string.
@@ -58,23 +58,50 @@ impl std::fmt::Display for OutOfRange {
 
 impl std::error::Error for OutOfRange {}
 
-/// A string longer than the greatest number of characters of its type.
+/// A string that its type refuses: longer than the greatest number of characters, or with a character that a
+/// visible string does not have (decision D-014).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct TooLong {
-    /// The number of characters offered.
-    pub length: usize,
-    /// The greatest number of characters.
-    pub max: usize,
+#[non_exhaustive]
+pub enum StringError {
+    /// More characters than the greatest number of the type.
+    TooLong {
+        /// The number of characters offered.
+        length: usize,
+        /// The greatest number of characters.
+        max: usize,
+    },
+    /// A character outside the visible string characters (space to tilde).
+    NotVisible(char),
 }
 
-impl std::fmt::Display for TooLong {
+impl std::fmt::Display for StringError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{} characters, at most {} allowed",
-            self.length, self.max
-        )
+        match self {
+            Self::TooLong { length, max } => {
+                write!(f, "{length} characters, at most {max} allowed")
+            }
+            Self::NotVisible(c) => {
+                write!(f, "the character {c:?} is not a visible string character")
+            }
+        }
     }
 }
 
-impl std::error::Error for TooLong {}
+impl std::error::Error for StringError {}
+
+/// Whether a character is a visible string character: the graphic characters and the space (decision D-014).
+pub fn is_visible(c: char) -> bool {
+    matches!(c, ' '..='~')
+}
+
+/// Checks a string against the greatest number of characters of its type, and against the visible characters.
+pub fn check_visible(text: &str, max: usize) -> Result<(), StringError> {
+    let length = text.chars().count();
+    if length > max {
+        return Err(StringError::TooLong { length, max });
+    }
+    match text.chars().find(|c| !is_visible(*c)) {
+        Some(c) => Err(StringError::NotVisible(c)),
+        None => Ok(()),
+    }
+}

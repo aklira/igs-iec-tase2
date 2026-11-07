@@ -13,3 +13,7 @@ repository.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+# The MMS values that the TASE.2 types convert to and from (task M1). A path dependency until it is published (rule 9).
+igs-iso9506-mms-codec.workspace = true

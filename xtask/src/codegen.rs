@@ -571,10 +571,20 @@ impl Model {
             return Vec::new();
         }
         let shape = match def.kind.as_deref() {
-            Some("floating-point") => Shape::Float {
-                format: def.format_width.unwrap_or(0),
-                exponent: def.exponent_width.unwrap_or(0),
-            },
+            Some("floating-point") => {
+                let (format, exponent) = (
+                    def.format_width.unwrap_or(0),
+                    def.exponent_width.unwrap_or(0),
+                );
+                if (format, exponent) != (32, 8) {
+                    self.errors.push(format!(
+                        "{}: floating point {format}/{exponent} is not the single precision format",
+                        def.name
+                    ));
+                    return Vec::new();
+                }
+                Shape::Float { format, exponent }
+            }
             Some("integer") => Shape::Integer {
                 width: number(&def.width).unwrap_or(0),
             },
@@ -888,7 +898,7 @@ fn render_item(item: &Item) -> String {
             .unwrap();
             writeln!(
                 out,
-                "impl {name} {{\n    /// The greatest number of characters (a maximum: decision D-004).\n    pub const MAX_LEN: usize = {max};\n    /// Whether the length is variable (the data file says so).\n    pub const VARYING: bool = {varying};\n    /// The string, if it has at most the greatest number of characters.\n    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {{\n        let text = text.into();\n        let length = text.chars().count();\n        if length <= Self::MAX_LEN {{\n            Ok(Self(text))\n        }} else {{\n            Err(crate::value::TooLong {{ length, max: Self::MAX_LEN }})\n        }}\n    }}\n    /// The string.\n    pub fn as_str(&self) -> &str {{\n        &self.0\n    }}\n}}"
+                "impl {name} {{\n    /// The greatest number of characters (a maximum: decision D-004).\n    pub const MAX_LEN: usize = {max};\n    /// Whether the length is variable (the data file says so).\n    pub const VARYING: bool = {varying};\n    /// The string, if it has at most the greatest number of visible characters (decision D-014).\n    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {{\n        let text = text.into();\n        crate::value::check_visible(&text, Self::MAX_LEN)?;\n        Ok(Self(text))\n    }}\n    /// The string.\n    pub fn as_str(&self) -> &str {{\n        &self.0\n    }}\n}}"
             )
             .unwrap();
         }
@@ -980,7 +990,28 @@ fn render_item(item: &Item) -> String {
             writeln!(out, "pub type {name} = {path};").unwrap();
         }
     }
+    out.push_str(&mms_impl(item));
     out
+}
+
+/// The conversion of a scalar type to and from its MMS value (`crate::mms::MmsValue`).
+fn mms_impl(item: &Item) -> String {
+    let name = &item.name;
+    let data = "igs_iso9506_mms_codec::generated::types::Data";
+    let body = match &item.shape {
+        Shape::Integer { .. } => format!(
+            "    fn to_mms(&self) -> {data} {{\n        {data}::Integer(i128::from(self.0))\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::Integer(value) => {{\n                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {{ value: *value, min: i128::from(Self::MIN), max: i128::from(Self::MAX) }})?;\n                Ok(Self::new(value)?)\n            }}\n            other => Err(crate::mms::ValueError::kind_of(\"integer\", other)),\n        }}\n    }}\n"),
+        Shape::Unsigned { .. } => format!(
+            "    fn to_mms(&self) -> {data} {{\n        {data}::Unsigned(u128::from(self.0))\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::Unsigned(value) => {{\n                let value = u64::try_from(*value).map_err(|_| crate::value::OutOfRange {{ value: i128::try_from(*value).unwrap_or(i128::MAX), min: i128::from(Self::MIN), max: i128::from(Self::MAX) }})?;\n                Ok(Self::new(value)?)\n            }}\n            other => Err(crate::mms::ValueError::kind_of(\"unsigned\", other)),\n        }}\n    }}\n"),
+        Shape::Boolean => format!(
+            "    fn to_mms(&self) -> {data} {{\n        {data}::Boolean(self.0)\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::Boolean(value) => Ok(Self(*value)),\n            other => Err(crate::mms::ValueError::kind_of(\"boolean\", other)),\n        }}\n    }}\n"),
+        Shape::Visible { .. } => format!(
+            "    fn to_mms(&self) -> {data} {{\n        {data}::VisibleString(self.as_str().to_string())\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::VisibleString(text) => Ok(Self::new(text.clone())?),\n            other => Err(crate::mms::ValueError::kind_of(\"visible string\", other)),\n        }}\n    }}\n"),
+        Shape::Float { .. } => format!(
+            "    fn to_mms(&self) -> {data} {{\n        let [a, b, c, d] = (self.0 as f32).to_be_bytes();\n        {data}::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]))\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {{\n                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),\n                _ => Err(crate::mms::ValueError::Format(\"a floating point value must be single precision: exponent width 8 and four octets\")),\n            }},\n            other => Err(crate::mms::ValueError::kind_of(\"floating point\", other)),\n        }}\n    }}\n"),
+        _ => return String::new(),
+    };
+    format!("impl crate::mms::MmsValue for {name} {{\n{body}}}\n")
 }
 
 fn render_root() -> String {

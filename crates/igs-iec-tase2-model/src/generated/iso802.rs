@@ -1304,6 +1304,26 @@ impl COVCounter {
         self.0
     }
 }
+impl crate::mms::MmsValue for COVCounter {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Unsigned(u128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Unsigned(value) => {
+                let value = u64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: i128::try_from(*value).unwrap_or(i128::MAX),
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("unsigned", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 24). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataRealQ {
@@ -1485,6 +1505,26 @@ impl IndicationPointConfigPointType {
         self.0
     }
 }
+impl crate::mms::MmsValue for IndicationPointConfigPointType {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 26). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IndicationPointConfigQualityClass(i64);
@@ -1510,6 +1550,26 @@ impl IndicationPointConfigQualityClass {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for IndicationPointConfigQualityClass {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.1 (page 26). inline definition.
@@ -1539,6 +1599,26 @@ impl IndicationPointConfigNormalSource {
         self.0
     }
 }
+impl crate::mms::MmsValue for IndicationPointConfigNormalSource {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 26). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IndicationPointConfigTimeStampClass(i64);
@@ -1566,6 +1646,26 @@ impl IndicationPointConfigTimeStampClass {
         self.0
     }
 }
+impl crate::mms::MmsValue for IndicationPointConfigTimeStampClass {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 26). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IndicationPointConfigCOVClass(i64);
@@ -1591,6 +1691,26 @@ impl IndicationPointConfigCOVClass {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for IndicationPointConfigCOVClass {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.1 (page 26). structure definition.
@@ -1634,6 +1754,26 @@ impl ControlCommand {
         self.0
     }
 }
+impl crate::mms::MmsValue for ControlCommand {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.2 (page 27). type definition.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ControlSetpointReal(pub f64);
@@ -1642,6 +1782,25 @@ impl ControlSetpointReal {
     pub const FORMAT_WIDTH: u32 = 32;
     /// The exponent width, in bits.
     pub const EXPONENT_WIDTH: u32 = 8;
+}
+impl crate::mms::MmsValue for ControlSetpointReal {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+        igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+            igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.2.2 (page 27). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1668,6 +1827,26 @@ impl ControlSetpointDiscrete {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for ControlSetpointDiscrete {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.2 (page 27). type definition.
@@ -1697,9 +1876,42 @@ impl SBOCheckBackName {
         self.0
     }
 }
+impl crate::mms::MmsValue for SBOCheckBackName {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.2 (page 27). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SelectState(pub bool);
+impl crate::mms::MmsValue for SelectState {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.2 (page 27). bit-string definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TagFlags(pub u64);
@@ -1735,22 +1947,30 @@ impl TextString {
     pub const MAX_LEN: usize = 255;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = false;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for TextString {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.2 (page 27). structure definition.
@@ -1796,6 +2016,26 @@ impl ControlConfigControlPointType {
         self.0
     }
 }
+impl crate::mms::MmsValue for ControlConfigControlPointType {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.2 (page 27). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ControlConfigSetPointType(i64);
@@ -1821,6 +2061,26 @@ impl ControlConfigSetPointType {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for ControlConfigSetPointType {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.2 (page 27). inline definition.
@@ -1850,6 +2110,26 @@ impl ControlConfigDeviceClass {
         self.0
     }
 }
+impl crate::mms::MmsValue for ControlConfigDeviceClass {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.2 (page 27). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ControlConfigTagClass(i64);
@@ -1875,6 +2155,26 @@ impl ControlConfigTagClass {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for ControlConfigTagClass {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.2 (page 27). structure definition.
@@ -2091,6 +2391,26 @@ impl ActionId {
         self.0
     }
 }
+impl crate::mms::MmsValue for ActionId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.3 (page 28). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ClassId(i64);
@@ -2118,6 +2438,26 @@ impl ClassId {
         self.0
     }
 }
+impl crate::mms::MmsValue for ClassId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.3 (page 28). type definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommentString(String);
@@ -2126,22 +2466,30 @@ impl CommentString {
     pub const MAX_LEN: usize = 128;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = false;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for CommentString {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.3 (page 28). type definition.
@@ -2171,6 +2519,26 @@ impl DeviceId {
         self.0
     }
 }
+impl crate::mms::MmsValue for DeviceId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.3 (page 28). type definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeviceName(String);
@@ -2179,22 +2547,30 @@ impl DeviceName {
     pub const MAX_LEN: usize = 32;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = true;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for DeviceName {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.3 (page 28). type definition.
@@ -2224,6 +2600,26 @@ impl DeviceNumber {
         self.0
     }
 }
+impl crate::mms::MmsValue for DeviceNumber {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.3 (page 28). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OutageAmountTypeId(i64);
@@ -2249,6 +2645,26 @@ impl OutageAmountTypeId {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for OutageAmountTypeId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.3 (page 28). type definition.
@@ -2278,6 +2694,26 @@ impl OutagePeriodId {
         self.0
     }
 }
+impl crate::mms::MmsValue for OutagePeriodId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.3 (page 28). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OutageTypeId(i64);
@@ -2303,6 +2739,26 @@ impl OutageTypeId {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for OutageTypeId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.3 (page 28). type definition.
@@ -2332,6 +2788,26 @@ impl PlanTypeId {
         self.0
     }
 }
+impl crate::mms::MmsValue for PlanTypeId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.3 (page 29). type definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StationNameString(String);
@@ -2340,22 +2816,30 @@ impl StationNameString {
     pub const MAX_LEN: usize = 32;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = false;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for StationNameString {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.3 (page 29). reference definition.
@@ -2510,6 +2994,26 @@ impl CommodityClass {
         self.0
     }
 }
+impl crate::mms::MmsValue for CommodityClass {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 65). reference definition.
 pub type Duration = crate::generated::iso503::TimeIntervalS;
 /// IEC 60870-6-802 B.2 (page 65). type definition.
@@ -2539,6 +3043,26 @@ impl IntegerId {
         self.0
     }
 }
+impl crate::mms::MmsValue for IntegerId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 65). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InterchangeId(i64);
@@ -2566,6 +3090,26 @@ impl InterchangeId {
         self.0
     }
 }
+impl crate::mms::MmsValue for InterchangeId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 65). type definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NameString(String);
@@ -2574,22 +3118,30 @@ impl NameString {
     pub const MAX_LEN: usize = 32;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = true;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for NameString {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.2 (page 65). type definition.
@@ -2619,6 +3171,26 @@ impl NumIntegers {
         self.0
     }
 }
+impl crate::mms::MmsValue for NumIntegers {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 65). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NumFloats(i64);
@@ -2644,6 +3216,26 @@ impl NumFloats {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for NumFloats {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.2 (page 65). type definition.
@@ -2673,6 +3265,26 @@ impl NumPeriods {
         self.0
     }
 }
+impl crate::mms::MmsValue for NumPeriods {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 65). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NumProfiles(i64);
@@ -2698,6 +3310,26 @@ impl NumProfiles {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for NumProfiles {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.2 (page 65). type definition.
@@ -2727,6 +3359,26 @@ impl NumSegs {
         self.0
     }
 }
+impl crate::mms::MmsValue for NumSegs {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 65). type definition.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TransactionAmount(pub f64);
@@ -2735,6 +3387,25 @@ impl TransactionAmount {
     pub const FORMAT_WIDTH: u32 = 32;
     /// The exponent width, in bits.
     pub const EXPONENT_WIDTH: u32 = 8;
+}
+impl crate::mms::MmsValue for TransactionAmount {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+        igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+            igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.2 (page 65). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -2761,6 +3432,26 @@ impl TransmissionSegCode {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for TransmissionSegCode {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.2 (page 65). structure definition.
@@ -2984,6 +3675,26 @@ impl AvailReasonCode {
         self.0
     }
 }
+impl crate::mms::MmsValue for AvailReasonCode {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 67). type definition.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Capacity(pub f64);
@@ -2992,6 +3703,25 @@ impl Capacity {
     pub const FORMAT_WIDTH: u32 = 32;
     /// The exponent width, in bits.
     pub const EXPONENT_WIDTH: u32 = 8;
+}
+impl crate::mms::MmsValue for Capacity {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+        igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+            igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.3 (page 67). reference definition.
 pub type DateAndTime = crate::generated::iso503::GMTBasedS;
@@ -3022,6 +3752,26 @@ impl LFCReasonCode {
         self.0
     }
 }
+impl crate::mms::MmsValue for LFCReasonCode {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 67). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlantId(i64);
@@ -3049,6 +3799,26 @@ impl PlantId {
         self.0
     }
 }
+impl crate::mms::MmsValue for PlantId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 68). type definition.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RampRate(pub f64);
@@ -3057,6 +3827,25 @@ impl RampRate {
     pub const FORMAT_WIDTH: u32 = 32;
     /// The exponent width, in bits.
     pub const EXPONENT_WIDTH: u32 = 8;
+}
+impl crate::mms::MmsValue for RampRate {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+        igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+            igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.3 (page 68). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -3085,6 +3874,26 @@ impl ReportStatus {
         self.0
     }
 }
+impl crate::mms::MmsValue for ReportStatus {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 68). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UnitId(i64);
@@ -3110,6 +3919,26 @@ impl UnitId {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for UnitId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.3 (page 68). inline definition.
@@ -3225,6 +4054,19 @@ pub struct AvailabilityClass {
 /// IEC 60870-6-802 B.3 (page 68). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AvailableProvidingReserve(pub bool);
+impl crate::mms::MmsValue for AvailableProvidingReserve {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 68). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AvailableImpact(pub u64);
@@ -3260,22 +4102,30 @@ impl AvailableComment {
     pub const MAX_LEN: usize = 255;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = false;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for AvailableComment {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.3 (page 68). structure definition.
@@ -3315,6 +4165,19 @@ pub struct Available {
 /// IEC 60870-6-802 B.3 (page 69). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UnAvailableProvidingReserve(pub bool);
+impl crate::mms::MmsValue for UnAvailableProvidingReserve {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 69). inline definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnAvailableComment(String);
@@ -3323,22 +4186,30 @@ impl UnAvailableComment {
     pub const MAX_LEN: usize = 255;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = false;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for UnAvailableComment {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.3 (page 69). structure definition.
@@ -3370,6 +4241,19 @@ pub struct UnAvailable {
 /// IEC 60870-6-802 B.3 (page 69). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StatusAvailableProvidingReserve(pub bool);
+impl crate::mms::MmsValue for StatusAvailableProvidingReserve {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 69). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct StatusAvailable {
@@ -3393,6 +4277,19 @@ pub struct StatusAvailable {
 /// IEC 60870-6-802 B.3 (page 69). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StatusUnAvailableProvidingReserve(pub bool);
+impl crate::mms::MmsValue for StatusUnAvailableProvidingReserve {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 69). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct StatusUnAvailable {
@@ -3456,6 +4353,25 @@ impl CurveLimit {
     pub const FORMAT_WIDTH: u32 = 32;
     /// The exponent width, in bits.
     pub const EXPONENT_WIDTH: u32 = 8;
+}
+impl crate::mms::MmsValue for CurveLimit {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+        igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+            igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.3 (page 70). bit-string definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -3541,6 +4457,25 @@ impl Coefficient {
     /// The exponent width, in bits.
     pub const EXPONENT_WIDTH: u32 = 8;
 }
+impl crate::mms::MmsValue for Coefficient {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+        igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+            igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 70). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CurveSegmentDescriptionOrder(i64);
@@ -3568,6 +4503,26 @@ impl CurveSegmentDescriptionOrder {
         self.0
     }
 }
+impl crate::mms::MmsValue for CurveSegmentDescriptionOrder {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 70). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CurveSegmentDescription {
@@ -3588,22 +4543,30 @@ impl CurveCurveName {
     pub const MAX_LEN: usize = 32;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = true;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for CurveCurveName {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.3 (page 70). structure definition.
@@ -3647,6 +4610,26 @@ impl MatrixId {
         self.0
     }
 }
+impl crate::mms::MmsValue for MatrixId {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.4.2 (page 72). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IntegerArrayXXElement(i64);
@@ -3674,6 +4657,26 @@ impl IntegerArrayXXElement {
         self.0
     }
 }
+impl crate::mms::MmsValue for IntegerArrayXXElement {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.4.2 (page 72). type definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct IntegerArrayXX(pub Vec<IntegerArrayXXElement>);
@@ -3690,6 +4693,25 @@ impl FloatArrayXXElement {
     /// The exponent width, in bits.
     pub const EXPONENT_WIDTH: u32 = 8;
 }
+impl crate::mms::MmsValue for FloatArrayXXElement {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+        igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+            igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.4.2 (page 72). type definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FloatArrayXX(pub Vec<FloatArrayXXElement>);
@@ -3705,22 +4727,30 @@ impl Text32ArrayXXElement {
     pub const MAX_LEN: usize = 32;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = false;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for Text32ArrayXXElement {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.4.2 (page 72). type definition.
@@ -3755,6 +4785,26 @@ impl NumRows {
     /// The value.
     pub fn get(self) -> i64 {
         self.0
+    }
+}
+impl crate::mms::MmsValue for NumRows {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.5 (page 72). structure definition.
@@ -3822,6 +4872,26 @@ impl GeneralDataResponseResponseData {
         self.0
     }
 }
+impl crate::mms::MmsValue for GeneralDataResponseResponseData {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                    value: *value,
+                    min: i128::from(Self::MIN),
+                    max: i128::from(Self::MAX),
+                })?;
+                Ok(Self::new(value)?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.6 (page 72). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct GeneralDataResponse {
@@ -3852,6 +4922,25 @@ pub mod clause_6_2_1 {
         /// The exponent width, in bits.
         pub const EXPONENT_WIDTH: u32 = 8;
     }
+    impl crate::mms::MmsValue for DataReal {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+                igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+            )
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+        }
+    }
     /// IEC 60870-6-802 6.2.1 (page 24). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct DataDiscrete(i64);
@@ -3879,6 +4968,26 @@ pub mod clause_6_2_1 {
             self.0
         }
     }
+    impl crate::mms::MmsValue for DataDiscrete {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-802 6.2.1 (page 24). reference definition.
     pub type DataTimeStamp = crate::generated::iso503::GMTBasedS;
 }
@@ -3893,6 +5002,25 @@ pub mod clause_6_3 {
         pub const FORMAT_WIDTH: u32 = 32;
         /// The exponent width, in bits.
         pub const EXPONENT_WIDTH: u32 = 8;
+    }
+    impl crate::mms::MmsValue for DataReal {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+                igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+            )
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+        }
     }
     /// IEC 60870-6-802 6.3 (page 28). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -3919,6 +5047,26 @@ pub mod clause_6_3 {
         /// The value.
         pub fn get(self) -> i64 {
             self.0
+        }
+    }
+    impl crate::mms::MmsValue for Number {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
         }
     }
     /// IEC 60870-6-802 6.3 (page 28). type definition.
@@ -3948,6 +5096,26 @@ pub mod clause_6_3 {
             self.0
         }
     }
+    impl crate::mms::MmsValue for ReferenceNum {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-802 6.3 (page 29). reference definition.
     pub type ScheduleTime = crate::generated::iso503::GMTBasedS;
     /// IEC 60870-6-802 6.3 (page 29). type definition.
@@ -3975,6 +5143,26 @@ pub mod clause_6_3 {
         /// The value.
         pub fn get(self) -> i64 {
             self.0
+        }
+    }
+    impl crate::mms::MmsValue for UtilityId {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
         }
     }
 }
@@ -4008,6 +5196,26 @@ pub mod clause_6_4 {
             self.0
         }
     }
+    impl crate::mms::MmsValue for ReferenceNum {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-802 6.4 (page 30). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct Number(i64);
@@ -4033,6 +5241,26 @@ pub mod clause_6_4 {
         /// The value.
         pub fn get(self) -> i64 {
             self.0
+        }
+    }
+    impl crate::mms::MmsValue for Number {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
         }
     }
 }
@@ -4066,6 +5294,26 @@ pub mod clause_b_2 {
             self.0
         }
     }
+    impl crate::mms::MmsValue for DataDiscrete {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-802 B.2 (page 65). type definition.
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub struct DataReal(pub f64);
@@ -4074,6 +5322,25 @@ pub mod clause_b_2 {
         pub const FORMAT_WIDTH: u32 = 32;
         /// The exponent width, in bits.
         pub const EXPONENT_WIDTH: u32 = 8;
+    }
+    impl crate::mms::MmsValue for DataReal {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+                igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+            )
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+        }
     }
     /// IEC 60870-6-802 B.2 (page 65). reference definition.
     pub type DataTimeStamp = crate::generated::iso503::GMTBasedS;
@@ -4085,6 +5352,25 @@ pub mod clause_b_2 {
         pub const FORMAT_WIDTH: u32 = 32;
         /// The exponent width, in bits.
         pub const EXPONENT_WIDTH: u32 = 8;
+    }
+    impl crate::mms::MmsValue for Price {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+                igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+            )
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+        }
     }
     /// IEC 60870-6-802 B.2 (page 65). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -4111,6 +5397,26 @@ pub mod clause_b_2 {
         /// The value.
         pub fn get(self) -> i64 {
             self.0
+        }
+    }
+    impl crate::mms::MmsValue for ReferenceNum {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
         }
     }
     /// IEC 60870-6-802 B.2 (page 65). reference definition.
@@ -4142,6 +5448,26 @@ pub mod clause_b_2 {
             self.0
         }
     }
+    impl crate::mms::MmsValue for TransactionCode {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-802 B.2 (page 65). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct UtilityId(i64);
@@ -4169,6 +5495,26 @@ pub mod clause_b_2 {
             self.0
         }
     }
+    impl crate::mms::MmsValue for UtilityId {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
 }
 
 /// The definitions of the clause b.3.
@@ -4181,6 +5527,25 @@ pub mod clause_b_3 {
         pub const FORMAT_WIDTH: u32 = 32;
         /// The exponent width, in bits.
         pub const EXPONENT_WIDTH: u32 = 8;
+    }
+    impl crate::mms::MmsValue for Price {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            let [a, b, c, d] = (self.0 as f32).to_be_bytes();
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(
+                igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]),
+            )
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
+                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("floating point", other)),
+        }
+        }
     }
     /// IEC 60870-6-802 B.3 (page 68). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -4207,6 +5572,26 @@ pub mod clause_b_3 {
         /// The value.
         pub fn get(self) -> i64 {
             self.0
+        }
+    }
+    impl crate::mms::MmsValue for ReferenceNum {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
         }
     }
 }
@@ -4238,6 +5623,26 @@ pub mod clause_b_5 {
         /// The value.
         pub fn get(self) -> i64 {
             self.0
+        }
+    }
+    impl crate::mms::MmsValue for TransactionCode {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {
+                        value: *value,
+                        min: i128::from(Self::MIN),
+                        max: i128::from(Self::MAX),
+                    })?;
+                    Ok(Self::new(value)?)
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
         }
     }
 }

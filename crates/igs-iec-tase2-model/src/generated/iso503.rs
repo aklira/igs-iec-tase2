@@ -595,22 +595,30 @@ impl VisibleString32 {
     pub const MAX_LEN: usize = 32;
     /// Whether the length is variable (the data file says so).
     pub const VARYING: bool = false;
-    /// The string, if it has at most the greatest number of characters.
-    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::TooLong> {
+    /// The string, if it has at most the greatest number of visible characters (decision D-014).
+    pub fn new(text: impl Into<String>) -> Result<Self, crate::value::StringError> {
         let text = text.into();
-        let length = text.chars().count();
-        if length <= Self::MAX_LEN {
-            Ok(Self(text))
-        } else {
-            Err(crate::value::TooLong {
-                length,
-                max: Self::MAX_LEN,
-            })
-        }
+        crate::value::check_visible(&text, Self::MAX_LEN)?;
+        Ok(Self(text))
     }
     /// The string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+impl crate::mms::MmsValue for VisibleString32 {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::VisibleString(self.as_str().to_string())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::VisibleString(text) => {
+                Ok(Self::new(text.clone())?)
+            }
+            other => Err(crate::mms::ValueError::kind_of("visible string", other)),
+        }
     }
 }
 /// IEC 60870-6-503 8.2.3 (page 92). inline definition.
@@ -837,6 +845,19 @@ pub mod clause_8_2_7_1 {
     /// IEC 60870-6-503 8.2.7.1 (page 95). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct IMTransferSet(pub bool);
+    impl crate::mms::MmsValue for IMTransferSet {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
+            }
+        }
+    }
 }
 
 /// The definitions of the clause 8.2.7.2.
@@ -1067,6 +1088,19 @@ pub mod clause_g_2_2 {
     /// IEC 60870-6-503 G.2.2 (page 151). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct IMTransferSet(pub bool);
+    impl crate::mms::MmsValue for IMTransferSet {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
+            }
+        }
+    }
 }
 
 /// The definitions of the clause g.2.3.
@@ -1261,4 +1295,17 @@ pub mod clause_g_4 {
     /// IEC 60870-6-503 G.4 (page 155). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct IMTransferSet(pub bool);
+    impl crate::mms::MmsValue for IMTransferSet {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
+            }
+        }
+    }
 }
