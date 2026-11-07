@@ -8,5 +8,6 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod association;
 pub mod bilateral;
 pub mod version;

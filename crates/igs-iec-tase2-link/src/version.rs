@@ -5,7 +5,7 @@
 //! The versions that two control centres compare after an association (IEC 60870-6-503 §5.3.3.3, §8.3.3, §8.3.4): the
 //! identifier of the Bilateral Table, then the TASE.2 version. A mismatch ends the association.
 
-use igs_iec_tase2_model::generated::iso503::VisibleString32;
+use igs_iec_tase2_model::generated::iso503::{TASE2Version, VisibleString32};
 
 /// A version of TASE.2: a major and a minor number (the type `TASE.2Version` of 503 §8.3.4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,6 +21,16 @@ pub const STANDARD_VERSION: Tase2Version = Tase2Version {
     major: 2000,
     minor: 8,
 };
+
+impl Tase2Version {
+    /// The version read from MMS (the type `TASE.2Version`), if both of its numbers fit in 16 bits.
+    pub fn from_mms(version: &TASE2Version) -> Option<Self> {
+        Some(Self {
+            major: i16::try_from(version.major_version_number.get()).ok()?,
+            minor: i16::try_from(version.minor_version_number.get()).ok()?,
+        })
+    }
+}
 
 /// What two parties agree on: the identifier of the Bilateral Table and the TASE.2 version.
 #[derive(Debug, Clone, PartialEq, Eq)]
