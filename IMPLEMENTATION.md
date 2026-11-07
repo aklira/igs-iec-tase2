@@ -371,7 +371,7 @@ out. Each task below names its clauses in its log; the behaviour is decided agai
 | C6 Client API and `igstase2-client` | [x] |
 | C7 Server | [x] |
 | C8 Bench and client matrix | [x] |
-| C9 Documentation | [ ] |
+| C9 Documentation | [x] |
 | R1 Legal review and release ⛔ | [ ] |
 
 Suggested order: F1, F2, F3, M1–M6 (in parallel with the MMS plan), B1–B5, F4, T1–T3, S1–S3, X1, C1–C9, R1.

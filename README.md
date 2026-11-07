@@ -8,7 +8,8 @@ An industrial-grade IEC 60870-6 ICCP TASE.2 protocol stack for SCADA and telecon
 - **Link** (`igs-iec-tase2-link`): sans-I/O bilateral tables, association, data values and data sets, transfer sets, with a
   fake clock in the tests.
 - **Client and server** (`igs-iec-tase2`): `TaseClient` and `TaseServer` over `igs-iso9506-mms`.
-- **Binaries**: `igstase2-server` (a demonstration server, the bench's device), `igstase2-client` (a command-line client) and
+- **Binaries**: `igstase2-server` (a demonstration server, the bench's device, with a simulated control point and information
+  messages), `igstase2-client` (a command-line client: reads and writes, transfer sets, devices, information messages) and
   `igstase2-load` (a load driver: many associations, latencies measured; see [`docs/load-test.md`](docs/load-test.md)).
 
 The standards are licensed and are not distributed with this repository. The references point to their clauses; no text of the
@@ -19,8 +20,10 @@ standards is in the code or the documents.
 - **Dual use is not supported.** An association has one role, client or server, as IEC 60870-6-503 §5.3.3.3 allows. The dual-use
   mode is outside 1.0 (decision D-054 in `PROVENANCE.md`).
 - The scope of 1.0 is Basic Services (block 1), Extended Conditions (block 2), Information Message (block 4) and SBO Device
-  Control (block 5): decisions D-009 and D-059. Blocks 2, 4 and 5 are in progress (`IMPLEMENTATION.md`, tasks C2 to C9). Block 3
-  (Blocked Transfers) and blocks 6 to 9 are not implemented.
+  Control (block 5): decisions D-009 and D-059. Block 3 (Blocked Transfers) and blocks 6 to 9 are not implemented.
+- The device commands of the server are simulated: an accepted Operate completes at once, and no real device executes it. The
+  device actions (timeout, local reset, success, failure) are not sent as MMS event conditions (decision D-066).
+- A critical report's acknowledgement is not available to the client, and the server does not receive it (decision D-046).
 - The full list of what is and is not served, with the test of each row: [`docs/capabilities.md`](docs/capabilities.md).
 
 ## Quick start
