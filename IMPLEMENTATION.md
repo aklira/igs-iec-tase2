@@ -292,7 +292,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | M4 Transfer sets, conditions, data set types | [x] |
 | M5 Other types of the chosen blocks | [x] |
 | M6 Property tests and fuzzing | [ ] |
-| B1 Bilateral table | [ ] |
+| B1 Bilateral table | [x] |
 | B2 Association | [ ] |
 | B3 Data values and data sets | [ ] |
 | B4 Transfer sets | [ ] |

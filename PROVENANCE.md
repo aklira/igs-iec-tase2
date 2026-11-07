@@ -384,3 +384,52 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: `tests/properties.rs` (25 properties). The fuzz target builds and runs; the long run required by M6 (at least
   eight hours) is set aside at the maintainer's request, see `docs/ai-log/M6.md`.
 
+### D-027 — The access results of the bilateral table
+
+- **Decision**: the table holds, per remote control centre, the data values, data sets, transfer sets and devices it may
+  access, each with its permitted operations (the Permitted Access lists of 503 §5.3.6.2, §5.3.7.2, §5.3.10.2.1, §5.3.12.2), and for
+  the data values and transfer sets the shortest interval agreed (the maximum exchange rate); each device carries its
+  CheckBackID and its Timeout. The checks give these results:
+  - `Granted`: the operation is in the permitted access of a visible object;
+  - `UnknownObject`: the object is not in the table, or is in it without the Visibility permission (for the client it
+    does not exist, so it is covered by no agreement);
+  - `NotPermitted(operation)`: the object is visible, but the operation is not in its list;
+  - `IntervalOutOfAgreement`: the requested interval is shorter than the agreed one;
+  - `OutOfTime`: the operation on a device is later than its Timeout (the time at the timeout itself is within it);
+  - the admission of a client (`UnknownClient`, `UnknownApplicationReference`, `Granted`) by the designation and the list of
+    application references.
+  The CheckBackID is returned only for a device the client may Select.
+- **Why**: the general validity check and the access checks of 503 §5.2.3 say what is refused, not how; the table is local
+  (503 §5.2.3.1). The result names follow the grounds of the refusal, so that each can be tested.
+- **Sources**: IEC 60870-6-503 §5.2.3.1 to §5.2.3.8, §5.3.2, §5.3.4.2, §5.3.6.2, §5.3.7.2, §5.3.10.2.1, §5.3.12.2 (the Permitted
+  Access lists), §6.5 (the table and its mapping).
+- **Confidence**: high for the lists and the grounds; medium for treating a missing Visibility as `UnknownObject` (the
+  standard says the object is or is not visible, not which answer the server gives).
+- **Test**: `crates/igs-iec-tase2-link/tests/bilateral.rs`: one test per result, and the scope of a name.
+
+### D-028 — The versions are compared in the order of the standard
+
+- **Decision**: after the association, the Bilateral Table identifier is compared first (`Bilateral_Table_ID`, 8.3.3); only
+  when it is identical, the TASE.2 version (`TASE.2_Version`, 8.3.4) is compared. A mismatch of either ends the association
+  (a Conclude). The version of this standard is 2000.08 (major 2000, minor 8).
+- **Why**: the standard gives this order in the text of the association: the second check happens only when the first
+  passes, so a table identifier mismatch is reported whatever the TASE.2 versions.
+- **Sources**: IEC 60870-6-503 §5.3.3.3 (the Associate operation: the read of the variables, then the two comparisons), §8.3.3,
+  §8.3.4.
+- **Confidence**: high.
+- **Test**: `tests/bilateral.rs`, `identical_versions_are_compatible`, `a_different_table_identifier_is_the_first_conflict`,
+  `a_different_tase2_version_is_a_conflict_when_the_table_identifiers_match`,
+  `the_table_identifier_is_checked_before_the_tase2_version`.
+
+### D-029 — What the bilateral table of B1 leaves to the later tasks
+
+- **Decision**: the list of association objects (503 §6.5), the Access_violation event condition (503 §5.3.4.2), the
+  security parameters of the data values, and the reading of the table over the MMS variables `Bilateral_Table_ID` and
+  `TASE.2_Version` are not in B1. The association objects are B2; the reading of the variables is B2 (the client reads
+  them after the association); the device operations are B5; the security parameters are local, as the standard leaves
+  them (503 §6.5, the access control list is a local matter).
+- **Why**: B1 is the table and its checks; the MMS exchanges belong to the association and the services.
+- **Sources**: IEC 60870-6-503 §5.3.4.2, §6.5, §5.3.5 (the access control specification is a local matter).
+- **Confidence**: high.
+- **Test**: none in B1; B2 and B5 test these parts.
+
