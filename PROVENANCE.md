@@ -751,7 +751,8 @@ silent, to be confirmed by an observation test against other implementations.
 - **Result, recorded on 2026-11-07 in the bench**: the container starts and listens; the probe associates (supported features
   `0x1`), reads the four points (`Flow1` 6, `Level` 110, `Temperature` 21.5 as a single-precision real, `Breaker` true), and
   receives three transfer reports driven by the simulations, with the values of the points at each report.
-- **Why**: the bench of the MMS stack runs its device in the same way (D-029 of the MMS repository); the probe is the client
+- **Why**: the bench of the MMS stack runs its device the same way (the bench run of `docs/igsmms-server.md` in the sibling
+  repository); the probe is the client
   of the bench for the TASE.2 device until the client binary (T2) exists.
 - **Sources**: the bench design of F4 (`bench/README.md`); D-010 (the reference peer does not serve TASE.2 yet, so the device
   is tested with our own client).
