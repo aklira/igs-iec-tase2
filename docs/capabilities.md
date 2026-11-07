@@ -9,7 +9,7 @@ in the bench (`crates/igs-iec-tase2/tests/capabilities.rs` checks it).
 | Block | Base | In 1.0 | Reason |
 | --- | --- | --- | --- |
 | Basic Services | m | yes | Mandatory; the scope of 1.0 (decision D-009). |
-| Extended Conditions (2), Information Message (4), SBO Device Control (5) | o | in progress | Join 1.0 by decision D-059; tasks C2 to C9. Operations are listed when implemented. |
+| Extended Conditions (2), Information Message (4), SBO Device Control (5) | o | yes | Join 1.0 by decision D-059. Their operations are in the matrix below, each with its test (tasks C2 to C9). |
 | Blocked Transfers (3) | o | no | Left out of 1.0 (D-059). The server refuses blocked reports per item (D-049). |
 | Programs, Events, Accounts, Time Series | i | no | Left out of 1.0 (D-009). |
 
@@ -53,6 +53,18 @@ The matrix covers the client (`igs-iec-tase2::TaseClient`, `igstase2-client`) an
 | Random data is read by every type without a panic | M6 | model | model | `random_data_is_read_by_every_type_without_a_panic` |
 | The demonstration file refuses an unknown key | `igstase2-server` | no | demo | `an_unknown_key_is_refused_with_its_line` |
 | The bench scenarios of the client, one per operation | T3 | yes | no | `test_association_is_established_and_points_are_read` |
+| Select: the CheckBackID of the table, and the device armed for the client until its timeout | 503 §5.3.12.3, §7.2.6.2 (block 5) | yes | yes | `select_returns_the_check_back_id_of_the_table_and_arms_the_device`, `a_second_select_of_an_armed_device_is_refused_to_every_client`, `the_armed_state_of_a_device_ends_at_its_timeout`, `test_a_device_armed_for_one_client_refuses_another_select_and_releases_at_its_timeout` |
+| Select of a non-SBO device is refused | 503 §5.3.12.3 (block 5) | yes | yes | `a_non_sbo_device_is_operated_directly_and_cannot_be_selected` |
+| Operate: an SBO device must be selected by the client; a non-SBO device is operated directly | 503 §5.3.12.4, §7.2.6.3 (block 5) | yes | yes | `an_operate_after_the_select_completes_and_returns_the_device_to_idle`, `an_operate_without_a_select_of_an_sbo_device_is_refused`, `test_an_operate_selects_then_operates_the_sbo_device` |
+| Operate: a command refused by the tag (CLOSE-ONLY-INHIBIT refuses closing commands) | 503 §5.3.12.4, 802 §7.1 (block 5) | yes | yes | `a_closing_command_is_refused_under_close_only_inhibit_and_another_is_not`, `test_a_close_only_inhibit_tag_refuses_the_closing_command_and_not_another` |
+| Set Tag and Get Tag, with the reason; an inhibit tag refuses the Select | 503 §5.3.12.5, §5.3.12.6, 802 §5.2 (block 5) | yes | yes | `a_tag_and_its_reason_are_set_and_read_and_inhibit_the_select`, `test_a_tag_and_its_reason_are_read_and_inhibit_the_select` |
+| The timeout of an armed device returns it to IDLE, and a late operate is refused | 503 §7.2.6.2.1 (block 5) | yes | yes | `an_armed_device_returns_to_idle_at_its_timeout_and_signals_it`, `the_timer_stops_while_an_operate_is_in_progress` |
+| The tag of a VCC-specific device is changed only by its client | 503 §5.3.12.5 (block 5) | no | model | `a_vcc_specific_device_tagged_by_one_client_is_changed_only_by_that_client` |
+| Start and Stop Information Transfer, per association | 503 §7.2.5.2, §7.2.5.3 (block 4) | yes | yes | `an_information_message_is_reported_while_its_transfer_set_is_enabled`, `test_an_information_message_is_reported_to_the_client` |
+| An information message is reported only while the transfer set is enabled | 503 §7.2.5.5.4 (block 4) | yes | yes | `no_information_message_is_reported_before_the_start_or_after_the_stop`, `test_the_stop_of_the_information_transfer_set_is_accepted` |
+| The header and the buffer of an information message, with the size of the valid octets | 802 §6.4, §7.3 (block 4) | yes | yes | `a_received_message_keeps_the_first_size_octets_of_its_buffer`, `the_header_round_trips_at_the_limits_of_its_numbers` |
+| The integrity check reports the entire data set, with RBE | 503 §7.2.5.4, §7.2.5.5.3 (block 2) | yes | yes | `an_integrity_check_reports_the_entire_data_set_with_rbe_when_nothing_changed`, `test_an_integrity_check_reports_the_entire_data_set_with_rbe` |
+| A buffered change is reported once, after the buffer time, with its last value; a report within its TLE is sent | 503 §5.3.10.2.2, §7.2.5.4.2 (block 2) | yes | yes | `a_buffered_object_change_is_reported_once_with_its_last_value_after_the_buffer_time`, `a_report_within_its_tle_is_sent`, `test_a_buffered_object_change_is_reported_with_its_tle` |
 
 <!-- matrix:end -->
 
@@ -65,7 +77,12 @@ Each gap is recorded with its decision; none is hidden.
 - **Blocked transfer reports** (`BlockData`) are refused per item by the server, and the client does not decode them (D-049).
 - **The Data_failure event** is not sent by the server (D-049).
 - **The acknowledgement of a critical report** is not sent by the client: the MMS client has no unconfirmed send (D-046).
-- **The device operations** (Select, Operate, Set Tag) and the **information messages** are not in 1.0 (D-044).
+- **The device commands are simulated** on the server: an accepted Operate completes at once, and no real device executes it (D-066).
+  The device actions (Timeout, Local Reset, Success, Failure) are not sent as MMS event conditions, which the stack does not serve (D-066).
+- **A selection is released by its timeout only**: the end of the association does not release it (D-066; to check in the PDF before R1).
+- **The Operate does not check the CheckBackID** of the client: the MMS mapping writes only the command (D-064).
+- **Information messages sent by the client** are not in 1.0 (D-061).
+- **The critical acknowledgement** (block 2) is not available to the client (D-046), so the critical report is not end to end.
 - **Programs, Events, Accounts and Time Series** are not in 1.0 (D-009).
 - **A point of an unsigned type** cannot be written by the command line, which sends integers and reals (D-056).
 - **A transfer set is active only on the association that started it**: the command line cannot stop it in another command (D-056).

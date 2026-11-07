@@ -1004,3 +1004,17 @@ silent, to be confirmed by an observation test against other implementations.
   the operate without it, a non-SBO device, the closing command under CLOSE-ONLY-INHIBIT, the tag and its reason, the timeout, the information
   message while enabled, and no message before the start or after the stop).
 
+### D-067 — The bench evidence of the blocks 2, 4 and 5: one control point, a periodic information message, and one name check for all the bench tests (task C8)
+
+- **Decision**: the demonstration file names one control point, the SBO breaker `Breaker12` (command 2 closes it), and one periodic
+  information message (`[[information]]`, every three seconds, the stream `bench-demo`). A client reads them over the bench. The
+  scenarios of the blocks are `bench/tests/test_c8_blocks.py`; the name check of the matrix reads every bench test file, not only T3's.
+- **Why**: a control point and a source of messages are the least that a bench can show for the device operations and the information
+  messages; the plan asks for one control point (C7). The name check must see every test the matrix names, since the matrix now names
+  tests in more than one file.
+- **Consequences on the bench**: the device is armed for a client for its timeout, so the tests that select wait for it or end with an
+  operate that completes the cycle; a refused operate leaves the selection held until its timeout (D-064). The non-SBO path and the stop
+  in the same association are not on the bench; the server's tests cover them (`docs/client-matrix.md`, gaps).
+- **Confidence**: high: the 29 bench tests of T3 and C8 pass in one run (`bench/transcripts/C8-run.txt`).
+- **Test**: `bench/tests/test_c8_blocks.py` (ten scenarios), `bench/tests/test_t3_client_matrix.py::test_every_test_the_client_matrix_names_exists_here`.
+

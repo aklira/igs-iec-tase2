@@ -370,7 +370,7 @@ out. Each task below names its clauses in its log; the behaviour is decided agai
 | C5 Extended data set conditions (link) | [x] |
 | C6 Client API and `igstase2-client` | [x] |
 | C7 Server | [x] |
-| C8 Bench and client matrix | [ ] |
+| C8 Bench and client matrix | [x] |
 | C9 Documentation | [ ] |
 | R1 Legal review and release ⛔ | [ ] |
 

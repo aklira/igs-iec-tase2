@@ -45,6 +45,7 @@ in the order of the example `bench/device/tase2-demo.toml`:
 | `[[table]]` | `designation`, `table_id`, `domain`, `application_references`, `data_set_creation`, `initiator` | The Bilateral Table of one client (below). |
 | `[[table.access]]` | `kind`, `name`, `permissions`, `interval_ms`, `check_back_id`, `timeout_s` | What the client may do with one object of its table. A device needs `check_back_id` (the value a Select returns, an integer of 16 bits) and `timeout_s`. |
 | `[[simulate]]` | `domain`, `name`, `kind`, `period_ms`, `min`, `max`, `step` | A change that the server makes by itself, at each period. |
+| `[[information]]` | `info_reference`, `local_reference`, `stream`, `period_ms` | An information message that the server sends at each period, with a MessageId counted from 1 (decision D-061). Its stream is the text, as UTF-8. |
 
 Types of a point (`type`):
 
