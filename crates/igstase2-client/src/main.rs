@@ -18,6 +18,8 @@ use igs_iec_tase2::{
 };
 use igs_iec_tase2_link::bilateral::{ObjectName, Scope};
 use igs_iec_tase2_link::data::Item;
+use igs_iec_tase2_link::device::{DeviceState, Tag, TagState};
+use igs_iec_tase2_link::information::InformationMessage;
 use igs_iec_tase2_link::version::{Versions, STANDARD_VERSION};
 use igs_iec_tase2_model::builtin::{Integer16, Integer32, MmsIdentifier};
 use igs_iec_tase2_model::generated::iso503::{
@@ -121,6 +123,15 @@ enum Command {
         /// Reports each change of a member (the ObjectChange condition). Set when no other condition is given.
         #[arg(long)]
         object_change: bool,
+        /// Checks the data set for integrity at this interval, in seconds, with RBE (the IntegrityTimeOut condition, block 2).
+        #[arg(long, default_value_t = 0)]
+        integrity_s: u32,
+        /// Buffers the changes for this time, in seconds, before reporting them (the BufferTime, block 2).
+        #[arg(long, default_value_t = 0)]
+        buffer_s: u32,
+        /// The time within which a report must be sent, in seconds (the TLE, block 2); zero means no limit.
+        #[arg(long, default_value_t = 0)]
+        tle_s: u32,
         /// How many reports to print before stopping.
         #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..=1000))]
         reports: u32,
@@ -132,6 +143,45 @@ enum Command {
         /// The name of the data set that it reports.
         data_set: String,
     },
+    /// Selects an SBO device: prints the CheckBackID that the server returns, and leaves the device armed for this association.
+    Select {
+        /// The name of the device.
+        device: String,
+    },
+    /// Operates a device with a command. An SBO device is selected first, in the same association; `--direct` skips the select
+    /// (a non-SBO device).
+    Operate {
+        /// The name of the device.
+        device: String,
+        /// The command: `true`, `false`, an integer, or a real.
+        command: String,
+        /// Operates without selecting first: for a non-SBO device.
+        #[arg(long)]
+        direct: bool,
+    },
+    /// Shows the tag of a device, its reason and its state.
+    GetTag {
+        /// The name of the device.
+        device: String,
+    },
+    /// Sets the tag of a device: `no-tag`, `open-and-close-inhibit` or `close-only-inhibit`.
+    SetTag {
+        /// The name of the device.
+        device: String,
+        /// The tag.
+        tag: String,
+        /// The reason of the tag (at most 255 characters).
+        #[arg(long, default_value = "")]
+        reason: String,
+    },
+    /// Starts the Information Message Transfer Set, and prints the messages it receives.
+    StartInfo {
+        /// How many messages to print before stopping.
+        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..=1000))]
+        messages: u32,
+    },
+    /// Stops the Information Message Transfer Set.
+    StopInfo,
 }
 
 /// A failure of the operation, with the message to print.
@@ -244,12 +294,21 @@ fn parse_designation(text: &str) -> Result<Vec<u64>, String> {
 }
 
 /// The transfer set that a Start or a Stop writes, on the data set named.
+/// The transmission parameters of a transfer set: the interval, and the block-2 parameters.
+#[derive(Debug, Clone, Copy, Default)]
+struct Timing {
+    interval_s: u32,
+    integrity_s: u32,
+    buffer_s: u32,
+    tle_s: u32,
+}
+
 fn transfer_set(
     domain: &str,
     data_set: &str,
     conditions: u64,
     rbe: bool,
-    interval_s: u32,
+    timing: Timing,
     enabled: bool,
 ) -> Result<DSTransferSet, Failure> {
     let parts =
@@ -261,10 +320,13 @@ fn transfer_set(
             name: parts(data_set)?,
         },
         start_time: Integer32::new(0).map_err(|e| Failure(format!("{e:?}")))?,
-        interval: Integer32::new(i64::from(interval_s)).map_err(|e| Failure(format!("{e:?}")))?,
-        tle: Integer32::new(0).map_err(|e| Failure(format!("{e:?}")))?,
-        buffer_time: Integer32::new(0).map_err(|e| Failure(format!("{e:?}")))?,
-        integrity_check: Integer32::new(0).map_err(|e| Failure(format!("{e:?}")))?,
+        interval: Integer32::new(i64::from(timing.interval_s))
+            .map_err(|e| Failure(format!("{e:?}")))?,
+        tle: Integer32::new(i64::from(timing.tle_s)).map_err(|e| Failure(format!("{e:?}")))?,
+        buffer_time: Integer32::new(i64::from(timing.buffer_s))
+            .map_err(|e| Failure(format!("{e:?}")))?,
+        integrity_check: Integer32::new(i64::from(timing.integrity_s))
+            .map_err(|e| Failure(format!("{e:?}")))?,
         ds_conditions_requested: DSConditions(conditions),
         block_data: DSTransferSetBlockData(false),
         critical: DSTransferSetCritical(false),
@@ -299,7 +361,7 @@ async fn next_report(
             Ok(None) => return Err(Failure("the association ended before a report".to_string())),
             Ok(Some(Err(error))) => return Err(Failure(error.to_string())),
             Ok(Some(Ok(TaseEvent::Report(report)))) => return Ok(report),
-            Ok(Some(Ok(TaseEvent::Connection(_)))) => continue,
+            Ok(Some(Ok(TaseEvent::Connection(_) | TaseEvent::Information(_)))) => continue,
         }
     }
 }
@@ -411,16 +473,28 @@ async fn execute(
             rbe,
             interval_s,
             object_change,
+            integrity_s,
+            buffer_s,
+            tle_s,
             reports,
         } => {
             let mut conditions = 0u64;
             if *interval_s > 0 {
                 conditions |= DSConditions::INTERVAL_TIME_OUT;
             }
+            if *integrity_s > 0 {
+                conditions |= DSConditions::INTEGRITY_TIME_OUT;
+            }
             if *object_change || conditions == 0 {
                 conditions |= DSConditions::OBJECT_CHANGE;
             }
-            let set = transfer_set(domain, data_set, conditions, *rbe, *interval_s, true)?;
+            let timing = Timing {
+                interval_s: *interval_s,
+                integrity_s: *integrity_s,
+                buffer_s: *buffer_s,
+                tle_s: *tle_s,
+            };
+            let set = transfer_set(domain, data_set, conditions, *rbe, timing, true)?;
             match client.start_transfer(&object(ts), &set).await? {
                 Item::Success(()) => println!("started {ts} on {data_set}"),
                 Item::Failure(code) => {
@@ -443,7 +517,7 @@ async fn execute(
                 data_set,
                 DSConditions::OBJECT_CHANGE,
                 false,
-                0,
+                Timing::default(),
                 false,
             )?;
             match client.stop_transfer(&object(ts), &set).await? {
@@ -453,8 +527,150 @@ async fn execute(
                 }
             }
         }
+        Command::Select { device } => match client.select_device(&object(device)).await? {
+            Item::Success(check_back) => {
+                println!("selected {device}: CheckBackID {}", check_back.get());
+            }
+            Item::Failure(code) => {
+                return Err(Failure(format!("the server refused the select: {code:?}")))
+            }
+        },
+        Command::Operate {
+            device,
+            command,
+            direct,
+        } => {
+            let value = parse_value(command).map_err(Failure)?;
+            if !direct {
+                match client.select_device(&object(device)).await? {
+                    Item::Success(_) => {}
+                    Item::Failure(code) => {
+                        return Err(Failure(format!("the server refused the select: {code:?}")))
+                    }
+                }
+            }
+            match client.operate_device(&object(device), value).await? {
+                Item::Success(()) => println!("operated {device}"),
+                Item::Failure(code) => {
+                    return Err(Failure(format!("the server refused the operate: {code:?}")))
+                }
+            }
+        }
+        Command::GetTag { device } => match client.get_tag(&object(device)).await? {
+            Item::Success(state) => println!("{device}: {}", show_tag_state(&state)),
+            Item::Failure(code) => {
+                return Err(Failure(format!("the server refused the tag: {code:?}")))
+            }
+        },
+        Command::SetTag {
+            device,
+            tag,
+            reason,
+        } => {
+            let tag = parse_tag(tag).map_err(Failure)?;
+            match client.set_tag(&object(device), tag, reason).await? {
+                Item::Success(()) => println!("{device}: tag set to {}", tag_name(tag)),
+                Item::Failure(code) => {
+                    return Err(Failure(format!("the server refused the tag: {code:?}")))
+                }
+            }
+        }
+        Command::StartInfo { messages } => {
+            match client.start_information_transfer().await? {
+                Item::Success(()) => println!("started the information messages"),
+                Item::Failure(code) => {
+                    return Err(Failure(format!(
+                        "the server refused the information transfer set: {code:?}"
+                    )))
+                }
+            }
+            for number in 1..=*messages {
+                let message = next_information(events, timeout).await?;
+                print_information(number, &message);
+            }
+        }
+        Command::StopInfo => match client.stop_information_transfer().await? {
+            Item::Success(()) => println!("stopped the information messages"),
+            Item::Failure(code) => {
+                return Err(Failure(format!(
+                    "the server refused the stop of the information transfer set: {code:?}"
+                )))
+            }
+        },
     }
     Ok(())
+}
+
+/// The name of a tag, as the command line writes it.
+fn tag_name(tag: Tag) -> &'static str {
+    match tag {
+        Tag::NoTag => "no-tag",
+        Tag::OpenAndCloseInhibit => "open-and-close-inhibit",
+        Tag::CloseOnlyInhibit => "close-only-inhibit",
+    }
+}
+
+/// The tag of a name of the command line, in any case.
+fn parse_tag(text: &str) -> Result<Tag, String> {
+    match text.to_ascii_lowercase().as_str() {
+        "no-tag" => Ok(Tag::NoTag),
+        "open-and-close-inhibit" => Ok(Tag::OpenAndCloseInhibit),
+        "close-only-inhibit" => Ok(Tag::CloseOnlyInhibit),
+        other => Err(format!(
+            "{other:?} is not a tag: no-tag, open-and-close-inhibit or close-only-inhibit"
+        )),
+    }
+}
+
+fn show_tag_state(state: &TagState) -> String {
+    let device_state = match state.state {
+        DeviceState::Idle => "IDLE",
+        DeviceState::Armed => "ARMED",
+    };
+    format!(
+        "tag {}, reason {:?}, state {device_state}",
+        tag_name(state.tag),
+        state.reason
+    )
+}
+
+/// The next information message of the events, skipping the other events, within the timeout.
+async fn next_information(
+    events: &mut TaseEvents,
+    timeout: Duration,
+) -> Result<InformationMessage, Failure> {
+    loop {
+        match tokio::time::timeout(timeout, events.next()).await {
+            Err(_) => {
+                return Err(Failure(
+                    "no information message within the timeout".to_string(),
+                ))
+            }
+            Ok(None) => {
+                return Err(Failure(
+                    "the association ended before an information message".to_string(),
+                ))
+            }
+            Ok(Some(Err(error))) => return Err(Failure(error.to_string())),
+            Ok(Some(Ok(TaseEvent::Information(message)))) => return Ok(message),
+            Ok(Some(Ok(TaseEvent::Report(_) | TaseEvent::Connection(_)))) => continue,
+        }
+    }
+}
+
+fn print_information(number: u32, message: &InformationMessage) {
+    let stream: String = message
+        .stream()
+        .iter()
+        .map(|octet| format!("{octet:02x}"))
+        .collect();
+    println!(
+        "message {number}: info reference {}, local reference {}, message id {}, {} octets: {stream}",
+        message.info_reference(),
+        message.local_reference(),
+        message.message_id(),
+        message.stream().len(),
+    );
 }
 
 #[tokio::main]
@@ -492,5 +708,72 @@ mod tests {
     fn an_ap_title_is_dotted_numbers() {
         assert_eq!(parse_designation("1.3.9999.1"), Ok(vec![1, 3, 9999, 1]));
         assert!(parse_designation("1.x").is_err());
+    }
+
+    #[test]
+    fn a_tag_is_named_in_any_case_and_refused_otherwise() {
+        assert_eq!(parse_tag("NO-TAG"), Ok(Tag::NoTag));
+        assert_eq!(
+            parse_tag("Open-And-Close-Inhibit"),
+            Ok(Tag::OpenAndCloseInhibit)
+        );
+        assert_eq!(parse_tag("close-only-inhibit"), Ok(Tag::CloseOnlyInhibit));
+        assert!(parse_tag("inhibit").is_err());
+        for tag in [Tag::NoTag, Tag::OpenAndCloseInhibit, Tag::CloseOnlyInhibit] {
+            assert_eq!(parse_tag(tag_name(tag)), Ok(tag));
+        }
+    }
+
+    #[test]
+    fn a_tag_state_shows_its_tag_reason_and_state() {
+        let state = TagState {
+            tag: Tag::CloseOnlyInhibit,
+            reason: "crew on site".to_string(),
+            state: DeviceState::Armed,
+        };
+        assert_eq!(
+            show_tag_state(&state),
+            "tag close-only-inhibit, reason \"crew on site\", state ARMED"
+        );
+    }
+
+    #[test]
+    fn the_commands_of_the_devices_and_of_the_information_messages_parse() {
+        use clap::Parser as _;
+        let parse = |args: &[&str]| {
+            let mut all = vec!["igstase2-client", "-s", "127.0.0.1:102"];
+            all.extend_from_slice(args);
+            Cli::try_parse_from(all)
+        };
+        assert!(parse(&["select", "Breaker12"]).is_ok());
+        assert!(parse(&["operate", "Breaker12", "1"]).is_ok());
+        assert!(parse(&["operate", "Valve", "true", "--direct"]).is_ok());
+        assert!(parse(&["get-tag", "Breaker12"]).is_ok());
+        assert!(parse(&[
+            "set-tag",
+            "Breaker12",
+            "close-only-inhibit",
+            "--reason",
+            "work"
+        ])
+        .is_ok());
+        assert!(parse(&["start-info", "--messages", "3"]).is_ok());
+        assert!(parse(&["stop-info"]).is_ok());
+        assert!(parse(&[
+            "start",
+            "TS1",
+            "DS1",
+            "--integrity-s",
+            "5",
+            "--buffer-s",
+            "1",
+            "--tle-s",
+            "10"
+        ])
+        .is_ok());
+        assert!(
+            parse(&["start-info", "--messages", "0"]).is_err(),
+            "at least one message"
+        );
     }
 }

@@ -13,9 +13,14 @@
 use igs_iec_tase2_link::association::{client_after_initiate, ServerVariables};
 use igs_iec_tase2_link::bilateral::{ObjectName, Scope};
 use igs_iec_tase2_link::data::{ErrorCode, Item};
+use igs_iec_tase2_link::device::{DeviceState, Tag, TagState};
+use igs_iec_tase2_link::information::{InformationMessage, HEADER_NAME};
 use igs_iec_tase2_link::version::Versions;
 use igs_iec_tase2_model::generated::iso503::{
     DSTransferSet, DSTransferSetStatus, SupportedFeatures, TASE2Version, VisibleString32,
+};
+use igs_iec_tase2_model::generated::iso802::{
+    InfoBufXX, InfoMessHeader, SBOCheckBackName, TagFlags, TagValue, TextString,
 };
 use igs_iec_tase2_model::mms::MmsValue;
 use igs_iso9506_mms::client::{Client, ClientConfig, ConnectionState, Event, Events};
@@ -26,6 +31,9 @@ use igs_iso9506_mms_codec::generated::types::{
     GetVariableAccessAttributesRequest, InformationReport, ReadRequest, TypeDescription,
     UnconfirmedService, VariableAccessSpecification, VariableSpecification, WriteRequest,
     WriteResponseItemItem,
+};
+use igs_iso9506_mms_codec::generated::types::{
+    Identifier, ObjectName as MmsObjectName, VariableAccessSpecificationListOfVariableItem,
 };
 
 use crate::error::Error;
@@ -62,6 +70,8 @@ pub enum TaseEvent {
     Connection(ConnectionState),
     /// A transfer report (an information report of a data set transfer set).
     Report(ReceivedReport),
+    /// An information message: a report of the Information Message Transfer Set (503 §7.2.5.5.4).
+    Information(InformationMessage),
 }
 
 /// A transfer report, as received: which objects it carries, and their values in the same order.
@@ -358,6 +368,106 @@ impl TaseClient {
         self.write_transfer_set(name, &disabled).await
     }
 
+    /// Start Transfer of the Information Message Transfer Set (503 §7.2.5.2): writes its status ENABLED. The server then reports
+    /// each message whose condition occurs, until the transfer set is stopped.
+    pub async fn start_information_transfer(&self) -> Result<Item<()>, Error> {
+        self.write_information_transfer(true).await
+    }
+
+    /// Stop Transfer of the Information Message Transfer Set (503 §7.2.5.3.2): writes its status DISABLED.
+    pub async fn stop_information_transfer(&self) -> Result<Item<()>, Error> {
+        self.write_information_transfer(false).await
+    }
+
+    async fn write_information_transfer(&self, enabled: bool) -> Result<Item<()>, Error> {
+        let name = VariableAccessSpecificationListOfVariableItem {
+            variable_specification: VariableSpecification::Name(MmsObjectName::AaSpecific(
+                Identifier(IM_TRANSFER_SET.to_string()),
+            )),
+            alternate_access: None,
+        };
+        let response = self
+            .mms
+            .write(WriteRequest {
+                variable_access_specification: VariableAccessSpecification::ListOfVariable(vec![
+                    name,
+                ]),
+                list_of_data: vec![Data::Boolean(enabled)],
+            })
+            .await?;
+        response
+            .0
+            .first()
+            .map(write_item_of)
+            .ok_or(Error::Malformed(
+                "one answer for the information transfer set",
+            ))
+    }
+
+    /// Select (503 §7.2.6.2): reads the CheckBackID of an SBO device, which the server gives when the device is armed for this
+    /// client. The reading of the CheckBackID is the client's business: the Operate does not carry it (see D-064).
+    pub async fn select_device(
+        &self,
+        device: &ObjectName,
+    ) -> Result<Item<SBOCheckBackName>, Error> {
+        let name = device_variable(device, "SBO");
+        match self
+            .get_data_values(std::slice::from_ref(&name))
+            .await?
+            .into_iter()
+            .next()
+        {
+            Some(Item::Success(data)) => Ok(Item::Success(SBOCheckBackName::from_mms(&data)?)),
+            Some(Item::Failure(code)) => Ok(Item::Failure(code)),
+            None => Err(Error::Malformed("one answer for the check-back identifier")),
+        }
+    }
+
+    /// Operate (503 §7.2.6.3): writes the command of a device. For an SBO device, the client selects the device first, in the
+    /// same association; the server refuses the command otherwise. The command is the value the device's control point takes.
+    pub async fn operate_device(
+        &self,
+        device: &ObjectName,
+        command: Data,
+    ) -> Result<Item<()>, Error> {
+        self.set_data_values(vec![(device.clone(), command)])
+            .await?
+            .into_iter()
+            .next()
+            .ok_or(Error::Malformed("one answer for the operate"))
+    }
+
+    /// Get Tag Value (503 §5.3.12.6, 802 §7.1): the tag of a device, its reason and its state.
+    pub async fn get_tag(&self, device: &ObjectName) -> Result<Item<TagState>, Error> {
+        let name = device_variable(device, "TAG");
+        match self
+            .get_data_values(std::slice::from_ref(&name))
+            .await?
+            .into_iter()
+            .next()
+        {
+            Some(Item::Success(data)) => Ok(Item::Success(tag_state(&TagValue::from_mms(&data)?)?)),
+            Some(Item::Failure(code)) => Ok(Item::Failure(code)),
+            None => Err(Error::Malformed("one answer for the tag")),
+        }
+    }
+
+    /// Set Tag Value (503 §5.3.12.5): sets the tag of a device, with its reason. The state bit of the value is not written: the
+    /// server gives the state of the device.
+    pub async fn set_tag(
+        &self,
+        device: &ObjectName,
+        tag: Tag,
+        reason: &str,
+    ) -> Result<Item<()>, Error> {
+        let value = tag_value(tag, reason)?;
+        self.set_data_values(vec![(device_variable(device, "TAG"), value.to_mms())])
+            .await?
+            .into_iter()
+            .next()
+            .ok_or(Error::Malformed("one answer for the tag"))
+    }
+
     async fn write_transfer_set(
         &self,
         name: &ObjectName,
@@ -385,13 +495,101 @@ impl TaseEvents {
             match self.events.next().await? {
                 Event::State(state) => return Some(Ok(TaseEvent::Connection(state))),
                 Event::Report(UnconfirmedService::InformationReport(report)) => {
-                    return Some(received(&report).map(TaseEvent::Report));
+                    return Some(match information_message(&report) {
+                        Ok(Some(message)) => Ok(TaseEvent::Information(message)),
+                        Ok(None) => received(&report).map(TaseEvent::Report),
+                        Err(error) => Err(error),
+                    });
                 }
                 // Other unconfirmed services and the traces of the MMS client are not transfer reports.
                 Event::Report(_) | Event::Trace(_) => continue,
             }
         }
     }
+}
+
+/// The name of the Information Message Transfer Set object of the server (503 §8.3.9): an AA-specific variable.
+const IM_TRANSFER_SET: &str = "IM_Transfer_Set";
+
+/// The variable of a suffix of a device: `<Device_Name>_SBO` holds the CheckBackID, `<Device_Name>_TAG` the Tag_Value (6.15).
+fn device_variable(device: &ObjectName, suffix: &str) -> ObjectName {
+    ObjectName {
+        scope: device.scope.clone(),
+        name: format!("{}_{suffix}", device.name),
+    }
+}
+
+/// The tag of a Tag_Value: its two bits give the code of the tag (802 §7.1), and its state bit whether the device is ARMED.
+fn tag_state(value: &TagValue) -> Result<TagState, Error> {
+    let hi = if value.flags.is_tag_hi() { 1 } else { 0 };
+    let lo = if value.flags.is_tag_lo() { 2 } else { 0 };
+    let tag = Tag::from_code(hi | lo).ok_or(Error::Malformed(
+        "a tag of the standard: NO-TAG, OPEN-AND-CLOSE-INHIBIT or CLOSE-ONLY-INHIBIT",
+    ))?;
+    let state = if value.flags.is_tag_state() {
+        DeviceState::Armed
+    } else {
+        DeviceState::Idle
+    };
+    Ok(TagState {
+        tag,
+        reason: value.reason.as_str().to_string(),
+        state,
+    })
+}
+
+/// The Tag_Value that sets a tag with its reason (the state bit is 0).
+fn tag_value(tag: Tag, reason: &str) -> Result<TagValue, Error> {
+    let code = tag.code();
+    let mut bits = 0;
+    if code & 1 != 0 {
+        bits |= TagFlags::TAG_HI;
+    }
+    if code & 2 != 0 {
+        bits |= TagFlags::TAG_LO;
+    }
+    Ok(TagValue {
+        flags: TagFlags(bits),
+        reason: TextString::new(reason)
+            .map_err(|_| Error::Malformed("a reason of a tag of at most 255 characters"))?,
+    })
+}
+
+/// The information message of a report whose variables are the header and the buffer of an information message (802 §6.4,
+/// 503 §7.2.5.5.4). `None` for any other report, which is a transfer report.
+fn information_message(report: &InformationReport) -> Result<Option<InformationMessage>, Error> {
+    let VariableAccessSpecification::ListOfVariable(items) = &report.variable_access_specification
+    else {
+        return Ok(None);
+    };
+    let [header_item, _] = items.as_slice() else {
+        return Ok(None);
+    };
+    let header_name = match &header_item.variable_specification {
+        VariableSpecification::Name(name) => from_mms(name),
+        _ => None,
+    };
+    if header_name
+        != Some(ObjectName {
+            scope: Scope::Vmd,
+            name: HEADER_NAME.to_string(),
+        })
+    {
+        return Ok(None);
+    }
+    let (header, buffer) = match report.list_of_access_result.as_slice() {
+        [AccessResult::Success(header), AccessResult::Success(buffer)] => (header, buffer),
+        _ => {
+            return Err(Error::Malformed(
+                "the header and the buffer of an information message are read",
+            ))
+        }
+    };
+    let header = InfoMessHeader::from_mms(header)?;
+    let buffer = InfoBufXX::from_mms(buffer)?;
+    InformationMessage::from_parts(header, &buffer)
+        .map(Some)
+        .map_err(|_| Error::Malformed("an information message whose size exceeds its buffer"))
 }
 
 fn received(report: &InformationReport) -> Result<ReceivedReport, Error> {
@@ -417,4 +615,122 @@ fn received(report: &InformationReport) -> Result<ReceivedReport, Error> {
         access,
         values: report.list_of_access_result.iter().map(item_of).collect(),
     })
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
+mod tests {
+    use super::*;
+
+    fn name(scope: Scope, item: &str) -> ObjectName {
+        ObjectName {
+            scope,
+            name: item.to_string(),
+        }
+    }
+
+    #[test]
+    fn a_device_variable_takes_the_suffix_in_the_scope_of_the_device() {
+        let device = name(Scope::Domain("ICC1".to_string()), "Breaker12");
+        assert_eq!(
+            device_variable(&device, "SBO"),
+            name(Scope::Domain("ICC1".to_string()), "Breaker12_SBO")
+        );
+        assert_eq!(
+            device_variable(&name(Scope::Vmd, "Breaker12"), "TAG"),
+            name(Scope::Vmd, "Breaker12_TAG")
+        );
+    }
+
+    #[test]
+    fn every_tag_is_written_as_its_code_and_read_back() {
+        for tag in [Tag::NoTag, Tag::OpenAndCloseInhibit, Tag::CloseOnlyInhibit] {
+            let value = tag_value(tag, "crew on site").unwrap();
+            let read = tag_state(&value).unwrap();
+            assert_eq!(read.tag, tag);
+            assert_eq!(read.reason, "crew on site");
+            assert_eq!(read.state, DeviceState::Idle);
+        }
+    }
+
+    #[test]
+    fn the_state_bit_of_a_tag_is_the_armed_state() {
+        let value = TagValue {
+            flags: TagFlags(TagFlags::TAG_STATE),
+            reason: TextString::new("").unwrap(),
+        };
+        assert_eq!(tag_state(&value).unwrap().tag, Tag::NoTag);
+        assert_eq!(tag_state(&value).unwrap().state, DeviceState::Armed);
+    }
+
+    #[test]
+    fn the_tag_code_three_is_refused() {
+        let value = TagValue {
+            flags: TagFlags(TagFlags::TAG_HI | TagFlags::TAG_LO),
+            reason: TextString::new("").unwrap(),
+        };
+        assert!(matches!(tag_state(&value), Err(Error::Malformed(_))));
+    }
+
+    fn information_report(names: [&str; 2], header: Data, buffer: Data) -> InformationReport {
+        InformationReport {
+            variable_access_specification: VariableAccessSpecification::ListOfVariable(
+                names
+                    .iter()
+                    .map(|item| VariableAccessSpecificationListOfVariableItem {
+                        variable_specification: VariableSpecification::Name(
+                            MmsObjectName::VmdSpecific(Identifier(item.to_string())),
+                        ),
+                        alternate_access: None,
+                    })
+                    .collect(),
+            ),
+            list_of_access_result: vec![
+                AccessResult::Success(header),
+                AccessResult::Success(buffer),
+            ],
+        }
+    }
+
+    fn header_data(size: i128) -> Data {
+        Data::Structure(vec![
+            Data::Integer(1),
+            Data::Integer(2),
+            Data::Integer(3),
+            Data::Integer(size),
+        ])
+    }
+
+    #[test]
+    fn an_information_report_decodes_into_its_message() {
+        let report = information_report(
+            [HEADER_NAME, "Info_Buff_64"],
+            header_data(3),
+            Data::OctetString(vec![7, 8, 9, 0]),
+        );
+        let message = information_message(&report).unwrap().unwrap();
+        assert_eq!(message.info_reference(), 1);
+        assert_eq!(message.local_reference(), 2);
+        assert_eq!(message.message_id(), 3);
+        assert_eq!(message.stream(), &[7, 8, 9]);
+    }
+
+    #[test]
+    fn a_transfer_report_is_not_an_information_message() {
+        let report = information_report(["Flow1", "Level"], Data::Integer(1), Data::Integer(2));
+        assert_eq!(information_message(&report).unwrap(), None);
+    }
+
+    #[test]
+    fn a_size_beyond_its_buffer_is_refused() {
+        let report = information_report(
+            [HEADER_NAME, "Info_Buff_64"],
+            header_data(9),
+            Data::OctetString(vec![0; 4]),
+        );
+        assert!(matches!(
+            information_message(&report),
+            Err(Error::Malformed(_))
+        ));
+    }
 }

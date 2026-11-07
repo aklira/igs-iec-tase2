@@ -31,8 +31,14 @@ Global options (before the command):
 | `write DATASET VALUE...` | Writes one value per member, in member order. Each member's answer is printed with its name. |
 | `create DATASET MEMBER...` | Creates a data set. The client may then use it (decision D-055). |
 | `delete DATASET...` | Deletes data sets. |
-| `start TRANSFERSET DATASET [--rbe] [--interval-s N] [--object-change] [--reports N]` | Starts a transfer set on a data set and prints N reports (default 1). With no condition given, `--object-change` is used. |
+| `start TRANSFERSET DATASET [--rbe] [--interval-s N] [--object-change] [--integrity-s N] [--buffer-s N] [--tle-s N] [--reports N]` | Starts a transfer set on a data set and prints N reports (default 1). With no condition given, `--object-change` is used. `--integrity-s`, `--buffer-s` and `--tle-s` are the block-2 parameters (the integrity check with RBE, the buffer time, the TLE), in seconds. |
 | `stop TRANSFERSET DATASET` | Stops a transfer set. |
+| `select DEVICE` | Selects an SBO device, and prints the CheckBackID that the server returns. The device stays armed for this association (503 §7.2.6.2). |
+| `operate DEVICE COMMAND [--direct]` | Operates a device with a command (`true`, `false`, an integer, or a real). An SBO device is selected first, in the same association; `--direct` skips the select, for a non-SBO device. |
+| `get-tag DEVICE` | Shows the tag of a device, its reason, and its state (IDLE or ARMED). |
+| `set-tag DEVICE TAG [--reason TEXT]` | Sets the tag: `no-tag`, `open-and-close-inhibit` or `close-only-inhibit`, with a reason of at most 255 characters. |
+| `start-info [--messages N]` | Starts the Information Message Transfer Set and prints N messages (default 1), with the info reference, the local reference, the message id, and the stream in hexadecimal. |
+| `stop-info` | Stops the Information Message Transfer Set. |
 
 Points and data sets are named in the domain of the client (`--domain`).
 
