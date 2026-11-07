@@ -12,6 +12,7 @@
 
 pub mod builtin;
 pub mod generated;
+pub mod indication;
 pub mod mms;
 pub mod time;
 pub mod value;

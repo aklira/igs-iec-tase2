@@ -947,7 +947,7 @@ fn render_item(item: &Item) -> String {
                     continue;
                 }
                 writeln!(consts, "    /// The mask of the flag `{}`.\n    pub const {constant}: u64 = {mask:#x};", bit.name).unwrap();
-                writeln!(methods, "    /// Whether the flag `{}` is set.\n    pub fn {flag}(self) -> bool {{\n        self.0 & Self::{constant} != 0\n    }}", bit.name).unwrap();
+                writeln!(methods, "    /// Whether the flag `{}` is set.\n    pub fn is_{flag}(self) -> bool {{\n        self.0 & Self::{constant} != 0\n    }}", bit.name).unwrap();
             }
             writeln!(out, "impl {name} {{\n    /// The number of bits of the string.\n    pub const BIT_COUNT: u32 = {count};\n{consts}}}\nimpl {name} {{\n{methods}}}").unwrap();
         }
@@ -1009,6 +1009,46 @@ fn mms_impl(item: &Item) -> String {
             "    fn to_mms(&self) -> {data} {{\n        {data}::VisibleString(self.as_str().to_string())\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::VisibleString(text) => Ok(Self::new(text.clone())?),\n            other => Err(crate::mms::ValueError::kind_of(\"visible string\", other)),\n        }}\n    }}\n"),
         Shape::Float { .. } => format!(
             "    fn to_mms(&self) -> {data} {{\n        let [a, b, c, d] = (self.0 as f32).to_be_bytes();\n        {data}::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(vec![8, a, b, c, d]))\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {{\n                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),\n                _ => Err(crate::mms::ValueError::Format(\"a floating point value must be single precision: exponent width 8 and four octets\")),\n            }},\n            other => Err(crate::mms::ValueError::kind_of(\"floating point\", other)),\n        }}\n    }}\n"),
+        Shape::Bits { .. } => {
+            format!(
+                "    fn to_mms(&self) -> {data} {{\n        let octets = (Self::BIT_COUNT as usize).div_ceil(8);\n        let mut bytes = vec![0u8; octets];\n        for position in 0..Self::BIT_COUNT {{\n            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {{\n                if let Some(octet) = bytes.get_mut((position / 8) as usize) {{\n                    *octet |= 0x80u8 >> (position % 8);\n                }}\n            }}\n        }}\n        let unused = u8::try_from(octets.saturating_mul(8).saturating_sub(Self::BIT_COUNT as usize)).unwrap_or(0);\n        {data}::BitString(igs_iso9506_mms_codec::schema::BitString {{ unused, bytes }})\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::BitString(bits) => {{\n                let length = bits.bytes.len().saturating_mul(8).saturating_sub(usize::from(bits.unused));\n                if length < Self::BIT_COUNT as usize {{\n                    return Err(crate::mms::ValueError::Format(\"a bit string shorter than the flags of its type\"));\n                }}\n                let mut value = 0u64;\n                for position in 0..length {{\n                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);\n                    if octet & (0x80u8 >> (position % 8)) != 0 {{\n                        if position >= Self::BIT_COUNT as usize {{\n                            return Err(crate::mms::ValueError::Format(\"a bit beyond the flags of its type is set\"));\n                        }}\n                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);\n                    }}\n                }}\n                Ok(Self(value))\n            }}\n            other => Err(crate::mms::ValueError::kind_of(\"bit string\", other)),\n        }}\n    }}\n"
+            )
+        }
+        Shape::Enumerated { values } => {
+            let list: Vec<String> = values.iter().map(|(_, v)| v.to_string()).collect();
+            format!(
+                "    fn to_mms(&self) -> {data} {{\n        {data}::Integer(i128::from(self.0))\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::Integer(value) => match i64::try_from(*value) {{\n                Ok(value) if [{}].contains(&value) => Ok(Self(value)),\n                _ => Err(crate::mms::ValueError::Format(\"not a value of the enumeration\")),\n            }},\n            other => Err(crate::mms::ValueError::kind_of(\"integer\", other)),\n        }}\n    }}\n",
+                list.join(", ")
+            )
+        }
+        Shape::Octets { .. } => format!(
+            "    fn to_mms(&self) -> {data} {{\n        {data}::OctetString(self.0.clone())\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::OctetString(octets) => {{\n                if Self::MAX_LEN.is_some_and(|max| octets.len() > max) {{\n                    return Err(crate::mms::ValueError::Format(\"an octet string longer than its type\"));\n                }}\n                Ok(Self(octets.clone()))\n            }}\n            other => Err(crate::mms::ValueError::kind_of(\"octet string\", other)),\n        }}\n    }}\n"
+        ),
+        Shape::Array { element, .. } => format!(
+            "    fn to_mms(&self) -> {data} {{\n        {data}::Array(self.0.iter().map(crate::mms::MmsValue::to_mms).collect())\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::Array(items) => {{\n                if Self::SIZE.is_some_and(|size| items.len() != size) {{\n                    return Err(crate::mms::ValueError::Format(\"an array of another number of elements\"));\n                }}\n                let elements = items\n                    .iter()\n                    .map(<{element} as crate::mms::MmsValue>::from_mms)\n                    .collect::<Result<Vec<_>, _>>()?;\n                Ok(Self(elements))\n            }}\n            other => Err(crate::mms::ValueError::kind_of(\"array\", other)),\n        }}\n    }}\n"
+        ),
+        Shape::Structure { fields } => {
+            if item.name == "TimeStampExtended" {
+                // Written by hand in time.rs: the milliseconds are checked there (decision D-011).
+                return String::new();
+            }
+            let to_items: Vec<String> = fields
+                .iter()
+                .map(|(field, _)| format!("crate::mms::MmsValue::to_mms(&self.{field})"))
+                .collect();
+            let patterns: Vec<String> = (0..fields.len()).map(|i| format!("item{i}")).collect();
+            let assigned: Vec<String> = fields
+                .iter()
+                .enumerate()
+                .map(|(i, (field, ty))| format!("{field}: <{ty} as crate::mms::MmsValue>::from_mms(item{i})?"))
+                .collect();
+            format!(
+                "    fn to_mms(&self) -> {data} {{\n        {data}::Structure(vec![{}])\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::Structure(items) => match items.as_slice() {{\n                [{}] => Ok(Self {{ {} }}),\n                _ => Err(crate::mms::ValueError::Format(\"a structure of another number of components\")),\n            }},\n            other => Err(crate::mms::ValueError::kind_of(\"structure\", other)),\n        }}\n    }}\n",
+                to_items.join(", "),
+                patterns.join(", "),
+                assigned.join(", ")
+            )
+        }
         _ => return String::new(),
     };
     format!("impl crate::mms::MmsValue for {name} {{\n{body}}}\n")

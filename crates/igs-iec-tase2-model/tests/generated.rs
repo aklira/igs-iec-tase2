@@ -81,8 +81,8 @@ fn a_bit_string_names_each_flag_with_its_mask() {
     assert_eq!(iso503::DSConditions::INTERVAL_TIME_OUT, 0x1);
     assert_eq!(iso503::DSConditions::INTEGRITY_TIME_OUT, 0x2);
     let set = iso503::DSConditions(0x2);
-    assert!(set.integrity_time_out());
-    assert!(!set.interval_time_out());
+    assert!(set.is_integrity_time_out());
+    assert!(!set.is_interval_time_out());
 }
 
 #[test]

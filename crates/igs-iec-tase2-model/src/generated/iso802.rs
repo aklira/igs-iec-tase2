@@ -1141,36 +1141,90 @@ impl DataState {
 }
 impl DataState {
     /// Whether the flag `State_hi` is set.
-    pub fn state_hi(self) -> bool {
+    pub fn is_state_hi(self) -> bool {
         self.0 & Self::STATE_HI != 0
     }
     /// Whether the flag `State_lo` is set.
-    pub fn state_lo(self) -> bool {
+    pub fn is_state_lo(self) -> bool {
         self.0 & Self::STATE_LO != 0
     }
     /// Whether the flag `Validity_hi` is set.
-    pub fn validity_hi(self) -> bool {
+    pub fn is_validity_hi(self) -> bool {
         self.0 & Self::VALIDITY_HI != 0
     }
     /// Whether the flag `Validity_lo` is set.
-    pub fn validity_lo(self) -> bool {
+    pub fn is_validity_lo(self) -> bool {
         self.0 & Self::VALIDITY_LO != 0
     }
     /// Whether the flag `CurrentSource_hi` is set.
-    pub fn current_source_hi(self) -> bool {
+    pub fn is_current_source_hi(self) -> bool {
         self.0 & Self::CURRENT_SOURCE_HI != 0
     }
     /// Whether the flag `CurrentSource_lo` is set.
-    pub fn current_source_lo(self) -> bool {
+    pub fn is_current_source_lo(self) -> bool {
         self.0 & Self::CURRENT_SOURCE_LO != 0
     }
     /// Whether the flag `NormalValue` is set.
-    pub fn normal_value(self) -> bool {
+    pub fn is_normal_value(self) -> bool {
         self.0 & Self::NORMAL_VALUE != 0
     }
     /// Whether the flag `TimeStampQuality` is set.
-    pub fn time_stamp_quality(self) -> bool {
+    pub fn is_time_stamp_quality(self) -> bool {
         self.0 & Self::TIME_STAMP_QUALITY != 0
+    }
+}
+impl crate::mms::MmsValue for DataState {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.1 (page 24). bit-string definition.
@@ -1196,32 +1250,86 @@ impl DataStateSupplemental {
 }
 impl DataStateSupplemental {
     /// Whether the flag `State_hi` is set.
-    pub fn state_hi(self) -> bool {
+    pub fn is_state_hi(self) -> bool {
         self.0 & Self::STATE_HI != 0
     }
     /// Whether the flag `State_lo` is set.
-    pub fn state_lo(self) -> bool {
+    pub fn is_state_lo(self) -> bool {
         self.0 & Self::STATE_LO != 0
     }
     /// Whether the flag `Tag_hi` is set.
-    pub fn tag_hi(self) -> bool {
+    pub fn is_tag_hi(self) -> bool {
         self.0 & Self::TAG_HI != 0
     }
     /// Whether the flag `Tag_lo` is set.
-    pub fn tag_lo(self) -> bool {
+    pub fn is_tag_lo(self) -> bool {
         self.0 & Self::TAG_LO != 0
     }
     /// Whether the flag `ExpectedState_hi` is set.
-    pub fn expected_state_hi(self) -> bool {
+    pub fn is_expected_state_hi(self) -> bool {
         self.0 & Self::EXPECTED_STATE_HI != 0
     }
     /// Whether the flag `ExpectedState_lo` is set.
-    pub fn expected_state_lo(self) -> bool {
+    pub fn is_expected_state_lo(self) -> bool {
         self.0 & Self::EXPECTED_STATE_LO != 0
     }
     /// Whether the flag `Reserved` is set.
-    pub fn reserved(self) -> bool {
+    pub fn is_reserved(self) -> bool {
         self.0 & Self::RESERVED != 0
+    }
+}
+impl crate::mms::MmsValue for DataStateSupplemental {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.1 (page 24). bit-string definition.
@@ -1247,32 +1355,86 @@ impl DataFlags {
 }
 impl DataFlags {
     /// Whether the flag `unused` is set.
-    pub fn unused(self) -> bool {
+    pub fn is_unused(self) -> bool {
         self.0 & Self::UNUSED != 0
     }
     /// Whether the flag `Validity_hi` is set.
-    pub fn validity_hi(self) -> bool {
+    pub fn is_validity_hi(self) -> bool {
         self.0 & Self::VALIDITY_HI != 0
     }
     /// Whether the flag `Validity_lo` is set.
-    pub fn validity_lo(self) -> bool {
+    pub fn is_validity_lo(self) -> bool {
         self.0 & Self::VALIDITY_LO != 0
     }
     /// Whether the flag `CurrentSource_hi` is set.
-    pub fn current_source_hi(self) -> bool {
+    pub fn is_current_source_hi(self) -> bool {
         self.0 & Self::CURRENT_SOURCE_HI != 0
     }
     /// Whether the flag `CurrentSource_lo` is set.
-    pub fn current_source_lo(self) -> bool {
+    pub fn is_current_source_lo(self) -> bool {
         self.0 & Self::CURRENT_SOURCE_LO != 0
     }
     /// Whether the flag `NormalValue` is set.
-    pub fn normal_value(self) -> bool {
+    pub fn is_normal_value(self) -> bool {
         self.0 & Self::NORMAL_VALUE != 0
     }
     /// Whether the flag `TimeStampQuality` is set.
-    pub fn time_stamp_quality(self) -> bool {
+    pub fn is_time_stamp_quality(self) -> bool {
         self.0 & Self::TIME_STAMP_QUALITY != 0
+    }
+}
+impl crate::mms::MmsValue for DataFlags {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.1 (page 24). reference definition.
@@ -1332,6 +1494,25 @@ pub struct DataRealQ {
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
 }
+impl crate::mms::MmsValue for DataRealQ {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1] => Ok(Self { value: <crate::generated::iso802::clause_6_2_1::DataReal as crate::mms::MmsValue>::from_mms(item0)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item1)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 25). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataStateQ {
@@ -1339,6 +1520,36 @@ pub struct DataStateQ {
     pub value: crate::generated::iso802::DataState,
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
+}
+impl crate::mms::MmsValue for DataStateQ {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items
+                .as_slice()
+            {
+                [item0, item1] => Ok(Self {
+                    value: <crate::generated::iso802::DataState as crate::mms::MmsValue>::from_mms(
+                        item0,
+                    )?,
+                    flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(
+                        item1,
+                    )?,
+                }),
+                _ => Err(crate::mms::ValueError::Format(
+                    "a structure of another number of components",
+                )),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.2.1 (page 25). structure definition.
 #[derive(Debug, Clone, PartialEq)]
@@ -1348,6 +1559,25 @@ pub struct DataDiscreteQ {
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
 }
+impl crate::mms::MmsValue for DataDiscreteQ {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1] => Ok(Self { value: <crate::generated::iso802::clause_6_2_1::DataDiscrete as crate::mms::MmsValue>::from_mms(item0)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item1)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 25). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataStateSupplementalQ {
@@ -1355,6 +1585,25 @@ pub struct DataStateSupplementalQ {
     pub value: crate::generated::iso802::DataStateSupplemental,
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
+}
+impl crate::mms::MmsValue for DataStateSupplementalQ {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1] => Ok(Self { value: <crate::generated::iso802::DataStateSupplemental as crate::mms::MmsValue>::from_mms(item0)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item1)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.2.1 (page 25). structure definition.
 #[derive(Debug, Clone, PartialEq)]
@@ -1366,6 +1615,26 @@ pub struct DataRealQTimeTag {
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
 }
+impl crate::mms::MmsValue for DataRealQTimeTag {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { value: <crate::generated::iso802::clause_6_2_1::DataReal as crate::mms::MmsValue>::from_mms(item0)?, time_stamp: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item1)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 25). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataStateQTimeTag {
@@ -1373,6 +1642,25 @@ pub struct DataStateQTimeTag {
     pub time_stamp: crate::generated::iso802::clause_6_2_1::DataTimeStamp,
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataState,
+}
+impl crate::mms::MmsValue for DataStateQTimeTag {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1] => Ok(Self { time_stamp: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item0)?, flags: <crate::generated::iso802::DataState as crate::mms::MmsValue>::from_mms(item1)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.2.1 (page 25). structure definition.
 #[derive(Debug, Clone, PartialEq)]
@@ -1384,6 +1672,26 @@ pub struct DataDiscreteQTimeTag {
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
 }
+impl crate::mms::MmsValue for DataDiscreteQTimeTag {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { value: <crate::generated::iso802::clause_6_2_1::DataDiscrete as crate::mms::MmsValue>::from_mms(item0)?, time_stamp: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item1)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 25). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataStateSupplementalQTimeTag {
@@ -1393,6 +1701,26 @@ pub struct DataStateSupplementalQTimeTag {
     pub time_stamp: crate::generated::iso802::clause_6_2_1::DataTimeStamp,
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
+}
+impl crate::mms::MmsValue for DataStateSupplementalQTimeTag {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { value: <crate::generated::iso802::DataStateSupplemental as crate::mms::MmsValue>::from_mms(item0)?, time_stamp: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item1)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.2.1 (page 25). structure definition.
 #[derive(Debug, Clone, PartialEq)]
@@ -1406,6 +1734,27 @@ pub struct DataRealExtended {
     /// The component `cov`.
     pub cov: crate::generated::iso802::COVCounter,
 }
+impl crate::mms::MmsValue for DataRealExtended {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+            crate::mms::MmsValue::to_mms(&self.cov),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3] => Ok(Self { value: <crate::generated::iso802::clause_6_2_1::DataReal as crate::mms::MmsValue>::from_mms(item0)?, time_stamp: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item1)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item2)?, cov: <crate::generated::iso802::COVCounter as crate::mms::MmsValue>::from_mms(item3)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 25). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataStateExtended {
@@ -1415,6 +1764,26 @@ pub struct DataStateExtended {
     pub flags: crate::generated::iso802::DataState,
     /// The component `cov`.
     pub cov: crate::generated::iso802::COVCounter,
+}
+impl crate::mms::MmsValue for DataStateExtended {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+            crate::mms::MmsValue::to_mms(&self.cov),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { time_stamp: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item0)?, flags: <crate::generated::iso802::DataState as crate::mms::MmsValue>::from_mms(item1)?, cov: <crate::generated::iso802::COVCounter as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.2.1 (page 26). structure definition.
 #[derive(Debug, Clone, PartialEq)]
@@ -1428,6 +1797,27 @@ pub struct DataDiscreteExtended {
     /// The component `cov`.
     pub cov: crate::generated::iso802::COVCounter,
 }
+impl crate::mms::MmsValue for DataDiscreteExtended {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+            crate::mms::MmsValue::to_mms(&self.cov),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3] => Ok(Self { value: <crate::generated::iso802::clause_6_2_1::DataDiscrete as crate::mms::MmsValue>::from_mms(item0)?, time_stamp: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item1)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item2)?, cov: <crate::generated::iso802::COVCounter as crate::mms::MmsValue>::from_mms(item3)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 26). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataStateSupplementalExtended {
@@ -1440,6 +1830,27 @@ pub struct DataStateSupplementalExtended {
     /// The component `cov`.
     pub cov: crate::generated::iso802::COVCounter,
 }
+impl crate::mms::MmsValue for DataStateSupplementalExtended {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+            crate::mms::MmsValue::to_mms(&self.cov),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3] => Ok(Self { value: <crate::generated::iso802::DataStateSupplemental as crate::mms::MmsValue>::from_mms(item0)?, time_stamp: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item1)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item2)?, cov: <crate::generated::iso802::COVCounter as crate::mms::MmsValue>::from_mms(item3)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 26). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataRealQTimeTagExtended {
@@ -1450,6 +1861,26 @@ pub struct DataRealQTimeTagExtended {
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
 }
+impl crate::mms::MmsValue for DataRealQTimeTagExtended {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { value: <crate::generated::iso802::clause_6_2_1::DataReal as crate::mms::MmsValue>::from_mms(item0)?, time_stamp: <crate::generated::iso802::DataTimeStampExtended as crate::mms::MmsValue>::from_mms(item1)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 26). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataStateQTimeTagExtended {
@@ -1457,6 +1888,25 @@ pub struct DataStateQTimeTagExtended {
     pub time_stamp: crate::generated::iso802::DataTimeStampExtended,
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataState,
+}
+impl crate::mms::MmsValue for DataStateQTimeTagExtended {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1] => Ok(Self { time_stamp: <crate::generated::iso802::DataTimeStampExtended as crate::mms::MmsValue>::from_mms(item0)?, flags: <crate::generated::iso802::DataState as crate::mms::MmsValue>::from_mms(item1)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.2.1 (page 26). structure definition.
 #[derive(Debug, Clone, PartialEq)]
@@ -1468,6 +1918,26 @@ pub struct DataDiscreteQTimeTagExtended {
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
 }
+impl crate::mms::MmsValue for DataDiscreteQTimeTagExtended {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { value: <crate::generated::iso802::clause_6_2_1::DataDiscrete as crate::mms::MmsValue>::from_mms(item0)?, time_stamp: <crate::generated::iso802::DataTimeStampExtended as crate::mms::MmsValue>::from_mms(item1)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.1 (page 26). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataStateSupplementalQTimeTagExtended {
@@ -1477,6 +1947,26 @@ pub struct DataStateSupplementalQTimeTagExtended {
     pub time_stamp: crate::generated::iso802::DataTimeStampExtended,
     /// The component `flags`.
     pub flags: crate::generated::iso802::DataFlags,
+}
+impl crate::mms::MmsValue for DataStateSupplementalQTimeTagExtended {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.value),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.flags),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { value: <crate::generated::iso802::DataStateSupplemental as crate::mms::MmsValue>::from_mms(item0)?, time_stamp: <crate::generated::iso802::DataTimeStampExtended as crate::mms::MmsValue>::from_mms(item1)?, flags: <crate::generated::iso802::DataFlags as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.2.1 (page 26). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1727,6 +2217,51 @@ pub struct IndicationPointConfig {
     /// The component `cov_class`.
     pub cov_class: IndicationPointConfigCOVClass,
 }
+impl crate::mms::MmsValue for IndicationPointConfig {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.point_type),
+            crate::mms::MmsValue::to_mms(&self.quality_class),
+            crate::mms::MmsValue::to_mms(&self.normal_source),
+            crate::mms::MmsValue::to_mms(&self.time_stamp_class),
+            crate::mms::MmsValue::to_mms(&self.cov_class),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items
+                .as_slice()
+            {
+                [item0, item1, item2, item3, item4] => Ok(Self {
+                    point_type: <IndicationPointConfigPointType as crate::mms::MmsValue>::from_mms(
+                        item0,
+                    )?,
+                    quality_class:
+                        <IndicationPointConfigQualityClass as crate::mms::MmsValue>::from_mms(
+                            item1,
+                        )?,
+                    normal_source:
+                        <IndicationPointConfigNormalSource as crate::mms::MmsValue>::from_mms(
+                            item2,
+                        )?,
+                    time_stamp_class:
+                        <IndicationPointConfigTimeStampClass as crate::mms::MmsValue>::from_mms(
+                            item3,
+                        )?,
+                    cov_class: <IndicationPointConfigCOVClass as crate::mms::MmsValue>::from_mms(
+                        item4,
+                    )?,
+                }),
+                _ => Err(crate::mms::ValueError::Format(
+                    "a structure of another number of components",
+                )),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.2 (page 27). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ControlCommand(i64);
@@ -1927,16 +2462,70 @@ impl TagFlags {
 }
 impl TagFlags {
     /// Whether the flag `tag_hi` is set.
-    pub fn tag_hi(self) -> bool {
+    pub fn is_tag_hi(self) -> bool {
         self.0 & Self::TAG_HI != 0
     }
     /// Whether the flag `tag_lo` is set.
-    pub fn tag_lo(self) -> bool {
+    pub fn is_tag_lo(self) -> bool {
         self.0 & Self::TAG_LO != 0
     }
     /// Whether the flag `tag_state` is set.
-    pub fn tag_state(self) -> bool {
+    pub fn is_tag_state(self) -> bool {
         self.0 & Self::TAG_STATE != 0
+    }
+}
+impl crate::mms::MmsValue for TagFlags {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.2 (page 27). type definition.
@@ -1981,6 +2570,25 @@ pub struct SBO {
     /// The component `select`.
     pub select: crate::generated::iso802::SelectState,
 }
+impl crate::mms::MmsValue for SBO {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.time_out),
+            crate::mms::MmsValue::to_mms(&self.select),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1] => Ok(Self { time_out: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item0)?, select: <crate::generated::iso802::SelectState as crate::mms::MmsValue>::from_mms(item1)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.2 (page 27). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TagValue {
@@ -1988,6 +2596,37 @@ pub struct TagValue {
     pub flags: crate::generated::iso802::TagFlags,
     /// The component `reason`.
     pub reason: crate::generated::iso802::TextString,
+}
+impl crate::mms::MmsValue for TagValue {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.flags),
+            crate::mms::MmsValue::to_mms(&self.reason),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items
+                .as_slice()
+            {
+                [item0, item1] => Ok(Self {
+                    flags: <crate::generated::iso802::TagFlags as crate::mms::MmsValue>::from_mms(
+                        item0,
+                    )?,
+                    reason:
+                        <crate::generated::iso802::TextString as crate::mms::MmsValue>::from_mms(
+                            item1,
+                        )?,
+                }),
+                _ => Err(crate::mms::ValueError::Format(
+                    "a structure of another number of components",
+                )),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.2.2 (page 27). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -2189,6 +2828,41 @@ pub struct ControlConfig {
     /// The component `tag_class`.
     pub tag_class: ControlConfigTagClass,
 }
+impl crate::mms::MmsValue for ControlConfig {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.control_point_type),
+            crate::mms::MmsValue::to_mms(&self.set_point_type),
+            crate::mms::MmsValue::to_mms(&self.device_class),
+            crate::mms::MmsValue::to_mms(&self.tag_class),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items
+                .as_slice()
+            {
+                [item0, item1, item2, item3] => Ok(Self {
+                    control_point_type:
+                        <ControlConfigControlPointType as crate::mms::MmsValue>::from_mms(item0)?,
+                    set_point_type: <ControlConfigSetPointType as crate::mms::MmsValue>::from_mms(
+                        item1,
+                    )?,
+                    device_class: <ControlConfigDeviceClass as crate::mms::MmsValue>::from_mms(
+                        item2,
+                    )?,
+                    tag_class: <ControlConfigTagClass as crate::mms::MmsValue>::from_mms(item3)?,
+                }),
+                _ => Err(crate::mms::ValueError::Format(
+                    "a structure of another number of components",
+                )),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.3 (page 27). bit-string definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SingleFlags(pub u64);
@@ -2214,36 +2888,90 @@ impl SingleFlags {
 }
 impl SingleFlags {
     /// Whether the flag `ElapsedTimeValidity` is set.
-    pub fn elapsed_time_validity(self) -> bool {
+    pub fn is_elapsed_time_validity(self) -> bool {
         self.0 & Self::ELAPSED_TIME_VALIDITY != 0
     }
     /// Whether the flag `Blocked` is set.
-    pub fn blocked(self) -> bool {
+    pub fn is_blocked(self) -> bool {
         self.0 & Self::BLOCKED != 0
     }
     /// Whether the flag `Substituted` is set.
-    pub fn substituted(self) -> bool {
+    pub fn is_substituted(self) -> bool {
         self.0 & Self::SUBSTITUTED != 0
     }
     /// Whether the flag `Topical` is set.
-    pub fn topical(self) -> bool {
+    pub fn is_topical(self) -> bool {
         self.0 & Self::TOPICAL != 0
     }
     /// Whether the flag `EventValidity` is set.
-    pub fn event_validity(self) -> bool {
+    pub fn is_event_validity(self) -> bool {
         self.0 & Self::EVENT_VALIDITY != 0
     }
     /// Whether the flag `unused` is set.
-    pub fn unused(self) -> bool {
+    pub fn is_unused(self) -> bool {
         self.0 & Self::UNUSED != 0
     }
     /// Whether the flag `EventState_hi` is set.
-    pub fn event_state_hi(self) -> bool {
+    pub fn is_event_state_hi(self) -> bool {
         self.0 & Self::EVENT_STATE_HI != 0
     }
     /// Whether the flag `EventState_lo` is set.
-    pub fn event_state_lo(self) -> bool {
+    pub fn is_event_state_lo(self) -> bool {
         self.0 & Self::EVENT_STATE_LO != 0
+    }
+}
+impl crate::mms::MmsValue for SingleFlags {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.3 (page 27). bit-string definition.
@@ -2269,32 +2997,86 @@ impl EventFlags {
 }
 impl EventFlags {
     /// Whether the flag `General` is set.
-    pub fn general(self) -> bool {
+    pub fn is_general(self) -> bool {
         self.0 & Self::GENERAL != 0
     }
     /// Whether the flag `Phase1` is set.
-    pub fn phase1(self) -> bool {
+    pub fn is_phase1(self) -> bool {
         self.0 & Self::PHASE1 != 0
     }
     /// Whether the flag `Phase2` is set.
-    pub fn phase2(self) -> bool {
+    pub fn is_phase2(self) -> bool {
         self.0 & Self::PHASE2 != 0
     }
     /// Whether the flag `Phase3` is set.
-    pub fn phase3(self) -> bool {
+    pub fn is_phase3(self) -> bool {
         self.0 & Self::PHASE3 != 0
     }
     /// Whether the flag `Earth` is set.
-    pub fn earth(self) -> bool {
+    pub fn is_earth(self) -> bool {
         self.0 & Self::EARTH != 0
     }
     /// Whether the flag `Reverse` is set.
-    pub fn reverse(self) -> bool {
+    pub fn is_reverse(self) -> bool {
         self.0 & Self::REVERSE != 0
     }
     /// Whether the flag `unused` is set.
-    pub fn unused(self) -> bool {
+    pub fn is_unused(self) -> bool {
         self.0 & Self::UNUSED != 0
+    }
+}
+impl crate::mms::MmsValue for EventFlags {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.3 (page 28). bit-string definition.
@@ -2318,28 +3100,82 @@ impl PackedFlags {
 }
 impl PackedFlags {
     /// Whether the flag `ElapsedTimeValidity` is set.
-    pub fn elapsed_time_validity(self) -> bool {
+    pub fn is_elapsed_time_validity(self) -> bool {
         self.0 & Self::ELAPSED_TIME_VALIDITY != 0
     }
     /// Whether the flag `Blocked` is set.
-    pub fn blocked(self) -> bool {
+    pub fn is_blocked(self) -> bool {
         self.0 & Self::BLOCKED != 0
     }
     /// Whether the flag `Substituted` is set.
-    pub fn substituted(self) -> bool {
+    pub fn is_substituted(self) -> bool {
         self.0 & Self::SUBSTITUTED != 0
     }
     /// Whether the flag `Topical` is set.
-    pub fn topical(self) -> bool {
+    pub fn is_topical(self) -> bool {
         self.0 & Self::TOPICAL != 0
     }
     /// Whether the flag `EventValidity` is set.
-    pub fn event_validity(self) -> bool {
+    pub fn is_event_validity(self) -> bool {
         self.0 & Self::EVENT_VALIDITY != 0
     }
     /// Whether the flag `unused` is set.
-    pub fn unused(self) -> bool {
+    pub fn is_unused(self) -> bool {
         self.0 & Self::UNUSED != 0
+    }
+}
+impl crate::mms::MmsValue for PackedFlags {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 6.2.3 (page 28). structure definition.
@@ -2352,6 +3188,26 @@ pub struct SingleProtectionEvent {
     /// The component `event_time`.
     pub event_time: crate::generated::iso503::TimeStampExtended,
 }
+impl crate::mms::MmsValue for SingleProtectionEvent {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.single_event_flags),
+            crate::mms::MmsValue::to_mms(&self.operating_time),
+            crate::mms::MmsValue::to_mms(&self.event_time),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { single_event_flags: <crate::generated::iso802::SingleFlags as crate::mms::MmsValue>::from_mms(item0)?, operating_time: <crate::generated::iso503::TimeIntervalL16 as crate::mms::MmsValue>::from_mms(item1)?, event_time: <crate::generated::iso503::TimeStampExtended as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.2.3 (page 28). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PackedProtectionEvent {
@@ -2363,6 +3219,27 @@ pub struct PackedProtectionEvent {
     pub operating_time: crate::generated::iso503::TimeIntervalL16,
     /// The component `event_time`.
     pub event_time: crate::generated::iso503::TimeStampExtended,
+}
+impl crate::mms::MmsValue for PackedProtectionEvent {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.packed_event),
+            crate::mms::MmsValue::to_mms(&self.packed_event_flags),
+            crate::mms::MmsValue::to_mms(&self.operating_time),
+            crate::mms::MmsValue::to_mms(&self.event_time),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3] => Ok(Self { packed_event: <crate::generated::iso802::EventFlags as crate::mms::MmsValue>::from_mms(item0)?, packed_event_flags: <crate::generated::iso802::PackedFlags as crate::mms::MmsValue>::from_mms(item1)?, operating_time: <crate::generated::iso503::TimeIntervalL16 as crate::mms::MmsValue>::from_mms(item2)?, event_time: <crate::generated::iso503::TimeStampExtended as crate::mms::MmsValue>::from_mms(item3)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.3 (page 28). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -2892,6 +3769,44 @@ pub struct DONewRevSched {
     /// The component `outage_effect`.
     pub outage_effect: crate::generated::iso802::CommentString,
 }
+impl crate::mms::MmsValue for DONewRevSched {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.outage_reference_id),
+            crate::mms::MmsValue::to_mms(&self.owning_utility_id),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.station_name),
+            crate::mms::MmsValue::to_mms(&self.device_name),
+            crate::mms::MmsValue::to_mms(&self.device_type),
+            crate::mms::MmsValue::to_mms(&self.device_number),
+            crate::mms::MmsValue::to_mms(&self.device_rating),
+            crate::mms::MmsValue::to_mms(&self.activity_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.plan_type),
+            crate::mms::MmsValue::to_mms(&self.planned_open_or_out_of_service_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.planned_close_or_in_service_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.outage_period),
+            crate::mms::MmsValue::to_mms(&self.outage_type),
+            crate::mms::MmsValue::to_mms(&self.outage_type_amount),
+            crate::mms::MmsValue::to_mms(&self.amount),
+            crate::mms::MmsValue::to_mms(&self.upper_operating_limit),
+            crate::mms::MmsValue::to_mms(&self.lower_operating_limit),
+            crate::mms::MmsValue::to_mms(&self.class),
+            crate::mms::MmsValue::to_mms(&self.comments),
+            crate::mms::MmsValue::to_mms(&self.outage_effect),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12, item13, item14, item15, item16, item17, item18, item19, item20] => Ok(Self { outage_reference_id: <crate::generated::iso802::clause_6_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, owning_utility_id: <crate::generated::iso802::clause_6_3::UtilityId as crate::mms::MmsValue>::from_mms(item1)?, time_stamp: <crate::generated::iso802::TimeStampS as crate::mms::MmsValue>::from_mms(item2)?, station_name: <crate::generated::iso802::StationNameString as crate::mms::MmsValue>::from_mms(item3)?, device_name: <crate::generated::iso802::DeviceName as crate::mms::MmsValue>::from_mms(item4)?, device_type: <crate::generated::iso802::DeviceId as crate::mms::MmsValue>::from_mms(item5)?, device_number: <crate::generated::iso802::clause_6_3::Number as crate::mms::MmsValue>::from_mms(item6)?, device_rating: <crate::generated::iso802::clause_6_3::DataReal as crate::mms::MmsValue>::from_mms(item7)?, activity_date_and_time: <crate::generated::iso802::clause_6_3::ScheduleTime as crate::mms::MmsValue>::from_mms(item8)?, plan_type: <crate::generated::iso802::PlanTypeId as crate::mms::MmsValue>::from_mms(item9)?, planned_open_or_out_of_service_date_and_time: <crate::generated::iso802::clause_6_3::ScheduleTime as crate::mms::MmsValue>::from_mms(item10)?, planned_close_or_in_service_date_and_time: <crate::generated::iso802::clause_6_3::ScheduleTime as crate::mms::MmsValue>::from_mms(item11)?, outage_period: <crate::generated::iso802::OutagePeriodId as crate::mms::MmsValue>::from_mms(item12)?, outage_type: <crate::generated::iso802::OutageTypeId as crate::mms::MmsValue>::from_mms(item13)?, outage_type_amount: <crate::generated::iso802::OutageAmountTypeId as crate::mms::MmsValue>::from_mms(item14)?, amount: <crate::generated::iso802::clause_6_3::DataReal as crate::mms::MmsValue>::from_mms(item15)?, upper_operating_limit: <crate::generated::iso802::clause_6_3::DataReal as crate::mms::MmsValue>::from_mms(item16)?, lower_operating_limit: <crate::generated::iso802::clause_6_3::DataReal as crate::mms::MmsValue>::from_mms(item17)?, class: <crate::generated::iso802::ClassId as crate::mms::MmsValue>::from_mms(item18)?, comments: <crate::generated::iso802::CommentString as crate::mms::MmsValue>::from_mms(item19)?, outage_effect: <crate::generated::iso802::CommentString as crate::mms::MmsValue>::from_mms(item20)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.3 (page 29). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DOCancel {
@@ -2917,6 +3832,34 @@ pub struct DOCancel {
     pub comments: crate::generated::iso802::CommentString,
     /// The component `outage_effect`.
     pub outage_effect: crate::generated::iso802::CommentString,
+}
+impl crate::mms::MmsValue for DOCancel {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.outage_reference_id),
+            crate::mms::MmsValue::to_mms(&self.owning_utility_id),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.station_name),
+            crate::mms::MmsValue::to_mms(&self.device_name),
+            crate::mms::MmsValue::to_mms(&self.device_type),
+            crate::mms::MmsValue::to_mms(&self.device_number),
+            crate::mms::MmsValue::to_mms(&self.device_rating),
+            crate::mms::MmsValue::to_mms(&self.activity_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.comments),
+            crate::mms::MmsValue::to_mms(&self.outage_effect),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10] => Ok(Self { outage_reference_id: <crate::generated::iso802::clause_6_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, owning_utility_id: <crate::generated::iso802::clause_6_3::UtilityId as crate::mms::MmsValue>::from_mms(item1)?, time_stamp: <crate::generated::iso802::TimeStampS as crate::mms::MmsValue>::from_mms(item2)?, station_name: <crate::generated::iso802::StationNameString as crate::mms::MmsValue>::from_mms(item3)?, device_name: <crate::generated::iso802::DeviceName as crate::mms::MmsValue>::from_mms(item4)?, device_type: <crate::generated::iso802::DeviceId as crate::mms::MmsValue>::from_mms(item5)?, device_number: <crate::generated::iso802::clause_6_3::Number as crate::mms::MmsValue>::from_mms(item6)?, device_rating: <crate::generated::iso802::clause_6_3::DataReal as crate::mms::MmsValue>::from_mms(item7)?, activity_date_and_time: <crate::generated::iso802::clause_6_3::ScheduleTime as crate::mms::MmsValue>::from_mms(item8)?, comments: <crate::generated::iso802::CommentString as crate::mms::MmsValue>::from_mms(item9)?, outage_effect: <crate::generated::iso802::CommentString as crate::mms::MmsValue>::from_mms(item10)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 6.3 (page 29). structure definition.
 #[derive(Debug, Clone, PartialEq)]
@@ -2948,6 +3891,36 @@ pub struct DOActual {
     /// The component `outage_effect`.
     pub outage_effect: crate::generated::iso802::CommentString,
 }
+impl crate::mms::MmsValue for DOActual {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.outage_reference_id),
+            crate::mms::MmsValue::to_mms(&self.owning_utility_id),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.station_name),
+            crate::mms::MmsValue::to_mms(&self.device_name),
+            crate::mms::MmsValue::to_mms(&self.device_type),
+            crate::mms::MmsValue::to_mms(&self.device_number),
+            crate::mms::MmsValue::to_mms(&self.device_rating),
+            crate::mms::MmsValue::to_mms(&self.activity_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.action),
+            crate::mms::MmsValue::to_mms(&self.affected_amount),
+            crate::mms::MmsValue::to_mms(&self.comments),
+            crate::mms::MmsValue::to_mms(&self.outage_effect),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12] => Ok(Self { outage_reference_id: <crate::generated::iso802::clause_6_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, owning_utility_id: <crate::generated::iso802::clause_6_3::UtilityId as crate::mms::MmsValue>::from_mms(item1)?, time_stamp: <crate::generated::iso802::TimeStampS as crate::mms::MmsValue>::from_mms(item2)?, station_name: <crate::generated::iso802::StationNameString as crate::mms::MmsValue>::from_mms(item3)?, device_name: <crate::generated::iso802::DeviceName as crate::mms::MmsValue>::from_mms(item4)?, device_type: <crate::generated::iso802::DeviceId as crate::mms::MmsValue>::from_mms(item5)?, device_number: <crate::generated::iso802::clause_6_3::Number as crate::mms::MmsValue>::from_mms(item6)?, device_rating: <crate::generated::iso802::clause_6_3::DataReal as crate::mms::MmsValue>::from_mms(item7)?, activity_date_and_time: <crate::generated::iso802::clause_6_3::ScheduleTime as crate::mms::MmsValue>::from_mms(item8)?, action: <crate::generated::iso802::ActionId as crate::mms::MmsValue>::from_mms(item9)?, affected_amount: <crate::generated::iso802::clause_6_3::DataReal as crate::mms::MmsValue>::from_mms(item10)?, comments: <crate::generated::iso802::CommentString as crate::mms::MmsValue>::from_mms(item11)?, outage_effect: <crate::generated::iso802::CommentString as crate::mms::MmsValue>::from_mms(item12)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.4 (page 30). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct InfoMessHeader {
@@ -2960,12 +3933,53 @@ pub struct InfoMessHeader {
     /// The component `size`.
     pub size: crate::generated::iso802::clause_6_4::Number,
 }
+impl crate::mms::MmsValue for InfoMessHeader {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.info_reference),
+            crate::mms::MmsValue::to_mms(&self.localreference),
+            crate::mms::MmsValue::to_mms(&self.message_id),
+            crate::mms::MmsValue::to_mms(&self.size),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3] => Ok(Self { info_reference: <crate::generated::iso802::clause_6_4::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, localreference: <crate::generated::iso802::clause_6_4::ReferenceNum as crate::mms::MmsValue>::from_mms(item1)?, message_id: <crate::generated::iso802::clause_6_4::ReferenceNum as crate::mms::MmsValue>::from_mms(item2)?, size: <crate::generated::iso802::clause_6_4::Number as crate::mms::MmsValue>::from_mms(item3)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 6.4 (page 30). type definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InfoBufXX(pub Vec<u8>);
 impl InfoBufXX {
     /// The greatest number of octets, when the data file gives one.
     pub const MAX_LEN: Option<usize> = None;
+}
+impl crate::mms::MmsValue for InfoBufXX {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::OctetString(self.0.clone())
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::OctetString(octets) => {
+                if Self::MAX_LEN.is_some_and(|max| octets.len() > max) {
+                    return Err(crate::mms::ValueError::Format(
+                        "an octet string longer than its type",
+                    ));
+                }
+                Ok(Self(octets.clone()))
+            }
+            other => Err(crate::mms::ValueError::kind_of("octet string", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.2 (page 65). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -3488,6 +4502,38 @@ pub struct TASegmentsPeriodic {
     /// The component `number_periods`.
     pub number_periods: crate::generated::iso802::NumPeriods,
 }
+impl crate::mms::MmsValue for TASegmentsPeriodic {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.transfer_account_ref),
+            crate::mms::MmsValue::to_mms(&self.send_utility),
+            crate::mms::MmsValue::to_mms(&self.recv_utility),
+            crate::mms::MmsValue::to_mms(&self.selling_utility),
+            crate::mms::MmsValue::to_mms(&self.buying_utility),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.transaction_code),
+            crate::mms::MmsValue::to_mms(&self.name),
+            crate::mms::MmsValue::to_mms(&self.start_time),
+            crate::mms::MmsValue::to_mms(&self.period_resolution),
+            crate::mms::MmsValue::to_mms(&self.number_local_references),
+            crate::mms::MmsValue::to_mms(&self.number_segments),
+            crate::mms::MmsValue::to_mms(&self.number_float_ids),
+            crate::mms::MmsValue::to_mms(&self.number_integer_ids),
+            crate::mms::MmsValue::to_mms(&self.number_periods),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12, item13, item14] => Ok(Self { transfer_account_ref: <crate::generated::iso802::clause_b_2::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, send_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item1)?, recv_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item2)?, selling_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item3)?, buying_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item4)?, time_stamp: <crate::generated::iso802::clause_b_2::DataTimeStamp as crate::mms::MmsValue>::from_mms(item5)?, transaction_code: <crate::generated::iso802::clause_b_2::TransactionCode as crate::mms::MmsValue>::from_mms(item6)?, name: <crate::generated::iso802::NameString as crate::mms::MmsValue>::from_mms(item7)?, start_time: <crate::generated::iso802::clause_b_2::ScheduleTime as crate::mms::MmsValue>::from_mms(item8)?, period_resolution: <crate::generated::iso503::TimeIntervalS as crate::mms::MmsValue>::from_mms(item9)?, number_local_references: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item10)?, number_segments: <crate::generated::iso802::NumSegs as crate::mms::MmsValue>::from_mms(item11)?, number_float_ids: <crate::generated::iso802::NumFloats as crate::mms::MmsValue>::from_mms(item12)?, number_integer_ids: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item13)?, number_periods: <crate::generated::iso802::NumPeriods as crate::mms::MmsValue>::from_mms(item14)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 66). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TANoSegmentsPeriodic {
@@ -3520,6 +4566,37 @@ pub struct TANoSegmentsPeriodic {
     /// The component `number_periods`.
     pub number_periods: crate::generated::iso802::NumPeriods,
 }
+impl crate::mms::MmsValue for TANoSegmentsPeriodic {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.transfer_account_ref),
+            crate::mms::MmsValue::to_mms(&self.send_utility),
+            crate::mms::MmsValue::to_mms(&self.recv_utility),
+            crate::mms::MmsValue::to_mms(&self.selling_utility),
+            crate::mms::MmsValue::to_mms(&self.buying_utility),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.transaction_code),
+            crate::mms::MmsValue::to_mms(&self.name),
+            crate::mms::MmsValue::to_mms(&self.start_time),
+            crate::mms::MmsValue::to_mms(&self.period_resolution),
+            crate::mms::MmsValue::to_mms(&self.number_local_references),
+            crate::mms::MmsValue::to_mms(&self.number_float_ids),
+            crate::mms::MmsValue::to_mms(&self.number_integer_ids),
+            crate::mms::MmsValue::to_mms(&self.number_periods),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12, item13] => Ok(Self { transfer_account_ref: <crate::generated::iso802::clause_b_2::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, send_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item1)?, recv_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item2)?, selling_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item3)?, buying_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item4)?, time_stamp: <crate::generated::iso802::clause_b_2::DataTimeStamp as crate::mms::MmsValue>::from_mms(item5)?, transaction_code: <crate::generated::iso802::clause_b_2::TransactionCode as crate::mms::MmsValue>::from_mms(item6)?, name: <crate::generated::iso802::NameString as crate::mms::MmsValue>::from_mms(item7)?, start_time: <crate::generated::iso802::clause_b_2::ScheduleTime as crate::mms::MmsValue>::from_mms(item8)?, period_resolution: <crate::generated::iso503::TimeIntervalS as crate::mms::MmsValue>::from_mms(item9)?, number_local_references: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item10)?, number_float_ids: <crate::generated::iso802::NumFloats as crate::mms::MmsValue>::from_mms(item11)?, number_integer_ids: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item12)?, number_periods: <crate::generated::iso802::NumPeriods as crate::mms::MmsValue>::from_mms(item13)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 66). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TASegmentsProfile {
@@ -3546,6 +4623,34 @@ pub struct TASegmentsProfile {
     /// The component `number_profile_values`.
     pub number_profile_values: crate::generated::iso802::NumProfiles,
 }
+impl crate::mms::MmsValue for TASegmentsProfile {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.transfer_account_ref),
+            crate::mms::MmsValue::to_mms(&self.send_utility),
+            crate::mms::MmsValue::to_mms(&self.recv_utility),
+            crate::mms::MmsValue::to_mms(&self.selling_utility),
+            crate::mms::MmsValue::to_mms(&self.buying_utility),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.transaction_code),
+            crate::mms::MmsValue::to_mms(&self.name),
+            crate::mms::MmsValue::to_mms(&self.number_local_references),
+            crate::mms::MmsValue::to_mms(&self.number_segments),
+            crate::mms::MmsValue::to_mms(&self.number_profile_values),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10] => Ok(Self { transfer_account_ref: <crate::generated::iso802::clause_b_2::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, send_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item1)?, recv_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item2)?, selling_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item3)?, buying_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item4)?, time_stamp: <crate::generated::iso802::clause_b_2::DataTimeStamp as crate::mms::MmsValue>::from_mms(item5)?, transaction_code: <crate::generated::iso802::clause_b_2::TransactionCode as crate::mms::MmsValue>::from_mms(item6)?, name: <crate::generated::iso802::NameString as crate::mms::MmsValue>::from_mms(item7)?, number_local_references: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item8)?, number_segments: <crate::generated::iso802::NumSegs as crate::mms::MmsValue>::from_mms(item9)?, number_profile_values: <crate::generated::iso802::NumProfiles as crate::mms::MmsValue>::from_mms(item10)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 66). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TANoSegmentsProfile {
@@ -3569,6 +4674,33 @@ pub struct TANoSegmentsProfile {
     pub number_local_references: crate::generated::iso802::NumIntegers,
     /// The component `number_profile_values`.
     pub number_profile_values: crate::generated::iso802::NumProfiles,
+}
+impl crate::mms::MmsValue for TANoSegmentsProfile {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.transfer_account_ref),
+            crate::mms::MmsValue::to_mms(&self.send_utility),
+            crate::mms::MmsValue::to_mms(&self.recv_utility),
+            crate::mms::MmsValue::to_mms(&self.selling_utility),
+            crate::mms::MmsValue::to_mms(&self.buying_utility),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.transaction_code),
+            crate::mms::MmsValue::to_mms(&self.name),
+            crate::mms::MmsValue::to_mms(&self.number_local_references),
+            crate::mms::MmsValue::to_mms(&self.number_profile_values),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9] => Ok(Self { transfer_account_ref: <crate::generated::iso802::clause_b_2::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, send_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item1)?, recv_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item2)?, selling_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item3)?, buying_utility: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item4)?, time_stamp: <crate::generated::iso802::clause_b_2::DataTimeStamp as crate::mms::MmsValue>::from_mms(item5)?, transaction_code: <crate::generated::iso802::clause_b_2::TransactionCode as crate::mms::MmsValue>::from_mms(item6)?, name: <crate::generated::iso802::NameString as crate::mms::MmsValue>::from_mms(item7)?, number_local_references: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item8)?, number_profile_values: <crate::generated::iso802::NumProfiles as crate::mms::MmsValue>::from_mms(item9)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.2 (page 66). structure definition.
 #[derive(Debug, Clone, PartialEq)]
@@ -3596,6 +4728,34 @@ pub struct TATransmissionSegment {
     /// The component `number_integer_ids`.
     pub number_integer_ids: crate::generated::iso802::NumIntegers,
 }
+impl crate::mms::MmsValue for TATransmissionSegment {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.transmission_reference),
+            crate::mms::MmsValue::to_mms(&self.util_wheeling),
+            crate::mms::MmsValue::to_mms(&self.util_paying),
+            crate::mms::MmsValue::to_mms(&self.transmission_seg_type),
+            crate::mms::MmsValue::to_mms(&self.util_in),
+            crate::mms::MmsValue::to_mms(&self.util_out),
+            crate::mms::MmsValue::to_mms(&self.interchange_pt_in),
+            crate::mms::MmsValue::to_mms(&self.interchange_pt_out),
+            crate::mms::MmsValue::to_mms(&self.interchange_pt),
+            crate::mms::MmsValue::to_mms(&self.number_float_ids),
+            crate::mms::MmsValue::to_mms(&self.number_integer_ids),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10] => Ok(Self { transmission_reference: <crate::generated::iso802::clause_b_2::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, util_wheeling: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item1)?, util_paying: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item2)?, transmission_seg_type: <crate::generated::iso802::TransmissionSegCode as crate::mms::MmsValue>::from_mms(item3)?, util_in: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item4)?, util_out: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item5)?, interchange_pt_in: <crate::generated::iso802::InterchangeId as crate::mms::MmsValue>::from_mms(item6)?, interchange_pt_out: <crate::generated::iso802::InterchangeId as crate::mms::MmsValue>::from_mms(item7)?, interchange_pt: <crate::generated::iso802::InterchangeId as crate::mms::MmsValue>::from_mms(item8)?, number_float_ids: <crate::generated::iso802::NumFloats as crate::mms::MmsValue>::from_mms(item9)?, number_integer_ids: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item10)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 67). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TATransmissionSegmentProfile {
@@ -3620,6 +4780,33 @@ pub struct TATransmissionSegmentProfile {
     /// The component `number_profile_values`.
     pub number_profile_values: crate::generated::iso802::NumProfiles,
 }
+impl crate::mms::MmsValue for TATransmissionSegmentProfile {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.transmission_reference),
+            crate::mms::MmsValue::to_mms(&self.util_wheeling),
+            crate::mms::MmsValue::to_mms(&self.util_paying),
+            crate::mms::MmsValue::to_mms(&self.transmission_seg_type),
+            crate::mms::MmsValue::to_mms(&self.util_in),
+            crate::mms::MmsValue::to_mms(&self.util_out),
+            crate::mms::MmsValue::to_mms(&self.interchange_pt_in),
+            crate::mms::MmsValue::to_mms(&self.interchange_pt_out),
+            crate::mms::MmsValue::to_mms(&self.interchange_pt),
+            crate::mms::MmsValue::to_mms(&self.number_profile_values),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9] => Ok(Self { transmission_reference: <crate::generated::iso802::clause_b_2::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, util_wheeling: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item1)?, util_paying: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item2)?, transmission_seg_type: <crate::generated::iso802::TransmissionSegCode as crate::mms::MmsValue>::from_mms(item3)?, util_in: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item4)?, util_out: <crate::generated::iso802::clause_b_2::UtilityId as crate::mms::MmsValue>::from_mms(item5)?, interchange_pt_in: <crate::generated::iso802::InterchangeId as crate::mms::MmsValue>::from_mms(item6)?, interchange_pt_out: <crate::generated::iso802::InterchangeId as crate::mms::MmsValue>::from_mms(item7)?, interchange_pt: <crate::generated::iso802::InterchangeId as crate::mms::MmsValue>::from_mms(item8)?, number_profile_values: <crate::generated::iso802::NumProfiles as crate::mms::MmsValue>::from_mms(item9)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 67). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TAProfileValue {
@@ -3634,6 +4821,28 @@ pub struct TAProfileValue {
     /// The component `profile_target`.
     pub profile_target: crate::generated::iso802::TransactionAmount,
 }
+impl crate::mms::MmsValue for TAProfileValue {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.ramp_start_time),
+            crate::mms::MmsValue::to_mms(&self.ramp_duration),
+            crate::mms::MmsValue::to_mms(&self.profile_price),
+            crate::mms::MmsValue::to_mms(&self.profile_target_class),
+            crate::mms::MmsValue::to_mms(&self.profile_target),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4] => Ok(Self { ramp_start_time: <crate::generated::iso802::clause_b_2::ScheduleTime as crate::mms::MmsValue>::from_mms(item0)?, ramp_duration: <crate::generated::iso802::Duration as crate::mms::MmsValue>::from_mms(item1)?, profile_price: <crate::generated::iso802::clause_b_2::Price as crate::mms::MmsValue>::from_mms(item2)?, profile_target_class: <crate::generated::iso802::CommodityClass as crate::mms::MmsValue>::from_mms(item3)?, profile_target: <crate::generated::iso802::TransactionAmount as crate::mms::MmsValue>::from_mms(item4)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.2 (page 67). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AccountRequest {
@@ -3647,6 +4856,28 @@ pub struct AccountRequest {
     pub request_id: crate::generated::iso802::clause_b_2::ReferenceNum,
     /// The component `ta_conditions_requested`.
     pub ta_conditions_requested: crate::generated::iso503::TAConditions,
+}
+impl crate::mms::MmsValue for AccountRequest {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.reference_tar),
+            crate::mms::MmsValue::to_mms(&self.start_time),
+            crate::mms::MmsValue::to_mms(&self.duration),
+            crate::mms::MmsValue::to_mms(&self.request_id),
+            crate::mms::MmsValue::to_mms(&self.ta_conditions_requested),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4] => Ok(Self { reference_tar: <crate::generated::iso802::clause_b_2::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, start_time: <crate::generated::iso802::clause_b_2::ScheduleTime as crate::mms::MmsValue>::from_mms(item1)?, duration: <crate::generated::iso802::Duration as crate::mms::MmsValue>::from_mms(item2)?, request_id: <crate::generated::iso802::clause_b_2::ReferenceNum as crate::mms::MmsValue>::from_mms(item3)?, ta_conditions_requested: <crate::generated::iso503::TAConditions as crate::mms::MmsValue>::from_mms(item4)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.3 (page 67). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -3954,12 +5185,66 @@ impl UnitCapacityCapacityClass {
 }
 impl UnitCapacityCapacityClass {
     /// Whether the flag `gross` is set.
-    pub fn gross(self) -> bool {
+    pub fn is_gross(self) -> bool {
         self.0 & Self::GROSS != 0
     }
     /// Whether the flag `net` is set.
-    pub fn net(self) -> bool {
+    pub fn is_net(self) -> bool {
         self.0 & Self::NET != 0
+    }
+}
+impl crate::mms::MmsValue for UnitCapacityCapacityClass {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.3 (page 68). structure definition.
@@ -3976,6 +5261,51 @@ pub struct UnitCapacity {
     /// The component `net_min_capacity`.
     pub net_min_capacity: crate::generated::iso802::Capacity,
 }
+impl crate::mms::MmsValue for UnitCapacity {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.capacity_class),
+            crate::mms::MmsValue::to_mms(&self.gross_max_capacity),
+            crate::mms::MmsValue::to_mms(&self.gross_min_capacity),
+            crate::mms::MmsValue::to_mms(&self.net_max_capacity),
+            crate::mms::MmsValue::to_mms(&self.net_min_capacity),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => {
+                match items.as_slice() {
+                    [item0, item1, item2, item3, item4] => Ok(Self {
+                        capacity_class:
+                            <UnitCapacityCapacityClass as crate::mms::MmsValue>::from_mms(item0)?,
+                        gross_max_capacity:
+                            <crate::generated::iso802::Capacity as crate::mms::MmsValue>::from_mms(
+                                item1,
+                            )?,
+                        gross_min_capacity:
+                            <crate::generated::iso802::Capacity as crate::mms::MmsValue>::from_mms(
+                                item2,
+                            )?,
+                        net_max_capacity:
+                            <crate::generated::iso802::Capacity as crate::mms::MmsValue>::from_mms(
+                                item3,
+                            )?,
+                        net_min_capacity:
+                            <crate::generated::iso802::Capacity as crate::mms::MmsValue>::from_mms(
+                                item4,
+                            )?,
+                    }),
+                    _ => Err(crate::mms::ValueError::Format(
+                        "a structure of another number of components",
+                    )),
+                }
+            }
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 68). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RampRates {
@@ -3983,6 +5313,38 @@ pub struct RampRates {
     pub max_ramp_rate_up: crate::generated::iso802::RampRate,
     /// The component `max_ramp_rate_down`.
     pub max_ramp_rate_down: crate::generated::iso802::RampRate,
+}
+impl crate::mms::MmsValue for RampRates {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.max_ramp_rate_up),
+            crate::mms::MmsValue::to_mms(&self.max_ramp_rate_down),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => {
+                match items.as_slice() {
+                    [item0, item1] => Ok(Self {
+                        max_ramp_rate_up:
+                            <crate::generated::iso802::RampRate as crate::mms::MmsValue>::from_mms(
+                                item0,
+                            )?,
+                        max_ramp_rate_down:
+                            <crate::generated::iso802::RampRate as crate::mms::MmsValue>::from_mms(
+                                item1,
+                            )?,
+                    }),
+                    _ => Err(crate::mms::ValueError::Format(
+                        "a structure of another number of components",
+                    )),
+                }
+            }
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.3 (page 68). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -4009,36 +5371,90 @@ impl AvailabilityClassAvailFlags {
 }
 impl AvailabilityClassAvailFlags {
     /// Whether the flag `online` is set.
-    pub fn online(self) -> bool {
+    pub fn is_online(self) -> bool {
         self.0 & Self::ONLINE != 0
     }
     /// Whether the flag `LFC` is set.
-    pub fn lfc(self) -> bool {
+    pub fn is_lfc(self) -> bool {
         self.0 & Self::LFC != 0
     }
     /// Whether the flag `dispatch` is set.
-    pub fn dispatch(self) -> bool {
+    pub fn is_dispatch(self) -> bool {
         self.0 & Self::DISPATCH != 0
     }
     /// Whether the flag `regulating` is set.
-    pub fn regulating(self) -> bool {
+    pub fn is_regulating(self) -> bool {
         self.0 & Self::REGULATING != 0
     }
     /// Whether the flag `manual` is set.
-    pub fn manual(self) -> bool {
+    pub fn is_manual(self) -> bool {
         self.0 & Self::MANUAL != 0
     }
     /// Whether the flag `reserve` is set.
-    pub fn reserve(self) -> bool {
+    pub fn is_reserve(self) -> bool {
         self.0 & Self::RESERVE != 0
     }
     /// Whether the flag `blocked_hi` is set.
-    pub fn blocked_hi(self) -> bool {
+    pub fn is_blocked_hi(self) -> bool {
         self.0 & Self::BLOCKED_HI != 0
     }
     /// Whether the flag `blocked_lo` is set.
-    pub fn blocked_lo(self) -> bool {
+    pub fn is_blocked_lo(self) -> bool {
         self.0 & Self::BLOCKED_LO != 0
+    }
+}
+impl crate::mms::MmsValue for AvailabilityClassAvailFlags {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.3 (page 68). structure definition.
@@ -4050,6 +5466,42 @@ pub struct AvailabilityClass {
     pub time_to_online: crate::generated::iso503::GMTBasedS,
     /// The component `reason_for_no_lfc`.
     pub reason_for_no_lfc: crate::generated::iso802::LFCReasonCode,
+}
+impl crate::mms::MmsValue for AvailabilityClass {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.avail_flags),
+            crate::mms::MmsValue::to_mms(&self.time_to_online),
+            crate::mms::MmsValue::to_mms(&self.reason_for_no_lfc),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items
+                .as_slice()
+            {
+                [item0, item1, item2] => Ok(Self {
+                    avail_flags: <AvailabilityClassAvailFlags as crate::mms::MmsValue>::from_mms(
+                        item0,
+                    )?,
+                    time_to_online:
+                        <crate::generated::iso503::GMTBasedS as crate::mms::MmsValue>::from_mms(
+                            item1,
+                        )?,
+                    reason_for_no_lfc:
+                        <crate::generated::iso802::LFCReasonCode as crate::mms::MmsValue>::from_mms(
+                            item2,
+                        )?,
+                }),
+                _ => Err(crate::mms::ValueError::Format(
+                    "a structure of another number of components",
+                )),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.3 (page 68). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -4082,16 +5534,70 @@ impl AvailableImpact {
 }
 impl AvailableImpact {
     /// Whether the flag `price` is set.
-    pub fn price(self) -> bool {
+    pub fn is_price(self) -> bool {
         self.0 & Self::PRICE != 0
     }
     /// Whether the flag `ramp` is set.
-    pub fn ramp(self) -> bool {
+    pub fn is_ramp(self) -> bool {
         self.0 & Self::RAMP != 0
     }
     /// Whether the flag `capacity` is set.
-    pub fn capacity(self) -> bool {
+    pub fn is_capacity(self) -> bool {
         self.0 & Self::CAPACITY != 0
+    }
+}
+impl crate::mms::MmsValue for AvailableImpact {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.3 (page 68). inline definition.
@@ -4161,6 +5667,38 @@ pub struct Available {
     pub availability: crate::generated::iso802::AvailabilityClass,
     /// The component `comment`.
     pub comment: AvailableComment,
+}
+impl crate::mms::MmsValue for Available {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.availability_reference_id),
+            crate::mms::MmsValue::to_mms(&self.plant_reference_id),
+            crate::mms::MmsValue::to_mms(&self.unit_id),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.start_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.end_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.duration),
+            crate::mms::MmsValue::to_mms(&self.providing_reserve),
+            crate::mms::MmsValue::to_mms(&self.report_status),
+            crate::mms::MmsValue::to_mms(&self.impact),
+            crate::mms::MmsValue::to_mms(&self.price_impact),
+            crate::mms::MmsValue::to_mms(&self.ramp_impact),
+            crate::mms::MmsValue::to_mms(&self.capacity_impact),
+            crate::mms::MmsValue::to_mms(&self.availability),
+            crate::mms::MmsValue::to_mms(&self.comment),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12, item13, item14] => Ok(Self { availability_reference_id: <crate::generated::iso802::clause_b_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, plant_reference_id: <crate::generated::iso802::PlantId as crate::mms::MmsValue>::from_mms(item1)?, unit_id: <crate::generated::iso802::UnitId as crate::mms::MmsValue>::from_mms(item2)?, time_stamp: <crate::generated::iso802::TimeStampS as crate::mms::MmsValue>::from_mms(item3)?, start_date_and_time: <crate::generated::iso802::DateAndTime as crate::mms::MmsValue>::from_mms(item4)?, end_date_and_time: <crate::generated::iso802::DateAndTime as crate::mms::MmsValue>::from_mms(item5)?, duration: <crate::generated::iso503::TimeIntervalM as crate::mms::MmsValue>::from_mms(item6)?, providing_reserve: <AvailableProvidingReserve as crate::mms::MmsValue>::from_mms(item7)?, report_status: <crate::generated::iso802::ReportStatus as crate::mms::MmsValue>::from_mms(item8)?, impact: <AvailableImpact as crate::mms::MmsValue>::from_mms(item9)?, price_impact: <crate::generated::iso802::clause_b_3::Price as crate::mms::MmsValue>::from_mms(item10)?, ramp_impact: <crate::generated::iso802::RampRates as crate::mms::MmsValue>::from_mms(item11)?, capacity_impact: <crate::generated::iso802::UnitCapacity as crate::mms::MmsValue>::from_mms(item12)?, availability: <crate::generated::iso802::AvailabilityClass as crate::mms::MmsValue>::from_mms(item13)?, comment: <AvailableComment as crate::mms::MmsValue>::from_mms(item14)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.3 (page 69). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -4238,6 +5776,34 @@ pub struct UnAvailable {
     /// The component `comment`.
     pub comment: UnAvailableComment,
 }
+impl crate::mms::MmsValue for UnAvailable {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.availability_reference_id),
+            crate::mms::MmsValue::to_mms(&self.plant_reference_id),
+            crate::mms::MmsValue::to_mms(&self.unit_id),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.start_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.end_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.duration),
+            crate::mms::MmsValue::to_mms(&self.providing_reserve),
+            crate::mms::MmsValue::to_mms(&self.report_status),
+            crate::mms::MmsValue::to_mms(&self.reason_for_unavailable),
+            crate::mms::MmsValue::to_mms(&self.comment),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10] => Ok(Self { availability_reference_id: <crate::generated::iso802::clause_b_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, plant_reference_id: <crate::generated::iso802::PlantId as crate::mms::MmsValue>::from_mms(item1)?, unit_id: <crate::generated::iso802::UnitId as crate::mms::MmsValue>::from_mms(item2)?, time_stamp: <crate::generated::iso802::TimeStampS as crate::mms::MmsValue>::from_mms(item3)?, start_date_and_time: <crate::generated::iso802::DateAndTime as crate::mms::MmsValue>::from_mms(item4)?, end_date_and_time: <crate::generated::iso802::DateAndTime as crate::mms::MmsValue>::from_mms(item5)?, duration: <crate::generated::iso503::TimeIntervalM as crate::mms::MmsValue>::from_mms(item6)?, providing_reserve: <UnAvailableProvidingReserve as crate::mms::MmsValue>::from_mms(item7)?, report_status: <crate::generated::iso802::ReportStatus as crate::mms::MmsValue>::from_mms(item8)?, reason_for_unavailable: <crate::generated::iso802::AvailReasonCode as crate::mms::MmsValue>::from_mms(item9)?, comment: <UnAvailableComment as crate::mms::MmsValue>::from_mms(item10)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 69). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StatusAvailableProvidingReserve(pub bool);
@@ -4274,6 +5840,31 @@ pub struct StatusAvailable {
     /// The component `providing_reserve`.
     pub providing_reserve: StatusAvailableProvidingReserve,
 }
+impl crate::mms::MmsValue for StatusAvailable {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.availability_reference_id),
+            crate::mms::MmsValue::to_mms(&self.plant_reference_id),
+            crate::mms::MmsValue::to_mms(&self.unit_id),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.ramp_status),
+            crate::mms::MmsValue::to_mms(&self.capacity_status),
+            crate::mms::MmsValue::to_mms(&self.availability_status),
+            crate::mms::MmsValue::to_mms(&self.providing_reserve),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7] => Ok(Self { availability_reference_id: <crate::generated::iso802::clause_b_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, plant_reference_id: <crate::generated::iso802::PlantId as crate::mms::MmsValue>::from_mms(item1)?, unit_id: <crate::generated::iso802::UnitId as crate::mms::MmsValue>::from_mms(item2)?, time_stamp: <crate::generated::iso802::TimeStampS as crate::mms::MmsValue>::from_mms(item3)?, ramp_status: <crate::generated::iso802::RampRates as crate::mms::MmsValue>::from_mms(item4)?, capacity_status: <crate::generated::iso802::UnitCapacity as crate::mms::MmsValue>::from_mms(item5)?, availability_status: <crate::generated::iso802::AvailabilityClass as crate::mms::MmsValue>::from_mms(item6)?, providing_reserve: <StatusAvailableProvidingReserve as crate::mms::MmsValue>::from_mms(item7)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 69). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StatusUnAvailableProvidingReserve(pub bool);
@@ -4306,6 +5897,29 @@ pub struct StatusUnAvailable {
     /// The component `providing_reserve`.
     pub providing_reserve: StatusUnAvailableProvidingReserve,
 }
+impl crate::mms::MmsValue for StatusUnAvailable {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.availability_reference_id),
+            crate::mms::MmsValue::to_mms(&self.plant_reference_id),
+            crate::mms::MmsValue::to_mms(&self.unit_id),
+            crate::mms::MmsValue::to_mms(&self.time_stamp),
+            crate::mms::MmsValue::to_mms(&self.reason_for_unavailable),
+            crate::mms::MmsValue::to_mms(&self.providing_reserve),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5] => Ok(Self { availability_reference_id: <crate::generated::iso802::clause_b_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, plant_reference_id: <crate::generated::iso802::PlantId as crate::mms::MmsValue>::from_mms(item1)?, unit_id: <crate::generated::iso802::UnitId as crate::mms::MmsValue>::from_mms(item2)?, time_stamp: <crate::generated::iso802::TimeStampS as crate::mms::MmsValue>::from_mms(item3)?, reason_for_unavailable: <crate::generated::iso802::AvailReasonCode as crate::mms::MmsValue>::from_mms(item4)?, providing_reserve: <StatusUnAvailableProvidingReserve as crate::mms::MmsValue>::from_mms(item5)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 69). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ForecastForecastType(pub u64);
@@ -4319,12 +5933,66 @@ impl ForecastForecastType {
 }
 impl ForecastForecastType {
     /// Whether the flag `generation` is set.
-    pub fn generation(self) -> bool {
+    pub fn is_generation(self) -> bool {
         self.0 & Self::GENERATION != 0
     }
     /// Whether the flag `reserve` is set.
-    pub fn reserve(self) -> bool {
+    pub fn is_reserve(self) -> bool {
         self.0 & Self::RESERVE != 0
+    }
+}
+impl crate::mms::MmsValue for ForecastForecastType {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.3 (page 69). structure definition.
@@ -4344,6 +6012,30 @@ pub struct Forecast {
     pub num_periods: crate::builtin::Integer32,
     /// The component `forecast_type`.
     pub forecast_type: ForecastForecastType,
+}
+impl crate::mms::MmsValue for Forecast {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.forecast_schedule_reference_id),
+            crate::mms::MmsValue::to_mms(&self.plant_reference_id),
+            crate::mms::MmsValue::to_mms(&self.unit_id),
+            crate::mms::MmsValue::to_mms(&self.start_time),
+            crate::mms::MmsValue::to_mms(&self.period_resolution),
+            crate::mms::MmsValue::to_mms(&self.num_periods),
+            crate::mms::MmsValue::to_mms(&self.forecast_type),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6] => Ok(Self { forecast_schedule_reference_id: <crate::generated::iso802::clause_b_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, plant_reference_id: <crate::generated::iso802::PlantId as crate::mms::MmsValue>::from_mms(item1)?, unit_id: <crate::generated::iso802::UnitId as crate::mms::MmsValue>::from_mms(item2)?, start_time: <crate::generated::iso503::GMTBasedS as crate::mms::MmsValue>::from_mms(item3)?, period_resolution: <crate::generated::iso503::TimeIntervalS as crate::mms::MmsValue>::from_mms(item4)?, num_periods: <crate::builtin::Integer32 as crate::mms::MmsValue>::from_mms(item5)?, forecast_type: <ForecastForecastType as crate::mms::MmsValue>::from_mms(item6)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.3 (page 70). type definition.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -4404,48 +6096,102 @@ impl CurveType {
 }
 impl CurveType {
     /// Whether the flag `HEAT_RATE` is set.
-    pub fn heat_rate(self) -> bool {
+    pub fn is_heat_rate(self) -> bool {
         self.0 & Self::HEAT_RATE != 0
     }
     /// Whether the flag `IO` is set.
-    pub fn io(self) -> bool {
+    pub fn is_io(self) -> bool {
         self.0 & Self::IO != 0
     }
     /// Whether the flag `IHR` is set.
-    pub fn ihr(self) -> bool {
+    pub fn is_ihr(self) -> bool {
         self.0 & Self::IHR != 0
     }
     /// Whether the flag `MVAR_CAP` is set.
-    pub fn mvar_cap(self) -> bool {
+    pub fn is_mvar_cap(self) -> bool {
         self.0 & Self::MVAR_CAP != 0
     }
     /// Whether the flag `COST` is set.
-    pub fn cost(self) -> bool {
+    pub fn is_cost(self) -> bool {
         self.0 & Self::COST != 0
     }
     /// Whether the flag `OPACITY` is set.
-    pub fn opacity(self) -> bool {
+    pub fn is_opacity(self) -> bool {
         self.0 & Self::OPACITY != 0
     }
     /// Whether the flag `SOX` is set.
-    pub fn sox(self) -> bool {
+    pub fn is_sox(self) -> bool {
         self.0 & Self::SOX != 0
     }
     /// Whether the flag `NOX` is set.
-    pub fn nox(self) -> bool {
+    pub fn is_nox(self) -> bool {
         self.0 & Self::NOX != 0
     }
     /// Whether the flag `CO2` is set.
-    pub fn co2(self) -> bool {
+    pub fn is_co2(self) -> bool {
         self.0 & Self::CO2 != 0
     }
     /// Whether the flag `Unused` is set.
-    pub fn unused(self) -> bool {
+    pub fn is_unused(self) -> bool {
         self.0 & Self::UNUSED != 0
     }
     /// Whether the flag `User defined` is set.
-    pub fn user_defined(self) -> bool {
+    pub fn is_user_defined(self) -> bool {
         self.0 & Self::USER_DEFINED != 0
+    }
+}
+impl crate::mms::MmsValue for CurveType {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-802 B.3 (page 70). type definition.
@@ -4535,6 +6281,45 @@ pub struct CurveSegmentDescription {
     /// The component `number_of_segments`.
     pub number_of_segments: crate::generated::iso802::NumSegs,
 }
+impl crate::mms::MmsValue for CurveSegmentDescription {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.order),
+            crate::mms::MmsValue::to_mms(&self.low_range),
+            crate::mms::MmsValue::to_mms(&self.high_range),
+            crate::mms::MmsValue::to_mms(&self.number_of_segments),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items
+                .as_slice()
+            {
+                [item0, item1, item2, item3] => Ok(Self {
+                    order: <CurveSegmentDescriptionOrder as crate::mms::MmsValue>::from_mms(item0)?,
+                    low_range:
+                        <crate::generated::iso802::CurveLimit as crate::mms::MmsValue>::from_mms(
+                            item1,
+                        )?,
+                    high_range:
+                        <crate::generated::iso802::CurveLimit as crate::mms::MmsValue>::from_mms(
+                            item2,
+                        )?,
+                    number_of_segments:
+                        <crate::generated::iso802::NumSegs as crate::mms::MmsValue>::from_mms(
+                            item3,
+                        )?,
+                }),
+                _ => Err(crate::mms::ValueError::Format(
+                    "a structure of another number of components",
+                )),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.3 (page 70). inline definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CurveCurveName(String);
@@ -4582,6 +6367,49 @@ pub struct Curve {
     pub curve_type: crate::generated::iso802::CurveType,
     /// The component `number_of_segments`.
     pub number_of_segments: crate::generated::iso802::NumSegs,
+}
+impl crate::mms::MmsValue for Curve {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.curve_name),
+            crate::mms::MmsValue::to_mms(&self.plant_reference_id),
+            crate::mms::MmsValue::to_mms(&self.unit_id),
+            crate::mms::MmsValue::to_mms(&self.curve_type),
+            crate::mms::MmsValue::to_mms(&self.number_of_segments),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items
+                .as_slice()
+            {
+                [item0, item1, item2, item3, item4] => Ok(Self {
+                    curve_name: <CurveCurveName as crate::mms::MmsValue>::from_mms(item0)?,
+                    plant_reference_id:
+                        <crate::generated::iso802::PlantId as crate::mms::MmsValue>::from_mms(
+                            item1,
+                        )?,
+                    unit_id: <crate::generated::iso802::UnitId as crate::mms::MmsValue>::from_mms(
+                        item2,
+                    )?,
+                    curve_type:
+                        <crate::generated::iso802::CurveType as crate::mms::MmsValue>::from_mms(
+                            item3,
+                        )?,
+                    number_of_segments:
+                        <crate::generated::iso802::NumSegs as crate::mms::MmsValue>::from_mms(
+                            item4,
+                        )?,
+                }),
+                _ => Err(crate::mms::ValueError::Format(
+                    "a structure of another number of components",
+                )),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.4.2 (page 71). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -4684,6 +6512,32 @@ impl IntegerArrayXX {
     /// The number of elements, when the data file gives one.
     pub const SIZE: Option<usize> = None;
 }
+impl crate::mms::MmsValue for IntegerArrayXX {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Array(
+            self.0.iter().map(crate::mms::MmsValue::to_mms).collect(),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Array(items) => {
+                if Self::SIZE.is_some_and(|size| items.len() != size) {
+                    return Err(crate::mms::ValueError::Format(
+                        "an array of another number of elements",
+                    ));
+                }
+                let elements = items
+                    .iter()
+                    .map(<IntegerArrayXXElement as crate::mms::MmsValue>::from_mms)
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(Self(elements))
+            }
+            other => Err(crate::mms::ValueError::kind_of("array", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.4.2 (page 72). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FloatArrayXXElement(pub f64);
@@ -4718,6 +6572,32 @@ pub struct FloatArrayXX(pub Vec<FloatArrayXXElement>);
 impl FloatArrayXX {
     /// The number of elements, when the data file gives one.
     pub const SIZE: Option<usize> = None;
+}
+impl crate::mms::MmsValue for FloatArrayXX {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Array(
+            self.0.iter().map(crate::mms::MmsValue::to_mms).collect(),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Array(items) => {
+                if Self::SIZE.is_some_and(|size| items.len() != size) {
+                    return Err(crate::mms::ValueError::Format(
+                        "an array of another number of elements",
+                    ));
+                }
+                let elements = items
+                    .iter()
+                    .map(<FloatArrayXXElement as crate::mms::MmsValue>::from_mms)
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(Self(elements))
+            }
+            other => Err(crate::mms::ValueError::kind_of("array", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.4.2 (page 72). inline definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -4759,6 +6639,32 @@ pub struct Text32ArrayXX(pub Vec<Text32ArrayXXElement>);
 impl Text32ArrayXX {
     /// The number of elements, when the data file gives one.
     pub const SIZE: Option<usize> = None;
+}
+impl crate::mms::MmsValue for Text32ArrayXX {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Array(
+            self.0.iter().map(crate::mms::MmsValue::to_mms).collect(),
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Array(items) => {
+                if Self::SIZE.is_some_and(|size| items.len() != size) {
+                    return Err(crate::mms::ValueError::Format(
+                        "an array of another number of elements",
+                    ));
+                }
+                let elements = items
+                    .iter()
+                    .map(<Text32ArrayXXElement as crate::mms::MmsValue>::from_mms)
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(Self(elements))
+            }
+            other => Err(crate::mms::ValueError::kind_of("array", other)),
+        }
+    }
 }
 /// IEC 60870-6-802 B.5 (page 72). type definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -4845,6 +6751,40 @@ pub struct GeneralDataReport {
     /// The component `number_of_text2_rows`.
     pub number_of_text2_rows: crate::generated::iso802::NumRows,
 }
+impl crate::mms::MmsValue for GeneralDataReport {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.general_data_report_reference_number),
+            crate::mms::MmsValue::to_mms(&self.report_name),
+            crate::mms::MmsValue::to_mms(&self.report_date_and_time),
+            crate::mms::MmsValue::to_mms(&self.transaction_code),
+            crate::mms::MmsValue::to_mms(&self.number_of_local_reference),
+            crate::mms::MmsValue::to_mms(&self.number_of_floating_point1),
+            crate::mms::MmsValue::to_mms(&self.number_of_floating_point1_rows),
+            crate::mms::MmsValue::to_mms(&self.number_of_floating_point2),
+            crate::mms::MmsValue::to_mms(&self.number_of_floating_point2_rows),
+            crate::mms::MmsValue::to_mms(&self.number_of_integer1),
+            crate::mms::MmsValue::to_mms(&self.number_of_integer1_rows),
+            crate::mms::MmsValue::to_mms(&self.number_of_integer2),
+            crate::mms::MmsValue::to_mms(&self.number_of_integer2_rows),
+            crate::mms::MmsValue::to_mms(&self.number_of_text1),
+            crate::mms::MmsValue::to_mms(&self.number_of_text1_rows),
+            crate::mms::MmsValue::to_mms(&self.number_of_text2),
+            crate::mms::MmsValue::to_mms(&self.number_of_text2_rows),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12, item13, item14, item15, item16] => Ok(Self { general_data_report_reference_number: <crate::generated::iso802::clause_6_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, report_name: <crate::generated::iso802::NameString as crate::mms::MmsValue>::from_mms(item1)?, report_date_and_time: <crate::generated::iso802::TimeStampS as crate::mms::MmsValue>::from_mms(item2)?, transaction_code: <crate::generated::iso802::clause_b_5::TransactionCode as crate::mms::MmsValue>::from_mms(item3)?, number_of_local_reference: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item4)?, number_of_floating_point1: <crate::generated::iso802::NumFloats as crate::mms::MmsValue>::from_mms(item5)?, number_of_floating_point1_rows: <crate::generated::iso802::NumRows as crate::mms::MmsValue>::from_mms(item6)?, number_of_floating_point2: <crate::generated::iso802::NumFloats as crate::mms::MmsValue>::from_mms(item7)?, number_of_floating_point2_rows: <crate::generated::iso802::NumRows as crate::mms::MmsValue>::from_mms(item8)?, number_of_integer1: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item9)?, number_of_integer1_rows: <crate::generated::iso802::NumRows as crate::mms::MmsValue>::from_mms(item10)?, number_of_integer2: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item11)?, number_of_integer2_rows: <crate::generated::iso802::NumRows as crate::mms::MmsValue>::from_mms(item12)?, number_of_text1: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item13)?, number_of_text1_rows: <crate::generated::iso802::NumRows as crate::mms::MmsValue>::from_mms(item14)?, number_of_text2: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item15)?, number_of_text2_rows: <crate::generated::iso802::NumRows as crate::mms::MmsValue>::from_mms(item16)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-802 B.6 (page 72). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GeneralDataResponseResponseData(i64);
@@ -4909,6 +6849,30 @@ pub struct GeneralDataResponse {
     pub response_code: crate::generated::iso802::clause_b_2::TransactionCode,
     /// The component `response_text`.
     pub response_text: crate::generated::iso802::CommentString,
+}
+impl crate::mms::MmsValue for GeneralDataResponse {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.report_reference_number),
+            crate::mms::MmsValue::to_mms(&self.report_name),
+            crate::mms::MmsValue::to_mms(&self.report_time_stamp),
+            crate::mms::MmsValue::to_mms(&self.number_of_local_references),
+            crate::mms::MmsValue::to_mms(&self.response_data),
+            crate::mms::MmsValue::to_mms(&self.response_code),
+            crate::mms::MmsValue::to_mms(&self.response_text),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6] => Ok(Self { report_reference_number: <crate::generated::iso802::clause_6_3::ReferenceNum as crate::mms::MmsValue>::from_mms(item0)?, report_name: <crate::generated::iso802::NameString as crate::mms::MmsValue>::from_mms(item1)?, report_time_stamp: <crate::generated::iso802::clause_6_2_1::DataTimeStamp as crate::mms::MmsValue>::from_mms(item2)?, number_of_local_references: <crate::generated::iso802::NumIntegers as crate::mms::MmsValue>::from_mms(item3)?, response_data: <GeneralDataResponseResponseData as crate::mms::MmsValue>::from_mms(item4)?, response_code: <crate::generated::iso802::clause_b_2::TransactionCode as crate::mms::MmsValue>::from_mms(item5)?, response_text: <crate::generated::iso802::CommentString as crate::mms::MmsValue>::from_mms(item6)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 
 /// The definitions of the clause 6.2.1.

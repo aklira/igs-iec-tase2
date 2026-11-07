@@ -630,6 +630,26 @@ impl MMSObjectNameScope {
     /// The value `vmd-specific`.
     pub const VMD_SPECIFIC: i64 = 0;
 }
+impl crate::mms::MmsValue for MMSObjectNameScope {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                match i64::try_from(*value) {
+                    Ok(value) if [1, 0].contains(&value) => Ok(Self(value)),
+                    _ => Err(crate::mms::ValueError::Format(
+                        "not a value of the enumeration",
+                    )),
+                }
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-503 8.2.3 (page 92). structure definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MMSObjectName {
@@ -639,6 +659,36 @@ pub struct MMSObjectName {
     pub domain_name: crate::builtin::MmsIdentifier,
     /// The component `name`.
     pub name: crate::builtin::MmsIdentifier,
+}
+impl crate::mms::MmsValue for MMSObjectName {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.scope),
+            crate::mms::MmsValue::to_mms(&self.domain_name),
+            crate::mms::MmsValue::to_mms(&self.name),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items
+                .as_slice()
+            {
+                [item0, item1, item2] => Ok(Self {
+                    scope: <MMSObjectNameScope as crate::mms::MmsValue>::from_mms(item0)?,
+                    domain_name: <crate::builtin::MmsIdentifier as crate::mms::MmsValue>::from_mms(
+                        item1,
+                    )?,
+                    name: <crate::builtin::MmsIdentifier as crate::mms::MmsValue>::from_mms(item2)?,
+                }),
+                _ => Err(crate::mms::ValueError::Format(
+                    "a structure of another number of components",
+                )),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-503 8.2.4 (page 93). type definition.
 pub type GMTBasedS = crate::builtin::Integer32;
@@ -675,12 +725,52 @@ impl DSTransferSetBlockData {
     /// The value `FALSE`.
     pub const FALSE: i64 = 0;
 }
+impl crate::mms::MmsValue for DSTransferSetBlockData {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                match i64::try_from(*value) {
+                    Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                    _ => Err(crate::mms::ValueError::Format(
+                        "not a value of the enumeration",
+                    )),
+                }
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-503 8.2.7.1 (page 94). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DSTransferSetCritical(pub i64);
 impl DSTransferSetCritical {
     /// The value `FALSE`.
     pub const FALSE: i64 = 0;
+}
+impl crate::mms::MmsValue for DSTransferSetCritical {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                match i64::try_from(*value) {
+                    Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                    _ => Err(crate::mms::ValueError::Format(
+                        "not a value of the enumeration",
+                    )),
+                }
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
 }
 /// IEC 60870-6-503 8.2.7.1 (page 94). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -689,12 +779,52 @@ impl DSTransferSetRBE {
     /// The value `FALSE`.
     pub const FALSE: i64 = 0;
 }
+impl crate::mms::MmsValue for DSTransferSetRBE {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                match i64::try_from(*value) {
+                    Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                    _ => Err(crate::mms::ValueError::Format(
+                        "not a value of the enumeration",
+                    )),
+                }
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
+}
 /// IEC 60870-6-503 8.2.7.1 (page 94). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DSTransferSetAllChangesReported(pub i64);
 impl DSTransferSetAllChangesReported {
     /// The value `FALSE`.
     pub const FALSE: i64 = 0;
+}
+impl crate::mms::MmsValue for DSTransferSetAllChangesReported {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                match i64::try_from(*value) {
+                    Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                    _ => Err(crate::mms::ValueError::Format(
+                        "not a value of the enumeration",
+                    )),
+                }
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
 }
 /// IEC 60870-6-503 8.2.7.1 (page 94). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -704,6 +834,26 @@ impl DSTransferSetStatus {
     pub const DISABLED: i64 = 0;
     /// The value `ENABLED`.
     pub const ENABLED: i64 = 1;
+}
+impl crate::mms::MmsValue for DSTransferSetStatus {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                match i64::try_from(*value) {
+                    Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
+                    _ => Err(crate::mms::ValueError::Format(
+                        "not a value of the enumeration",
+                    )),
+                }
+            }
+            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+        }
+    }
 }
 /// IEC 60870-6-503 8.2.7.1 (page 94). structure definition.
 #[derive(Debug, Clone, PartialEq)]
@@ -735,6 +885,36 @@ pub struct DSTransferSet {
     /// The component `event_code_requested`.
     pub event_code_requested: crate::builtin::Integer16,
 }
+impl crate::mms::MmsValue for DSTransferSet {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.data_set_name),
+            crate::mms::MmsValue::to_mms(&self.start_time),
+            crate::mms::MmsValue::to_mms(&self.interval),
+            crate::mms::MmsValue::to_mms(&self.tle),
+            crate::mms::MmsValue::to_mms(&self.buffer_time),
+            crate::mms::MmsValue::to_mms(&self.integrity_check),
+            crate::mms::MmsValue::to_mms(&self.ds_conditions_requested),
+            crate::mms::MmsValue::to_mms(&self.block_data),
+            crate::mms::MmsValue::to_mms(&self.critical),
+            crate::mms::MmsValue::to_mms(&self.rbe),
+            crate::mms::MmsValue::to_mms(&self.all_changes_reported),
+            crate::mms::MmsValue::to_mms(&self.status),
+            crate::mms::MmsValue::to_mms(&self.event_code_requested),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12] => Ok(Self { data_set_name: <crate::generated::iso503::MMSObjectName as crate::mms::MmsValue>::from_mms(item0)?, start_time: <crate::generated::iso503::GMTBasedS as crate::mms::MmsValue>::from_mms(item1)?, interval: <crate::generated::iso503::TimeIntervalS as crate::mms::MmsValue>::from_mms(item2)?, tle: <crate::generated::iso503::TimeIntervalS as crate::mms::MmsValue>::from_mms(item3)?, buffer_time: <crate::generated::iso503::TimeIntervalS as crate::mms::MmsValue>::from_mms(item4)?, integrity_check: <crate::generated::iso503::TimeIntervalS as crate::mms::MmsValue>::from_mms(item5)?, ds_conditions_requested: <crate::generated::iso503::DSConditions as crate::mms::MmsValue>::from_mms(item6)?, block_data: <DSTransferSetBlockData as crate::mms::MmsValue>::from_mms(item7)?, critical: <DSTransferSetCritical as crate::mms::MmsValue>::from_mms(item8)?, rbe: <DSTransferSetRBE as crate::mms::MmsValue>::from_mms(item9)?, all_changes_reported: <DSTransferSetAllChangesReported as crate::mms::MmsValue>::from_mms(item10)?, status: <DSTransferSetStatus as crate::mms::MmsValue>::from_mms(item11)?, event_code_requested: <crate::builtin::Integer16 as crate::mms::MmsValue>::from_mms(item12)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
+}
 /// IEC 60870-6-503 8.2.8.1 (page 96). bit-string definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DSConditions(pub u64);
@@ -754,24 +934,78 @@ impl DSConditions {
 }
 impl DSConditions {
     /// Whether the flag `IntervalTimeOut` is set.
-    pub fn interval_time_out(self) -> bool {
+    pub fn is_interval_time_out(self) -> bool {
         self.0 & Self::INTERVAL_TIME_OUT != 0
     }
     /// Whether the flag `IntegrityTimeOut` is set.
-    pub fn integrity_time_out(self) -> bool {
+    pub fn is_integrity_time_out(self) -> bool {
         self.0 & Self::INTEGRITY_TIME_OUT != 0
     }
     /// Whether the flag `ObjectChange` is set.
-    pub fn object_change(self) -> bool {
+    pub fn is_object_change(self) -> bool {
         self.0 & Self::OBJECT_CHANGE != 0
     }
     /// Whether the flag `Operator Request` is set.
-    pub fn operator_request(self) -> bool {
+    pub fn is_operator_request(self) -> bool {
         self.0 & Self::OPERATOR_REQUEST != 0
     }
     /// Whether the flag `OtherExternalEvent` is set.
-    pub fn other_external_event(self) -> bool {
+    pub fn is_other_external_event(self) -> bool {
         self.0 & Self::OTHER_EXTERNAL_EVENT != 0
+    }
+}
+impl crate::mms::MmsValue for DSConditions {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 /// IEC 60870-6-503 8.2.10 (page 97). structure definition.
@@ -781,6 +1015,34 @@ pub struct TASE2Version {
     pub major_version_number: crate::builtin::Integer16,
     /// The component `minor_version_number`.
     pub minor_version_number: crate::builtin::Integer16,
+}
+impl crate::mms::MmsValue for TASE2Version {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+            crate::mms::MmsValue::to_mms(&self.major_version_number),
+            crate::mms::MmsValue::to_mms(&self.minor_version_number),
+        ])
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => {
+                match items.as_slice() {
+                    [item0, item1] => Ok(Self {
+                        major_version_number:
+                            <crate::builtin::Integer16 as crate::mms::MmsValue>::from_mms(item0)?,
+                        minor_version_number:
+                            <crate::builtin::Integer16 as crate::mms::MmsValue>::from_mms(item1)?,
+                    }),
+                    _ => Err(crate::mms::ValueError::Format(
+                        "a structure of another number of components",
+                    )),
+                }
+            }
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+    }
 }
 /// IEC 60870-6-503 G.2.4 (page 152). bit-string definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -807,36 +1069,90 @@ impl TAConditions {
 }
 impl TAConditions {
     /// Whether the flag `BeforeTheHour` is set.
-    pub fn before_the_hour(self) -> bool {
+    pub fn is_before_the_hour(self) -> bool {
         self.0 & Self::BEFORE_THE_HOUR != 0
     }
     /// Whether the flag `DispatchUpdate` is set.
-    pub fn dispatch_update(self) -> bool {
+    pub fn is_dispatch_update(self) -> bool {
         self.0 & Self::DISPATCH_UPDATE != 0
     }
     /// Whether the flag `DuringTheHour` is set.
-    pub fn during_the_hour(self) -> bool {
+    pub fn is_during_the_hour(self) -> bool {
         self.0 & Self::DURING_THE_HOUR != 0
     }
     /// Whether the flag `AfterTheHour` is set.
-    pub fn after_the_hour(self) -> bool {
+    pub fn is_after_the_hour(self) -> bool {
         self.0 & Self::AFTER_THE_HOUR != 0
     }
     /// Whether the flag `ActualDataUpdate` is set.
-    pub fn actual_data_update(self) -> bool {
+    pub fn is_actual_data_update(self) -> bool {
         self.0 & Self::ACTUAL_DATA_UPDATE != 0
     }
     /// Whether the flag `PastHours` is set.
-    pub fn past_hours(self) -> bool {
+    pub fn is_past_hours(self) -> bool {
         self.0 & Self::PAST_HOURS != 0
     }
     /// Whether the flag `ObjectChange` is set.
-    pub fn object_change(self) -> bool {
+    pub fn is_object_change(self) -> bool {
         self.0 & Self::OBJECT_CHANGE != 0
     }
     /// Whether the flag `Operator Request` is set.
-    pub fn operator_request(self) -> bool {
+    pub fn is_operator_request(self) -> bool {
         self.0 & Self::OPERATOR_REQUEST != 0
+    }
+}
+impl crate::mms::MmsValue for TAConditions {
+    fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+        let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+        let mut bytes = vec![0u8; octets];
+        for position in 0..Self::BIT_COUNT {
+            if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                    *octet |= 0x80u8 >> (position % 8);
+                }
+            }
+        }
+        let unused = u8::try_from(
+            octets
+                .saturating_mul(8)
+                .saturating_sub(Self::BIT_COUNT as usize),
+        )
+        .unwrap_or(0);
+        igs_iso9506_mms_codec::generated::types::Data::BitString(
+            igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+        )
+    }
+    fn from_mms(
+        data: &igs_iso9506_mms_codec::generated::types::Data,
+    ) -> Result<Self, crate::mms::ValueError> {
+        match data {
+            igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                let length = bits
+                    .bytes
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_sub(usize::from(bits.unused));
+                if length < Self::BIT_COUNT as usize {
+                    return Err(crate::mms::ValueError::Format(
+                        "a bit string shorter than the flags of its type",
+                    ));
+                }
+                let mut value = 0u64;
+                for position in 0..length {
+                    let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                    if octet & (0x80u8 >> (position % 8)) != 0 {
+                        if position >= Self::BIT_COUNT as usize {
+                            return Err(crate::mms::ValueError::Format(
+                                "a bit beyond the flags of its type is set",
+                            ));
+                        }
+                        value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                    }
+                }
+                Ok(Self(value))
+            }
+            other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+        }
     }
 }
 
@@ -869,6 +1185,26 @@ pub mod clause_8_2_7_2 {
         /// The value `FALSE`.
         pub const FALSE: i64 = 0;
     }
+    impl crate::mms::MmsValue for TSTransferSetBlockData {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-503 8.2.7.2 (page 95). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct TSTransferSetStatus(pub i64);
@@ -877,6 +1213,26 @@ pub mod clause_8_2_7_2 {
         pub const DISABLED: i64 = 0;
         /// The value `ENABLED`.
         pub const ENABLED: i64 = 1;
+    }
+    impl crate::mms::MmsValue for TSTransferSetStatus {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
     }
     /// IEC 60870-6-503 8.2.7.2 (page 95). structure definition.
     #[derive(Debug, Clone, PartialEq)]
@@ -898,12 +1254,57 @@ pub mod clause_8_2_7_2 {
         /// The component `status`.
         pub status: TSTransferSetStatus,
     }
+    impl crate::mms::MmsValue for TSTransferSet {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+                crate::mms::MmsValue::to_mms(&self.data_value_name),
+                crate::mms::MmsValue::to_mms(&self.ts_conditions_requested),
+                crate::mms::MmsValue::to_mms(&self.block_data),
+                crate::mms::MmsValue::to_mms(&self.begin_time),
+                crate::mms::MmsValue::to_mms(&self.end_time),
+                crate::mms::MmsValue::to_mms(&self.sampling_interval),
+                crate::mms::MmsValue::to_mms(&self.reporting_interval),
+                crate::mms::MmsValue::to_mms(&self.status),
+            ])
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7] => Ok(Self { data_value_name: <crate::generated::iso503::MMSObjectName as crate::mms::MmsValue>::from_mms(item0)?, ts_conditions_requested: <crate::generated::iso503::clause_8_2_8_2::TSConditions as crate::mms::MmsValue>::from_mms(item1)?, block_data: <TSTransferSetBlockData as crate::mms::MmsValue>::from_mms(item2)?, begin_time: <crate::generated::iso503::GMTBasedS as crate::mms::MmsValue>::from_mms(item3)?, end_time: <crate::generated::iso503::GMTBasedS as crate::mms::MmsValue>::from_mms(item4)?, sampling_interval: <crate::generated::iso503::TimeIntervalL32 as crate::mms::MmsValue>::from_mms(item5)?, reporting_interval: <crate::generated::iso503::TimeIntervalL32 as crate::mms::MmsValue>::from_mms(item6)?, status: <TSTransferSetStatus as crate::mms::MmsValue>::from_mms(item7)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+        }
+    }
     /// IEC 60870-6-503 8.2.7.2 (page 96). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct TATransferSetBlockData(pub i64);
     impl TATransferSetBlockData {
         /// The value `FALSE`.
         pub const FALSE: i64 = 0;
+    }
+    impl crate::mms::MmsValue for TATransferSetBlockData {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
     }
     /// IEC 60870-6-503 8.2.7.2 (page 96). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -914,6 +1315,26 @@ pub mod clause_8_2_7_2 {
         /// The value `ENABLED`.
         pub const ENABLED: i64 = 1;
     }
+    impl crate::mms::MmsValue for TATransferSetStatus {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-503 8.2.7.2 (page 96). structure definition.
     #[derive(Debug, Clone, PartialEq)]
     pub struct TATransferSet {
@@ -923,6 +1344,26 @@ pub mod clause_8_2_7_2 {
         pub block_data: TATransferSetBlockData,
         /// The component `status`.
         pub status: TATransferSetStatus,
+    }
+    impl crate::mms::MmsValue for TATransferSet {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+                crate::mms::MmsValue::to_mms(&self.ta_conditions_requested),
+                crate::mms::MmsValue::to_mms(&self.block_data),
+                crate::mms::MmsValue::to_mms(&self.status),
+            ])
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { ta_conditions_requested: <crate::generated::iso503::TAConditions as crate::mms::MmsValue>::from_mms(item0)?, block_data: <TATransferSetBlockData as crate::mms::MmsValue>::from_mms(item1)?, status: <TATransferSetStatus as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+        }
     }
 }
 
@@ -945,20 +1386,74 @@ pub mod clause_8_2_8_2 {
     }
     impl TSConditions {
         /// Whether the flag `EndTimeArrived` is set.
-        pub fn end_time_arrived(self) -> bool {
+        pub fn is_end_time_arrived(self) -> bool {
             self.0 & Self::END_TIME_ARRIVED != 0
         }
         /// Whether the flag `OperatorRequest` is set.
-        pub fn operator_request(self) -> bool {
+        pub fn is_operator_request(self) -> bool {
             self.0 & Self::OPERATOR_REQUEST != 0
         }
         /// Whether the flag `ReportIntervalTimeOut` is set.
-        pub fn report_interval_time_out(self) -> bool {
+        pub fn is_report_interval_time_out(self) -> bool {
             self.0 & Self::REPORT_INTERVAL_TIME_OUT != 0
         }
         /// Whether the flag `MaxMMSPDU` is set.
-        pub fn max_mmspdu(self) -> bool {
+        pub fn is_max_mmspdu(self) -> bool {
             self.0 & Self::MAX_MMSPDU != 0
+        }
+    }
+    impl crate::mms::MmsValue for TSConditions {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+            let mut bytes = vec![0u8; octets];
+            for position in 0..Self::BIT_COUNT {
+                if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                    if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                        *octet |= 0x80u8 >> (position % 8);
+                    }
+                }
+            }
+            let unused = u8::try_from(
+                octets
+                    .saturating_mul(8)
+                    .saturating_sub(Self::BIT_COUNT as usize),
+            )
+            .unwrap_or(0);
+            igs_iso9506_mms_codec::generated::types::Data::BitString(
+                igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+            )
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                    let length = bits
+                        .bytes
+                        .len()
+                        .saturating_mul(8)
+                        .saturating_sub(usize::from(bits.unused));
+                    if length < Self::BIT_COUNT as usize {
+                        return Err(crate::mms::ValueError::Format(
+                            "a bit string shorter than the flags of its type",
+                        ));
+                    }
+                    let mut value = 0u64;
+                    for position in 0..length {
+                        let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                        if octet & (0x80u8 >> (position % 8)) != 0 {
+                            if position >= Self::BIT_COUNT as usize {
+                                return Err(crate::mms::ValueError::Format(
+                                    "a bit beyond the flags of its type is set",
+                                ));
+                            }
+                            value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                        }
+                    }
+                    Ok(Self(value))
+                }
+                other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+            }
         }
     }
 }
@@ -988,32 +1483,86 @@ pub mod clause_8_2_9 {
     }
     impl SupportedFeatures {
         /// Whether the flag `Block1` is set.
-        pub fn block1(self) -> bool {
+        pub fn is_block1(self) -> bool {
             self.0 & Self::BLOCK1 != 0
         }
         /// Whether the flag `Block2` is set.
-        pub fn block2(self) -> bool {
+        pub fn is_block2(self) -> bool {
             self.0 & Self::BLOCK2 != 0
         }
         /// Whether the flag `reserved` is set.
-        pub fn reserved(self) -> bool {
+        pub fn is_reserved(self) -> bool {
             self.0 & Self::RESERVED != 0
         }
         /// Whether the flag `Block4` is set.
-        pub fn block4(self) -> bool {
+        pub fn is_block4(self) -> bool {
             self.0 & Self::BLOCK4 != 0
         }
         /// Whether the flag `Block5` is set.
-        pub fn block5(self) -> bool {
+        pub fn is_block5(self) -> bool {
             self.0 & Self::BLOCK5 != 0
         }
         /// Whether the flag `Block11` is set.
-        pub fn block11(self) -> bool {
+        pub fn is_block11(self) -> bool {
             self.0 & Self::BLOCK11 != 0
         }
         /// Whether the flag `Block12` is set.
-        pub fn block12(self) -> bool {
+        pub fn is_block12(self) -> bool {
             self.0 & Self::BLOCK12 != 0
+        }
+    }
+    impl crate::mms::MmsValue for SupportedFeatures {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+            let mut bytes = vec![0u8; octets];
+            for position in 0..Self::BIT_COUNT {
+                if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                    if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                        *octet |= 0x80u8 >> (position % 8);
+                    }
+                }
+            }
+            let unused = u8::try_from(
+                octets
+                    .saturating_mul(8)
+                    .saturating_sub(Self::BIT_COUNT as usize),
+            )
+            .unwrap_or(0);
+            igs_iso9506_mms_codec::generated::types::Data::BitString(
+                igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+            )
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                    let length = bits
+                        .bytes
+                        .len()
+                        .saturating_mul(8)
+                        .saturating_sub(usize::from(bits.unused));
+                    if length < Self::BIT_COUNT as usize {
+                        return Err(crate::mms::ValueError::Format(
+                            "a bit string shorter than the flags of its type",
+                        ));
+                    }
+                    let mut value = 0u64;
+                    for position in 0..length {
+                        let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                        if octet & (0x80u8 >> (position % 8)) != 0 {
+                            if position >= Self::BIT_COUNT as usize {
+                                return Err(crate::mms::ValueError::Format(
+                                    "a bit beyond the flags of its type is set",
+                                ));
+                            }
+                            value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                        }
+                    }
+                    Ok(Self(value))
+                }
+                other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+            }
         }
     }
 }
@@ -1030,6 +1579,26 @@ pub mod clause_g_2_2 {
         /// The value `FALSE`.
         pub const FALSE: i64 = 0;
     }
+    impl crate::mms::MmsValue for TSTransferSetBlockData {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-503 G.2.2 (page 150). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct TSTransferSetStatus(pub i64);
@@ -1038,6 +1607,26 @@ pub mod clause_g_2_2 {
         pub const DISABLED: i64 = 0;
         /// The value `ENABLED`.
         pub const ENABLED: i64 = 1;
+    }
+    impl crate::mms::MmsValue for TSTransferSetStatus {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
     }
     /// IEC 60870-6-503 G.2.2 (page 150). structure definition.
     #[derive(Debug, Clone, PartialEq)]
@@ -1059,12 +1648,57 @@ pub mod clause_g_2_2 {
         /// The component `status`.
         pub status: TSTransferSetStatus,
     }
+    impl crate::mms::MmsValue for TSTransferSet {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+                crate::mms::MmsValue::to_mms(&self.data_value_name),
+                crate::mms::MmsValue::to_mms(&self.ts_conditions_requested),
+                crate::mms::MmsValue::to_mms(&self.block_data),
+                crate::mms::MmsValue::to_mms(&self.begin_time),
+                crate::mms::MmsValue::to_mms(&self.end_time),
+                crate::mms::MmsValue::to_mms(&self.sampling_interval),
+                crate::mms::MmsValue::to_mms(&self.reporting_interval),
+                crate::mms::MmsValue::to_mms(&self.status),
+            ])
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7] => Ok(Self { data_value_name: <crate::generated::iso503::MMSObjectName as crate::mms::MmsValue>::from_mms(item0)?, ts_conditions_requested: <crate::generated::iso503::clause_8_2_8_2::TSConditions as crate::mms::MmsValue>::from_mms(item1)?, block_data: <TSTransferSetBlockData as crate::mms::MmsValue>::from_mms(item2)?, begin_time: <crate::generated::iso503::GMTBasedS as crate::mms::MmsValue>::from_mms(item3)?, end_time: <crate::generated::iso503::GMTBasedS as crate::mms::MmsValue>::from_mms(item4)?, sampling_interval: <crate::generated::iso503::TimeIntervalL32 as crate::mms::MmsValue>::from_mms(item5)?, reporting_interval: <crate::generated::iso503::TimeIntervalL32 as crate::mms::MmsValue>::from_mms(item6)?, status: <TSTransferSetStatus as crate::mms::MmsValue>::from_mms(item7)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+        }
+    }
     /// IEC 60870-6-503 G.2.2 (page 151). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct TATransferSetBlockData(pub i64);
     impl TATransferSetBlockData {
         /// The value `FALSE`.
         pub const FALSE: i64 = 0;
+    }
+    impl crate::mms::MmsValue for TATransferSetBlockData {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
     }
     /// IEC 60870-6-503 G.2.2 (page 151). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1075,6 +1709,26 @@ pub mod clause_g_2_2 {
         /// The value `ENABLED`.
         pub const ENABLED: i64 = 1;
     }
+    impl crate::mms::MmsValue for TATransferSetStatus {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-503 G.2.2 (page 151). structure definition.
     #[derive(Debug, Clone, PartialEq)]
     pub struct TATransferSet {
@@ -1084,6 +1738,26 @@ pub mod clause_g_2_2 {
         pub block_data: TATransferSetBlockData,
         /// The component `status`.
         pub status: TATransferSetStatus,
+    }
+    impl crate::mms::MmsValue for TATransferSet {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+                crate::mms::MmsValue::to_mms(&self.ta_conditions_requested),
+                crate::mms::MmsValue::to_mms(&self.block_data),
+                crate::mms::MmsValue::to_mms(&self.status),
+            ])
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { ta_conditions_requested: <crate::generated::iso503::TAConditions as crate::mms::MmsValue>::from_mms(item0)?, block_data: <TATransferSetBlockData as crate::mms::MmsValue>::from_mms(item1)?, status: <TATransferSetStatus as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+        }
     }
     /// IEC 60870-6-503 G.2.2 (page 151). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1138,52 +1812,106 @@ pub mod clause_g_2_3 {
     }
     impl SupportedFeatures {
         /// Whether the flag `Block1` is set.
-        pub fn block1(self) -> bool {
+        pub fn is_block1(self) -> bool {
             self.0 & Self::BLOCK1 != 0
         }
         /// Whether the flag `Block2` is set.
-        pub fn block2(self) -> bool {
+        pub fn is_block2(self) -> bool {
             self.0 & Self::BLOCK2 != 0
         }
         /// Whether the flag `Block3` is set.
-        pub fn block3(self) -> bool {
+        pub fn is_block3(self) -> bool {
             self.0 & Self::BLOCK3 != 0
         }
         /// Whether the flag `Block4` is set.
-        pub fn block4(self) -> bool {
+        pub fn is_block4(self) -> bool {
             self.0 & Self::BLOCK4 != 0
         }
         /// Whether the flag `Block5` is set.
-        pub fn block5(self) -> bool {
+        pub fn is_block5(self) -> bool {
             self.0 & Self::BLOCK5 != 0
         }
         /// Whether the flag `Block6` is set.
-        pub fn block6(self) -> bool {
+        pub fn is_block6(self) -> bool {
             self.0 & Self::BLOCK6 != 0
         }
         /// Whether the flag `Block7` is set.
-        pub fn block7(self) -> bool {
+        pub fn is_block7(self) -> bool {
             self.0 & Self::BLOCK7 != 0
         }
         /// Whether the flag `Block8` is set.
-        pub fn block8(self) -> bool {
+        pub fn is_block8(self) -> bool {
             self.0 & Self::BLOCK8 != 0
         }
         /// Whether the flag `Block9` is set.
-        pub fn block9(self) -> bool {
+        pub fn is_block9(self) -> bool {
             self.0 & Self::BLOCK9 != 0
         }
         /// Whether the flag `Block10` is set.
-        pub fn block10(self) -> bool {
+        pub fn is_block10(self) -> bool {
             self.0 & Self::BLOCK10 != 0
         }
         /// Whether the flag `Block11` is set.
-        pub fn block11(self) -> bool {
+        pub fn is_block11(self) -> bool {
             self.0 & Self::BLOCK11 != 0
         }
         /// Whether the flag `Block12` is set.
-        pub fn block12(self) -> bool {
+        pub fn is_block12(self) -> bool {
             self.0 & Self::BLOCK12 != 0
+        }
+    }
+    impl crate::mms::MmsValue for SupportedFeatures {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+            let mut bytes = vec![0u8; octets];
+            for position in 0..Self::BIT_COUNT {
+                if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                    if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                        *octet |= 0x80u8 >> (position % 8);
+                    }
+                }
+            }
+            let unused = u8::try_from(
+                octets
+                    .saturating_mul(8)
+                    .saturating_sub(Self::BIT_COUNT as usize),
+            )
+            .unwrap_or(0);
+            igs_iso9506_mms_codec::generated::types::Data::BitString(
+                igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+            )
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                    let length = bits
+                        .bytes
+                        .len()
+                        .saturating_mul(8)
+                        .saturating_sub(usize::from(bits.unused));
+                    if length < Self::BIT_COUNT as usize {
+                        return Err(crate::mms::ValueError::Format(
+                            "a bit string shorter than the flags of its type",
+                        ));
+                    }
+                    let mut value = 0u64;
+                    for position in 0..length {
+                        let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                        if octet & (0x80u8 >> (position % 8)) != 0 {
+                            if position >= Self::BIT_COUNT as usize {
+                                return Err(crate::mms::ValueError::Format(
+                                    "a bit beyond the flags of its type is set",
+                                ));
+                            }
+                            value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                        }
+                    }
+                    Ok(Self(value))
+                }
+                other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+            }
         }
     }
 }
@@ -1207,20 +1935,74 @@ pub mod clause_g_2_4 {
     }
     impl TSConditions {
         /// Whether the flag `EndTimeArrived` is set.
-        pub fn end_time_arrived(self) -> bool {
+        pub fn is_end_time_arrived(self) -> bool {
             self.0 & Self::END_TIME_ARRIVED != 0
         }
         /// Whether the flag `OperatorRequest` is set.
-        pub fn operator_request(self) -> bool {
+        pub fn is_operator_request(self) -> bool {
             self.0 & Self::OPERATOR_REQUEST != 0
         }
         /// Whether the flag `ReportIntervalTimeOut` is set.
-        pub fn report_interval_time_out(self) -> bool {
+        pub fn is_report_interval_time_out(self) -> bool {
             self.0 & Self::REPORT_INTERVAL_TIME_OUT != 0
         }
         /// Whether the flag `MaiMMSPDU` is set.
-        pub fn mai_mmspdu(self) -> bool {
+        pub fn is_mai_mmspdu(self) -> bool {
             self.0 & Self::MAI_MMSPDU != 0
+        }
+    }
+    impl crate::mms::MmsValue for TSConditions {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            let octets = (Self::BIT_COUNT as usize).div_ceil(8);
+            let mut bytes = vec![0u8; octets];
+            for position in 0..Self::BIT_COUNT {
+                if self.0 & 1u64.checked_shl(position).unwrap_or(0) != 0 {
+                    if let Some(octet) = bytes.get_mut((position / 8) as usize) {
+                        *octet |= 0x80u8 >> (position % 8);
+                    }
+                }
+            }
+            let unused = u8::try_from(
+                octets
+                    .saturating_mul(8)
+                    .saturating_sub(Self::BIT_COUNT as usize),
+            )
+            .unwrap_or(0);
+            igs_iso9506_mms_codec::generated::types::Data::BitString(
+                igs_iso9506_mms_codec::schema::BitString { unused, bytes },
+            )
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::BitString(bits) => {
+                    let length = bits
+                        .bytes
+                        .len()
+                        .saturating_mul(8)
+                        .saturating_sub(usize::from(bits.unused));
+                    if length < Self::BIT_COUNT as usize {
+                        return Err(crate::mms::ValueError::Format(
+                            "a bit string shorter than the flags of its type",
+                        ));
+                    }
+                    let mut value = 0u64;
+                    for position in 0..length {
+                        let octet = bits.bytes.get(position / 8).copied().unwrap_or(0);
+                        if octet & (0x80u8 >> (position % 8)) != 0 {
+                            if position >= Self::BIT_COUNT as usize {
+                                return Err(crate::mms::ValueError::Format(
+                                    "a bit beyond the flags of its type is set",
+                                ));
+                            }
+                            value |= 1u64.checked_shl(position as u32).unwrap_or(0);
+                        }
+                    }
+                    Ok(Self(value))
+                }
+                other => Err(crate::mms::ValueError::kind_of("bit string", other)),
+            }
         }
     }
 }
@@ -1237,6 +2019,26 @@ pub mod clause_g_4 {
         /// The value `FALSE`.
         pub const FALSE: i64 = 0;
     }
+    impl crate::mms::MmsValue for TSTransferSetBlockData {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-503 G.4 (page 154). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct TSTransferSetStatus(pub i64);
@@ -1245,6 +2047,26 @@ pub mod clause_g_4 {
         pub const DISABLED: i64 = 0;
         /// The value `ENABLED`.
         pub const ENABLED: i64 = 1;
+    }
+    impl crate::mms::MmsValue for TSTransferSetStatus {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
     }
     /// IEC 60870-6-503 G.4 (page 154). structure definition.
     #[derive(Debug, Clone, PartialEq)]
@@ -1266,12 +2088,57 @@ pub mod clause_g_4 {
         /// The component `status`.
         pub status: TSTransferSetStatus,
     }
+    impl crate::mms::MmsValue for TSTransferSet {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+                crate::mms::MmsValue::to_mms(&self.data_value_name),
+                crate::mms::MmsValue::to_mms(&self.ts_conditions_requested),
+                crate::mms::MmsValue::to_mms(&self.block_data),
+                crate::mms::MmsValue::to_mms(&self.begin_time),
+                crate::mms::MmsValue::to_mms(&self.end_time),
+                crate::mms::MmsValue::to_mms(&self.sampling_interval),
+                crate::mms::MmsValue::to_mms(&self.reporting_interval),
+                crate::mms::MmsValue::to_mms(&self.status),
+            ])
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2, item3, item4, item5, item6, item7] => Ok(Self { data_value_name: <crate::generated::iso503::MMSObjectName as crate::mms::MmsValue>::from_mms(item0)?, ts_conditions_requested: <crate::generated::iso503::clause_8_2_8_2::TSConditions as crate::mms::MmsValue>::from_mms(item1)?, block_data: <TSTransferSetBlockData as crate::mms::MmsValue>::from_mms(item2)?, begin_time: <crate::generated::iso503::GMTBasedS as crate::mms::MmsValue>::from_mms(item3)?, end_time: <crate::generated::iso503::GMTBasedS as crate::mms::MmsValue>::from_mms(item4)?, sampling_interval: <crate::generated::iso503::TimeIntervalL32 as crate::mms::MmsValue>::from_mms(item5)?, reporting_interval: <crate::generated::iso503::TimeIntervalL32 as crate::mms::MmsValue>::from_mms(item6)?, status: <TSTransferSetStatus as crate::mms::MmsValue>::from_mms(item7)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+        }
+    }
     /// IEC 60870-6-503 G.4 (page 155). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct TATransferSetBlockData(pub i64);
     impl TATransferSetBlockData {
         /// The value `FALSE`.
         pub const FALSE: i64 = 0;
+    }
+    impl crate::mms::MmsValue for TATransferSetBlockData {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
     }
     /// IEC 60870-6-503 G.4 (page 155). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1282,6 +2149,26 @@ pub mod clause_g_4 {
         /// The value `ENABLED`.
         pub const ENABLED: i64 = 1;
     }
+    impl crate::mms::MmsValue for TATransferSetStatus {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
+                    match i64::try_from(*value) {
+                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
+                        _ => Err(crate::mms::ValueError::Format(
+                            "not a value of the enumeration",
+                        )),
+                    }
+                }
+                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            }
+        }
+    }
     /// IEC 60870-6-503 G.4 (page 155). structure definition.
     #[derive(Debug, Clone, PartialEq)]
     pub struct TATransferSet {
@@ -1291,6 +2178,26 @@ pub mod clause_g_4 {
         pub block_data: TATransferSetBlockData,
         /// The component `status`.
         pub status: TATransferSetStatus,
+    }
+    impl crate::mms::MmsValue for TATransferSet {
+        fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(vec![
+                crate::mms::MmsValue::to_mms(&self.ta_conditions_requested),
+                crate::mms::MmsValue::to_mms(&self.block_data),
+                crate::mms::MmsValue::to_mms(&self.status),
+            ])
+        }
+        fn from_mms(
+            data: &igs_iso9506_mms_codec::generated::types::Data,
+        ) -> Result<Self, crate::mms::ValueError> {
+            match data {
+            igs_iso9506_mms_codec::generated::types::Data::Structure(items) => match items.as_slice() {
+                [item0, item1, item2] => Ok(Self { ta_conditions_requested: <crate::generated::iso503::TAConditions as crate::mms::MmsValue>::from_mms(item0)?, block_data: <TATransferSetBlockData as crate::mms::MmsValue>::from_mms(item1)?, status: <TATransferSetStatus as crate::mms::MmsValue>::from_mms(item2)? }),
+                _ => Err(crate::mms::ValueError::Format("a structure of another number of components")),
+            },
+            other => Err(crate::mms::ValueError::kind_of("structure", other)),
+        }
+        }
     }
     /// IEC 60870-6-503 G.4 (page 155). type definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
