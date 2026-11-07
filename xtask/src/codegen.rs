@@ -79,6 +79,8 @@ struct Inline {
     of: Option<Box<Inline>>,
     size: Option<Num>,
     varying: Option<bool>,
+    /// A constraint of the values, written `range least .. greatest` (the data files give it for some integers).
+    constraint: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -139,17 +141,41 @@ impl Entry {
 /// The shape of a type, as it is written in the generated code.
 #[derive(Debug, Clone)]
 enum Shape {
-    Float { format: i64, exponent: i64 },
-    Integer { width: i64 },
-    Unsigned { width: i64 },
+    Float {
+        format: i64,
+        exponent: i64,
+    },
+    Integer {
+        width: i64,
+        range: Option<(i64, i64)>,
+    },
+    Unsigned {
+        width: i64,
+    },
     Boolean,
-    Visible { max: i64, varying: bool },
-    Octets { max: Option<i64> },
-    Array { size: Option<i64>, element: String },
-    Bits { bits: Vec<Bit> },
-    Enumerated { values: Vec<(String, i64)> },
-    Structure { fields: Vec<(String, String)> },
-    Alias { path: String },
+    Visible {
+        max: i64,
+        varying: bool,
+    },
+    Octets {
+        max: Option<i64>,
+    },
+    Array {
+        size: Option<i64>,
+        element: String,
+    },
+    Bits {
+        bits: Vec<Bit>,
+    },
+    Enumerated {
+        values: Vec<(String, i64)>,
+    },
+    Structure {
+        fields: Vec<(String, String)>,
+    },
+    Alias {
+        path: String,
+    },
 }
 
 /// A generated item: its Rust name, its shape, and the clause and page where it is defined.
@@ -435,6 +461,7 @@ impl Model {
         Some(match kind {
             "integer" => Shape::Integer {
                 width: number(&inline.width)?,
+                range: parse_range(inline.constraint.as_deref()),
             },
             "unsigned" => Shape::Unsigned {
                 width: number(&inline.width)?,
@@ -587,6 +614,7 @@ impl Model {
             }
             Some("integer") => Shape::Integer {
                 width: number(&def.width).unwrap_or(0),
+                range: None,
             },
             Some("unsigned") => Shape::Unsigned {
                 width: number(&def.width).unwrap_or(0),
@@ -835,6 +863,46 @@ fn render_module(source: &Model, notation: usize) -> Result<String, String> {
     Ok(out)
 }
 
+/// The range written by a constraint, `range least .. greatest`; no constraint gives none.
+fn parse_range(constraint: Option<&str>) -> Option<(i64, i64)> {
+    let text = constraint?.strip_prefix("range")?;
+    let (least, greatest) = text.split_once("..")?;
+    Some((least.trim().parse().ok()?, greatest.trim().parse().ok()?))
+}
+
+/// An integer type: a newtype whose least and greatest values are those of its width, or of its constraint when the
+/// data files give one (the values of the constraint are then the only ones it holds).
+fn render_integer(
+    out: &mut String,
+    doc: &str,
+    name: &str,
+    width: i64,
+    range: Option<(i64, i64)>,
+    signed: bool,
+) {
+    let (min, max): (i128, i128) = match range {
+        Some((least, greatest)) => (i128::from(least), i128::from(greatest)),
+        None if signed => {
+            let half = 1i128 << (width - 1).max(0);
+            (-half, half - 1)
+        }
+        None => (0, (1i128 << width) - 1),
+    };
+    let ty = if signed { "i64" } else { "u64" };
+    let field = if signed { "i64" } else { "u64" };
+    writeln!(out, "{doc}").unwrap();
+    writeln!(
+        out,
+        "#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub struct {name}({field});"
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "impl {name} {{\n    /// The width in bits.\n    pub const WIDTH: u32 = {width};\n    /// The least value.\n    pub const MIN: {ty} = {min};\n    /// The greatest value.\n    pub const MAX: {ty} = {max};\n    /// The value, if it is in range.\n    pub fn new(value: {ty}) -> Result<Self, crate::value::OutOfRange> {{\n        if (Self::MIN..=Self::MAX).contains(&value) {{\n            Ok(Self(value))\n        }} else {{\n            Err(crate::value::OutOfRange {{ value: i128::from(value), min: {min}, max: {max} }})\n        }}\n    }}\n    /// The value.\n    pub fn get(self) -> {ty} {{\n        self.0\n    }}\n}}"
+    )
+    .unwrap();
+}
+
 fn render_item(item: &Item) -> String {
     let mut out = String::new();
     let doc = format!(
@@ -852,35 +920,10 @@ fn render_item(item: &Item) -> String {
             .unwrap();
             writeln!(out, "impl {name} {{\n    /// The format width, in bits.\n    pub const FORMAT_WIDTH: u32 = {format};\n    /// The exponent width, in bits.\n    pub const EXPONENT_WIDTH: u32 = {exponent};\n}}").unwrap();
         }
-        Shape::Integer { width } | Shape::Unsigned { width } => {
-            let signed = matches!(item.shape, Shape::Integer { .. });
-            let (min, max) = if signed {
-                let half = 1i128 << (width - 1).max(0);
-                (-half, half - 1)
-            } else {
-                (0, (1i128 << width) - 1)
-            };
-            writeln!(out, "{doc}").unwrap();
-            if signed {
-                writeln!(
-                    out,
-                    "#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub struct {name}(i64);"
-                )
-                .unwrap();
-            } else {
-                writeln!(
-                    out,
-                    "#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub struct {name}(u64);"
-                )
-                .unwrap();
-            }
-            let ty = if signed { "i64" } else { "u64" };
-            writeln!(
-                out,
-                "impl {name} {{\n    /// The width in bits.\n    pub const WIDTH: u32 = {width};\n    /// The least value.\n    pub const MIN: {ty} = {min};\n    /// The greatest value.\n    pub const MAX: {ty} = {max};\n    /// The value, if it is in range.\n    pub fn new(value: {ty}) -> Result<Self, crate::value::OutOfRange> {{\n        if (Self::MIN..=Self::MAX).contains(&value) {{\n            Ok(Self(value))\n        }} else {{\n            Err(crate::value::OutOfRange {{ value: i128::from(value), min: {min}, max: {max} }})\n        }}\n    }}\n    /// The value.\n    pub fn get(self) -> {ty} {{\n        self.0\n    }}\n}}"
-            )
-            .unwrap();
+        Shape::Integer { width, range } => {
+            render_integer(&mut out, &doc, name, *width, *range, true)
         }
+        Shape::Unsigned { width } => render_integer(&mut out, &doc, name, *width, None, false),
         Shape::Boolean => {
             writeln!(out, "{doc}").unwrap();
             writeln!(

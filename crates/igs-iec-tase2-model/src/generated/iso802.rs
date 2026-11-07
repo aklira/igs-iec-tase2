@@ -1975,9 +1975,9 @@ impl IndicationPointConfigPointType {
     /// The width in bits.
     pub const WIDTH: u32 = 8;
     /// The least value.
-    pub const MIN: i64 = -128;
+    pub const MIN: i64 = 0;
     /// The greatest value.
-    pub const MAX: i64 = 127;
+    pub const MAX: i64 = 2;
     /// The value, if it is in range.
     pub fn new(value: i64) -> Result<Self, crate::value::OutOfRange> {
         if (Self::MIN..=Self::MAX).contains(&value) {
@@ -1985,8 +1985,8 @@ impl IndicationPointConfigPointType {
         } else {
             Err(crate::value::OutOfRange {
                 value: i128::from(value),
-                min: -128,
-                max: 127,
+                min: 0,
+                max: 2,
             })
         }
     }
@@ -2022,9 +2022,9 @@ impl IndicationPointConfigQualityClass {
     /// The width in bits.
     pub const WIDTH: u32 = 8;
     /// The least value.
-    pub const MIN: i64 = -128;
+    pub const MIN: i64 = 0;
     /// The greatest value.
-    pub const MAX: i64 = 127;
+    pub const MAX: i64 = 1;
     /// The value, if it is in range.
     pub fn new(value: i64) -> Result<Self, crate::value::OutOfRange> {
         if (Self::MIN..=Self::MAX).contains(&value) {
@@ -2032,8 +2032,8 @@ impl IndicationPointConfigQualityClass {
         } else {
             Err(crate::value::OutOfRange {
                 value: i128::from(value),
-                min: -128,
-                max: 127,
+                min: 0,
+                max: 1,
             })
         }
     }
@@ -2069,9 +2069,9 @@ impl IndicationPointConfigNormalSource {
     /// The width in bits.
     pub const WIDTH: u32 = 8;
     /// The least value.
-    pub const MIN: i64 = -128;
+    pub const MIN: i64 = 0;
     /// The greatest value.
-    pub const MAX: i64 = 127;
+    pub const MAX: i64 = 3;
     /// The value, if it is in range.
     pub fn new(value: i64) -> Result<Self, crate::value::OutOfRange> {
         if (Self::MIN..=Self::MAX).contains(&value) {
@@ -2079,8 +2079,8 @@ impl IndicationPointConfigNormalSource {
         } else {
             Err(crate::value::OutOfRange {
                 value: i128::from(value),
-                min: -128,
-                max: 127,
+                min: 0,
+                max: 3,
             })
         }
     }
@@ -2116,9 +2116,9 @@ impl IndicationPointConfigTimeStampClass {
     /// The width in bits.
     pub const WIDTH: u32 = 8;
     /// The least value.
-    pub const MIN: i64 = -128;
+    pub const MIN: i64 = 0;
     /// The greatest value.
-    pub const MAX: i64 = 127;
+    pub const MAX: i64 = 1;
     /// The value, if it is in range.
     pub fn new(value: i64) -> Result<Self, crate::value::OutOfRange> {
         if (Self::MIN..=Self::MAX).contains(&value) {
@@ -2126,8 +2126,8 @@ impl IndicationPointConfigTimeStampClass {
         } else {
             Err(crate::value::OutOfRange {
                 value: i128::from(value),
-                min: -128,
-                max: 127,
+                min: 0,
+                max: 1,
             })
         }
     }
@@ -2163,9 +2163,9 @@ impl IndicationPointConfigCOVClass {
     /// The width in bits.
     pub const WIDTH: u32 = 8;
     /// The least value.
-    pub const MIN: i64 = -128;
+    pub const MIN: i64 = 0;
     /// The greatest value.
-    pub const MAX: i64 = 127;
+    pub const MAX: i64 = 1;
     /// The value, if it is in range.
     pub fn new(value: i64) -> Result<Self, crate::value::OutOfRange> {
         if (Self::MIN..=Self::MAX).contains(&value) {
@@ -2173,8 +2173,8 @@ impl IndicationPointConfigCOVClass {
         } else {
             Err(crate::value::OutOfRange {
                 value: i128::from(value),
-                min: -128,
-                max: 127,
+                min: 0,
+                max: 1,
             })
         }
     }
@@ -2635,9 +2635,9 @@ impl ControlConfigControlPointType {
     /// The width in bits.
     pub const WIDTH: u32 = 8;
     /// The least value.
-    pub const MIN: i64 = -128;
+    pub const MIN: i64 = 0;
     /// The greatest value.
-    pub const MAX: i64 = 127;
+    pub const MAX: i64 = 2;
     /// The value, if it is in range.
     pub fn new(value: i64) -> Result<Self, crate::value::OutOfRange> {
         if (Self::MIN..=Self::MAX).contains(&value) {
@@ -2645,8 +2645,8 @@ impl ControlConfigControlPointType {
         } else {
             Err(crate::value::OutOfRange {
                 value: i128::from(value),
-                min: -128,
-                max: 127,
+                min: 0,
+                max: 2,
             })
         }
     }
@@ -2682,9 +2682,9 @@ impl ControlConfigSetPointType {
     /// The width in bits.
     pub const WIDTH: u32 = 8;
     /// The least value.
-    pub const MIN: i64 = -128;
+    pub const MIN: i64 = 0;
     /// The greatest value.
-    pub const MAX: i64 = 127;
+    pub const MAX: i64 = 2;
     /// The value, if it is in range.
     pub fn new(value: i64) -> Result<Self, crate::value::OutOfRange> {
         if (Self::MIN..=Self::MAX).contains(&value) {
@@ -2692,8 +2692,8 @@ impl ControlConfigSetPointType {
         } else {
             Err(crate::value::OutOfRange {
                 value: i128::from(value),
-                min: -128,
-                max: 127,
+                min: 0,
+                max: 2,
             })
         }
     }
@@ -2729,9 +2729,9 @@ impl ControlConfigDeviceClass {
     /// The width in bits.
     pub const WIDTH: u32 = 8;
     /// The least value.
-    pub const MIN: i64 = -128;
+    pub const MIN: i64 = 0;
     /// The greatest value.
-    pub const MAX: i64 = 127;
+    pub const MAX: i64 = 1;
     /// The value, if it is in range.
     pub fn new(value: i64) -> Result<Self, crate::value::OutOfRange> {
         if (Self::MIN..=Self::MAX).contains(&value) {
@@ -2739,8 +2739,8 @@ impl ControlConfigDeviceClass {
         } else {
             Err(crate::value::OutOfRange {
                 value: i128::from(value),
-                min: -128,
-                max: 127,
+                min: 0,
+                max: 1,
             })
         }
     }
@@ -2776,9 +2776,9 @@ impl ControlConfigTagClass {
     /// The width in bits.
     pub const WIDTH: u32 = 8;
     /// The least value.
-    pub const MIN: i64 = -128;
+    pub const MIN: i64 = 0;
     /// The greatest value.
-    pub const MAX: i64 = 127;
+    pub const MAX: i64 = 1;
     /// The value, if it is in range.
     pub fn new(value: i64) -> Result<Self, crate::value::OutOfRange> {
         if (Self::MIN..=Self::MAX).contains(&value) {
@@ -2786,8 +2786,8 @@ impl ControlConfigTagClass {
         } else {
             Err(crate::value::OutOfRange {
                 value: i128::from(value),
-                min: -128,
-                max: 127,
+                min: 0,
+                max: 1,
             })
         }
     }
