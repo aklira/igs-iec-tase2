@@ -28,7 +28,8 @@ silent, to be confirmed by an observation test against other implementations.
   §6.4. Each definition applies within its clause.
 - **Sources**: IEC 60870-6-802 §6.3, §6.4.
 - **Confidence**: medium, to be confirmed by reading the use of each type.
-- **Test**: to be written (task F2).
+- **Test**: `crates/igs-iec-tase2-model/tests/generated.rs`, `a_name_defined_in_several_clauses_keeps_each_definition_in_its_clause`
+  (the two widths of `Number`, 16 and 32 bits).
 
 ### D-002 — Spelling of type names
 
@@ -36,7 +37,7 @@ silent, to be confirmed by an observation test against other implementations.
   802 §6.2 is spelled `COV_Counter`), `OutageAmountTypeId`, `ReferenceNum`, `InfoBufXX`.
 - **Sources**: count of each spelling in the PDF of 802 and 503.
 - **Confidence**: medium, deduced from the names.
-- **Test**: to be written (task F2).
+- **Test**: `crates/igs-iec-tase2-model/tests/generated.rs`, `the_spelling_of_the_data_file_is_kept_in_the_type_names`.
 
 ### D-003 — The current text of 503 prevails over its annex G
 
@@ -51,3 +52,61 @@ silent, to be confirmed by an observation test against other implementations.
 | Source | Licence | Use | Provenance |
 | --- | --- | --- | --- |
 | rusty-iccp | MIT, to be confirmed at task F4 | Reference peer of the bench, black box only | Source never read |
+
+### D-004 — A visible string width is a maximum
+
+- **Decision**: the width of a visible string (`visiblestring` in the data files, with or without `varying`) is the
+  greatest number of characters. The generated `new` refuses a longer string; a shorter one is accepted, also when the
+  data file gives no variable length.
+- **Why**: the data files give one width per string, and do not say in every case whether the length is fixed. The
+  maximum is the constraint that every reading satisfies.
+- **Sources**: IEC 60870-6-802 §6.2, §6.3 (the definitions of the strings), and the data files.
+- **Confidence**: medium. A fixed-length reading would refuse shorter strings; to be confirmed at M1 against the
+  encoding rules of the MMS string types.
+- **Test**: to be written with the conversions (task M1); the generated `MAX_LEN` constants are in the model.
+
+### D-005 — A plain INTEGER is a 32-bit integer
+
+- **Decision**: the plain `integer` that the data files name as a type (for example `NumPeriods` of the Forecast type,
+  802 annex B) is the 32-bit integer of the base types. Every integer of the files has that width when it has one.
+- **Why**: the data files name the type `integer` without a width; the width of the integers of the standard is 32
+  bits, and the decoder of the stack reads 32-bit integers in the same places.
+- **Sources**: the data files (the widths of the integer definitions); IEC 60870-6-802 annex B.3.
+- **Confidence**: medium: a 16-bit reading would also fit the data.
+- **Test**: `crates/igs-iec-tase2-model/tests/generated.rs`, `a_plain_integer_of_the_data_file_is_a_32_bit_integer`.
+
+### D-006 — References across the two files, and a name defined several times
+
+- **Decision**: a reference is resolved in the names of both data files (802 and 503), since the two standards share
+  their types (for example `TimeIntervalS` of 503 is used by 802 annex B). When a name is defined several times, a
+  reference takes the definition of its own clause; otherwise the definition of the main text, when there is exactly
+  one (an annex is not preferred to the main text: decision D-003 for annex G of 503); otherwise the first of several
+  definitions with the same structure; otherwise the generation fails, and the case is decided and recorded here.
+- **Why**: the rule resolves every reference of the two files without a choice by hand; the generation refuses any
+  case it cannot resolve, so that no reference is guessed.
+- **Sources**: the data files; IEC 60870-6-503 §8.2, annex G (D-003).
+- **Confidence**: high for the cross-file resolution (every reference resolves); medium for the choice of the first of
+  several identical definitions, which does not change the type.
+- **Test**: `crates/igs-iec-tase2-model/tests/generated.rs`, the counts (123 and 111, 49 and 40), the components (285 and
+  53) and the bits (68 and 45), counted independently from the YAML.
+
+### D-007 — The base types, written by hand
+
+- **Decision**: the base types that the data files name without defining them are written by hand in
+  `crates/igs-iec-tase2-model/src/builtin.rs`: `MMS Identifier` (at most 32 characters), `Integer16`, `Integer32`
+  and `Unsigned8` (two's complement and unsigned ranges of their widths).
+- **Why**: the generator must not invent the base types; they are the same in every use, and few.
+- **Sources**: IEC 60870-6-802 §6 (the base types as used), the identifier of 32 characters of ISO 9506-2 §7.5.2
+  (the same rule as the MMS plan, G9 of `igs-iso9506-mms`).
+- **Confidence**: high.
+- **Test**: `crates/igs-iec-tase2-model/tests/builtin.rs` (the limits of each type).
+
+### D-008 — The generator: the data files, the formatting, the check
+
+- **Decision**: `cargo xtask codegen` reads the two data files with `serde-saphyr` (MIT or Apache-2.0, the parser of
+  `igs-iso9506-mms`'s xtask), writes the generated files, and formats them with `rustfmt`. `--check` regenerates in
+  memory and fails if a committed file differs: the staleness is the difference of contents, not a hash.
+- **Why**: the committed files are the reviewed code; their difference is the only check the reviewer needs.
+- **Confidence**: high (`--check` was tested on a stale file: it fails, and passes once restored).
+- **Test**: the generated files are checked by `cargo xtask codegen --check` in the gate.
+
