@@ -16,6 +16,7 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use igs_iec_tase2_model::builtin::{Integer16, Integer32, MmsIdentifier, Unsigned8};
 use igs_iec_tase2_model::generated::iso503::{TimeStampExtended, VisibleString32};
+use igs_iec_tase2_model::generated::iso802::ControlSetpointReal;
 use igs_iec_tase2_model::generated::iso802::{
     self, clause_6_2_1, clause_6_3, clause_6_4, COVCounter, TextString,
 };
@@ -279,4 +280,21 @@ fn the_generated_types_name_their_clause_and_the_base_types_are_by_hand() {
     // The generated code keeps the definition of each clause (decision D-001): both Number definitions exist.
     assert_eq!(clause_6_3::Number::WIDTH, 16);
     assert_eq!(clause_6_4::Number::WIDTH, 32);
+}
+
+#[test]
+fn a_real_that_is_not_a_number_or_infinite_is_refused() {
+    // Single precision: exponent width 8, then the octets. All ones in the exponent: an infinity, or a NaN.
+    let infinity = Data::FloatingPoint(FloatingPoint(vec![8, 0x7f, 0x80, 0, 0]));
+    let nan = Data::FloatingPoint(FloatingPoint(vec![8, 0x7f, 0xc0, 0, 0]));
+    let negative_infinity = Data::FloatingPoint(FloatingPoint(vec![8, 0xff, 0x80, 0, 0]));
+    for data in [infinity, nan, negative_infinity] {
+        assert!(matches!(
+            ControlSetpointReal::from_mms(&data),
+            Err(ValueError::Format(_))
+        ));
+    }
+    // The largest finite single-precision value is read.
+    let largest = Data::FloatingPoint(FloatingPoint(vec![8, 0x7f, 0x7f, 0xff, 0xff]));
+    assert!(ControlSetpointReal::from_mms(&largest).is_ok());
 }
