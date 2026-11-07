@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 The igs-iec-tase2 contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# The interop bench of igs-iec-tase2 (task F4). The reference peer (rusty-iccp, as a black box) runs in its own
+# container; the device under test is igsmms-server of igs-iso9506-mms (bench/device/build.sh). The capture shares the
+# network namespace of the device, so that every frame of the association is seen once.
+
+x-debian: &debian
+  image: docker.io/library/debian:bookworm-slim
+
+services:
+  peer:
+    build:
+      context: ./peer
+    command: ["sleep", "infinity"]
+    networks:
+      bench:
+        ipv4_address: 172.31.110.21
+
+  device:
+    <<: *debian
+    command: ["/usr/local/bin/igsmms-server", "--listen", "0.0.0.0:102", "--config", "/etc/igsmms/demo.toml"]
+    volumes:
+      - ./device/bin/igsmms-server:/usr/local/bin/igsmms-server:ro
+      - ./device/demo.toml:/etc/igsmms/demo.toml:ro
+    ports:
+      - "127.0.0.1:10102:102"
+    networks:
+      bench:
+        ipv4_address: 172.31.110.10
+
+  capture:
+    image: docker.io/nicolaka/netshoot@sha256:a20c2531bf35436ed3766cd6cfe89d352b050ccc4d7005ce6400adf97503da1b
+    network_mode: "service:device"
+    depends_on:
+      - device
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      BENCH_CAPTURE: ${BENCH_CAPTURE:-bench.pcap}
+    command:
+      - sh
+      - -c
+      - tcpdump -i any -U --immediate-mode -Z root -w "/captures/$$BENCH_CAPTURE" tcp port 102 & exec sleep infinity
+    volumes:
+      - ./captures:/captures
+
+networks:
+  bench:
+    ipam:
+      config:
+        - subnet: 172.31.110.0/24

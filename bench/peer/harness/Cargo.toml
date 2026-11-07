@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 The igs-iec-tase2 contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# The harness of the reference peer (task F4). It uses the public API of rusty-iccp and of its MMS service crate as a
+# black box: the crates are built and run in the bench, and their source is never read (rule 1 of IMPLEMENTATION.md).
+# The crates are MIT OR Apache-2.0 (PROVENANCE.md, D-010).
+
+[package]
+name = "ref-peer"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "Apache-2.0"
+
+[workspace]
+
+[dependencies]
+rusty-iccp = "=0.9.2"
+rusty-mms-service = "=0.9.2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time"] }

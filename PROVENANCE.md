@@ -51,7 +51,7 @@ silent, to be confirmed by an observation test against other implementations.
 
 | Source | Licence | Use | Provenance |
 | --- | --- | --- | --- |
-| rusty-iccp | MIT, to be confirmed at task F4 | Reference peer of the bench, black box only | Source never read |
+| rusty-iccp 0.9.2 (and rusty-mms-service 0.9.2) | MIT OR Apache-2.0, read on crates.io (`license` of the version) | Reference peer of the bench, as a black box: built in a container, its public API used by the harness `bench/peer/harness` (D-010) | Source never read: the crates.io metadata, the public README of the repository, and the signatures of the public API on docs.rs only |
 
 ### D-004 — A visible string width is a maximum
 
@@ -133,4 +133,24 @@ silent, to be confirmed by an observation test against other implementations.
   for the choice of the other blocks, which waits for F4.
 - **Test**: to be written with the blocks themselves (task B5 and the tests of the services in the link and client
   tasks); the scope itself is checked by `docs/capabilities.md` in X1.
+
+### D-010 — The reference peer: rusty-iccp 0.9.2, used as a black box (task F4)
+
+- **Decision**: the reference peer is rusty-iccp 0.9.2 (MIT OR Apache-2.0), with its MMS service crate
+  rusty-mms-service 0.9.2 (the same licence). The bench builds a harness (`bench/peer/harness`) that calls the public API
+  of the MMS service crate: `create_mms_service_client`, then `identify`. The harness is the reference peer's initiator.
+  The ICCP client of rusty-iccp is not yet exercised: its API is not documented (docs.rs: 0 % of the crate documented),
+  and the association is the first scenario, as the plan requires.
+- **Why this peer**: it is the peer named in the plan (F4), it is public and permissively licensed, and it builds from
+  crates.io. No other peer is available (the plan allows a second one, given by a maintainer).
+- **How it was read**: the crates.io metadata (licence, versions), the README of the repository (the status of each
+  layer), and the signatures of the public API on docs.rs. The source of the crates was never opened or extracted. The
+  harness uses only those signatures.
+- **Status of the layers** (from the README of the repository, as its authors state it): TPKT and COTP complete; the
+  session, presentation, ACSE and MMS layers pre-release; ICCP/TASE.2 in progress. The scenario therefore tests the
+  association and one confirmed service, not TASE.2.
+- **Confidence**: high for the licence and the version (crates.io); medium for the description of the layers, which is
+  the authors' own statement.
+- **Test**: `bench/tests/test_f4_peer_association.py`: the peer associates with `igsmms-server` and identifies it; the
+  capture decodes with no error in tshark.
 
