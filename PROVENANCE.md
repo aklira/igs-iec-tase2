@@ -851,10 +851,11 @@ silent, to be confirmed by an observation test against other implementations.
 
 ### D-060 — Which transfer-set conditions belong to block 2, and what is already implemented (task C2)
 
-- **Decision**: in the conformance table of IEC 60870-6-702 (the statuses of the transfer-set operations, A.2 of 702), the conditions
-  IntervalTimeOut, OperatorRequest, OtherExternalEvent and EventCodeRequested are required of a server for block 1 (`m1`), and the
-  conditions ObjectChange and IntegrityTimeout are required of a server for block 2 (`m2`). Block 2 (Extended Conditions) is therefore
-  the ObjectChange and IntegrityTimeout conditions, with their buffer and their RBE rules. Both are already implemented in the link
+- **Decision**: in Table A.7 of IEC 60870-6-702 (DS transfer sets, read on the page image), a server must support, for block 1 (`m1`):
+  the operations, the Start Time and the Interval, the DSConditions Requested, IntervalTimeOut, OperatorRequest, OtherExternalEvent and
+  EventCodeRequested; and for block 2 (`m2`): ObjectChange, IntegrityTimeout, TLE, BufferTime, IntegrityCheck, Critical and RBE. Block 2
+  (Extended Conditions) is therefore the ObjectChange and IntegrityTimeout conditions and the transmission parameters that they use
+  (TLE, buffer time, integrity check, critical, RBE). Block 3 (Blocked Transfers) is `m3` for the Block Data parameter. Both are already implemented in the link
   (B4: `an_object_change_without_a_buffer_is_reported_at_once`, `a_buffered_change_is_reported_at_the_end_of_the_buffer_with_the_last_value`,
   `an_integrity_expiry_reports_the_entire_data_set_with_rbe`, `the_integrity_check_applies_only_with_rbe`), and the server reports
   the ObjectChange condition (`a_change_of_a_monitored_value_is_reported_to_its_association`). The client requests them through the
@@ -865,9 +866,7 @@ silent, to be confirmed by an observation test against other implementations.
 - **Consequence for C5**: the link and the server already cover block 2's conditions. C5 is reduced to checking, in the client and
   the server, that a block-2 condition is requested and reported end to end (tests in `crates/igs-iec-tase2/tests/`), and to noting it in
   the capabilities matrix.
-- **Confidence**: high for the reading of the table (its statuses are printed in the extracted conformance data); medium for the claim
-  that the block-2 set is exactly ObjectChange and IntegrityTimeout, since the block's own clause (the Extended Conditions block of 702)
-  was not re-read in this decision. Re-check it against the clause before R1.
+- **Confidence**: high: the statuses were read on the page image of Table A.7 (page 19 of the PDF in `docs/standard/IECTASE2/`).
 - **Test**: the tests named above; `crates/igs-iec-tase2-model/tests/information.rs` for the information types of C2.
 
 ### D-061 — Information messages are reported by the server; the trigger is local; the Information Message block is required for both roles (task C3)
@@ -878,14 +877,14 @@ silent, to be confirmed by an observation test against other implementations.
   send information messages: the mapping of 6-503 §6.8 says that messages "are only reported by the server". The condition that
   triggers a report is local: the link's `report` is called when the server's condition occurs (6-503 §7.2.5.4.1: "the mechanism for
   performing condition monitoring is a local matter").
-  The conformance table of 702 (A.10) prints the Information Message Transfer Set Model and the InformationBuffer Object with the
-  status `I4` for both roles. This is read as mandatory for block 4, for both roles, as the other tables print the block number as
-  the superscript of a mandatory status (`m1`, `m2`).
+  The conformance table of 702 (A.10, page 20 of the PDF) prints the Information Message Transfer Set Model and the InformationBuffer
+  Object as `i` with the superscript 4, for both roles: the letter is the status "outside the scope" of the legend of A.2.4, and the
+  superscript names the block. The objects are therefore not required by the profile's conformance table; block 4 stays an optional
+  block (Table A.1). The same pattern holds for blocks 8 and 9, which are out of 1.0. The mandatory entries are `mn`, as A.3 defines.
 - **Why**: the mapping of 6-503 §6.8 and §7.2.5.5.4 is the normative description of the report; the trigger is local by the standard's
-  own words; the table's status for both roles follows the reading of the superscript that the other tables use.
-- **Confidence**: high for the report (the mapping gives the variables and their order); medium for the reading of `I4` as mandatory
-  for block 4, since the printed status is not a legend in the extracted data. Check the PDF (page 20 of 702, table A.10) before R1.
-  The client's sending of information messages is out of 1.0: the mapping gives no MMS form for it; recorded as a gap.
+  own words. The objects are implemented because block 4 is in 1.0 (D-059), not because the profile requires them.
+- **Confidence**: high for the report (the mapping gives the variables and their order); high for the status `i` of table A.10 (read on
+  the page image). The client's sending of information messages is out of 1.0: the mapping gives no MMS form for it; recorded as a gap.
 - **Test**: `crates/igs-iec-tase2-link/tests/information.rs`, 15 tests, including the round trip of a message through its report.
 
 ### D-062 — The sizes of the information buffers (task C3)
