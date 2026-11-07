@@ -20,9 +20,10 @@ igs-iec-tase2-link = { path = "../igs-iec-tase2-link" }
 igs-iso9506-mms.workspace = true
 # The MMS types of the requests and the responses (task T1).
 igs-iso9506-mms-codec.workspace = true
+igs-iso9506-mms-link.workspace = true
+# The update channel of the server, to its model (task S1).
+tokio = { version = "1", features = ["sync"] }
 
 [dev-dependencies]
 # The runtime of the integration tests, which run the client against an in-process server (task T1).
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time"] }
-# The link configuration of the MMS stack, for the client of the tests.
-igs-iso9506-mms-link.workspace = true

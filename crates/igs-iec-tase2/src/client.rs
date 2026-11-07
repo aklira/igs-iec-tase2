@@ -23,8 +23,9 @@ use igs_iso9506_mms_codec::generated::types::{
     AccessResult, Data, DataAccessError, DefineNamedVariableListRequest,
     DefineNamedVariableListRequestListOfVariableItem, DeleteNamedVariableListRequest,
     DeleteNamedVariableListRequestScopeOfDelete, GetNamedVariableListAttributesRequest,
-    InformationReport, ReadRequest, UnconfirmedService, VariableAccessSpecification,
-    VariableSpecification, WriteRequest, WriteResponseItemItem,
+    GetVariableAccessAttributesRequest, InformationReport, ReadRequest, TypeDescription,
+    UnconfirmedService, VariableAccessSpecification, VariableSpecification, WriteRequest,
+    WriteResponseItemItem,
 };
 
 use crate::error::Error;
@@ -282,6 +283,15 @@ impl TaseClient {
                 _ => Err(Error::Malformed("a member of a data set is named")),
             })
             .collect()
+    }
+
+    /// Get Data Value Type (503 §7.2.3.5): the type description of a data value.
+    pub async fn get_data_value_type(&self, name: &ObjectName) -> Result<TypeDescription, Error> {
+        let response = self
+            .mms
+            .get_variable_access_attributes(GetVariableAccessAttributesRequest::Name(to_mms(name)))
+            .await?;
+        Ok(response.type_description)
     }
 
     /// Create Data Set (503 §7.2.4.2): defines the data set with its members. A refusal is the MMS error of the server.

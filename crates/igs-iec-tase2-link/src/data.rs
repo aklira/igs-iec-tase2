@@ -140,6 +140,11 @@ impl<S: Store> Vcc<S> {
         &self.store
     }
 
+    /// The store of the values, for the application that owns the values (its updates are not client writes).
+    pub fn store_mut(&mut self) -> &mut S {
+        &mut self.store
+    }
+
     /// The members of a data set, or `None` when the data set does not exist.
     pub fn members(&self, name: &ObjectName) -> Option<&[ObjectName]> {
         self.data_sets.get(name).map(Vec::as_slice)

@@ -14,6 +14,8 @@
 pub mod client;
 pub mod error;
 mod names;
+pub mod server;
 
 pub use client::{Agreement, ReceivedReport, ReportAccess, TaseClient, TaseEvent, TaseEvents};
 pub use error::Error;
+pub use server::{TaseServer, TaseServerConfig};
