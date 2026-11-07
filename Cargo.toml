@@ -10,6 +10,7 @@ members = [
     "crates/igs-iec-tase2",
     "crates/igstase2-server",
     "crates/igstase2-client",
+    "crates/igstase2-load",
     "xtask",
 ]
 

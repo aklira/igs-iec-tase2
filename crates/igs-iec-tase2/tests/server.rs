@@ -452,6 +452,43 @@ async fn a_change_of_a_monitored_value_is_reported_to_its_association() {
 }
 
 #[tokio::test]
+async fn a_report_reaches_only_the_association_that_started_its_transfer_set() {
+    // Two associations at once (the load run): only the first starts TS1, so only the first receives the report.
+    let server = serving("BT-2026-001").await;
+    let (first, mut first_events) = client(&server).await;
+    let (second, mut second_events) = client(&server).await;
+    let set = transfer_set("DS1", DSConditions::OBJECT_CHANGE, false);
+    assert_eq!(
+        first.start_transfer(&icc("TS1"), &set).await.unwrap(),
+        Item::Success(())
+    );
+    server
+        .set_value(icc("Flow1"), Data::Integer(43))
+        .await
+        .unwrap();
+    let report = next_report(&mut first_events).await;
+    assert_eq!(report.values[0], Item::Success(Data::Integer(43)));
+    // The second association sees no report within the answer time (its own events may carry only connection events).
+    let quiet = timeout(ANSWER, async {
+        loop {
+            match second_events.next().await {
+                Some(Ok(TaseEvent::Report(report))) => return Some(report),
+                Some(Ok(TaseEvent::Connection(_))) => continue,
+                _ => return None,
+            }
+        }
+    })
+    .await;
+    assert!(
+        !matches!(quiet, Ok(Some(_))),
+        "the second association received a report it did not start"
+    );
+    first.close().await.unwrap();
+    second.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
 async fn a_report_by_exception_carries_the_changed_member_only() {
     let server = serving("BT-2026-001").await;
     let (client, mut events) = client(&server).await;
