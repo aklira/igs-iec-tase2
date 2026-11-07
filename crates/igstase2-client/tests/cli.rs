@@ -84,6 +84,7 @@ async fn serving() -> TaseServer {
         transfer_sets: BTreeSet::new(),
         data_sets: Vec::new(),
         data_set_capacity: 4,
+        devices: Vec::new(),
         transfer: Policy {
             expected_send_delay: Duration::ZERO,
             ack_timeout: Duration::from_secs(30),

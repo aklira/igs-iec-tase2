@@ -110,6 +110,7 @@ fn server_config() -> Result<(TaseServerConfig, Vmd), Box<dyn std::error::Error>
         transfer_sets: BTreeSet::from([icc("TS1")]),
         data_sets: Vec::new(),
         data_set_capacity: 8,
+        devices: Vec::new(),
         transfer: Policy {
             expected_send_delay: Duration::ZERO,
             ack_timeout: Duration::from_secs(30),

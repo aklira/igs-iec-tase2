@@ -10,9 +10,16 @@
 //! application changes a data value through [`TaseServer::set_value`]; the change is sent by the model at its next poll,
 //! and the transfer sets that monitor the value report it.
 //!
-//! Not served by S1: the GetNameList service (503 §7.2.3.4, §7.2.4.6), which needs a per-table listing; the blocked
-//! transfer reports (BlockData); and the acknowledgement of a critical report, which the MMS stack does not send from the
-//! server side as a request (the server signals the data failure after the ack timeout, and no Data_failure event).
+//! The devices (503 §5.3.12) are served under the table of each client: the Select is the read of `<device>_SBO`, the
+//! Operate the write of the device, and the tag is read and written as `<device>_TAG`. The commands are simulated: an
+//! accepted Operate completes at once. The Information Message Transfer Set (503 §7.2.5) is started and stopped by the
+//! client, and the server reports the messages that [`TaseServer::send_information`] gives it.
+//!
+//! Not served: the GetNameList service (503 §7.2.3.4, §7.2.4.6), which needs a per-table listing; the blocked transfer
+//! reports (BlockData); the acknowledgement of a critical report, which the MMS stack does not send from the server side as a
+//! request (the server signals the data failure after the ack timeout, and no Data_failure event); and the device actions
+//! (Timeout, Local Reset, Success, Failure) as MMS event conditions, which the stack does not serve: the model takes them and
+//! drops them.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::net::SocketAddr;
@@ -23,13 +30,21 @@ use igs_iec_tase2_link::bilateral::{
     Access, BilateralTable, BilateralTables, Object, ObjectAccess, ObjectName, Permission, Scope,
 };
 use igs_iec_tase2_link::data::{ErrorCode, Item, Store, Vcc};
+use igs_iec_tase2_link::device::{
+    ClientId, Device, DeviceClass, DeviceState, Outcome, Tag, TagState,
+};
+use igs_iec_tase2_link::information::{InformationMessage, InformationTransferSet};
 use igs_iec_tase2_link::transfer::{DataSetTransferSet, Parameters, Payload, Policy, Report};
 use igs_iec_tase2_link::version::STANDARD_VERSION;
 use igs_iec_tase2_model::builtin::Integer16;
-use igs_iec_tase2_model::generated::iso503::{DSConditions, DSTransferSet, SupportedFeatures};
+use igs_iec_tase2_model::generated::iso503::{
+    DSConditions, DSTransferSet, IMTransferSet, SupportedFeatures,
+};
+use igs_iec_tase2_model::generated::iso802::{TagFlags, TagValue, TextString};
 use igs_iec_tase2_model::mms::MmsValue;
 use igs_iso9506_mms::server::{Model, Outbound, Peer, PeerId, Server, ServerConfig};
 use igs_iso9506_mms::vmd::{Name, Target, Vmd};
+use igs_iso9506_mms_codec::generated::types::Identifier;
 use igs_iso9506_mms_codec::generated::types::ObjectName as MmsObjectName;
 use igs_iso9506_mms_codec::generated::types::{
     AEQualifier, AEQualifierForm2, APTitle, APTitleForm2, AccessResult, ConfirmedServiceRequest,
@@ -52,6 +67,17 @@ use crate::names::{from_mms, to_mms, variable};
 /// The number of changes of data values that wait for the model.
 const UPDATE_CAPACITY: usize = 64;
 
+/// A device of the server (503 §5.3.12): its name, its class, and the commands that close or raise.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeviceConfig {
+    /// The name of the device; its variables are `<name>` (the command), `<name>_SBO` and `<name>_TAG` (802 §5.2, 503 §6.15).
+    pub name: ObjectName,
+    /// The class: Select-Before-Operate, or Direct-Control.
+    pub class: DeviceClass,
+    /// The commands that close or raise, which CLOSE-ONLY-INHIBIT refuses. The meaning of the commands is local (503 §5.3.12.4).
+    pub closing_commands: Vec<i64>,
+}
+
 /// The configuration of a TASE.2 server.
 #[derive(Debug, Clone)]
 pub struct TaseServerConfig {
@@ -67,6 +93,8 @@ pub struct TaseServerConfig {
     pub data_sets: Vec<(ObjectName, Vec<ObjectName>)>,
     /// The number of data sets the server can hold.
     pub data_set_capacity: usize,
+    /// The devices of the server. Their commands are simulated: an accepted Operate completes at once.
+    pub devices: Vec<DeviceConfig>,
     /// The expected time to send a report, and the time to wait for the acknowledgement of a critical one.
     pub transfer: Policy,
 }
@@ -74,7 +102,7 @@ pub struct TaseServerConfig {
 /// A running TASE.2 server.
 pub struct TaseServer {
     mms: Server,
-    updates: mpsc::Sender<(ObjectName, Data)>,
+    updates: mpsc::Sender<Update>,
 }
 
 impl TaseServer {
@@ -96,7 +124,16 @@ impl TaseServer {
     /// it report the change at the next poll of the model.
     pub async fn set_value(&self, name: ObjectName, value: Data) -> Result<(), Error> {
         self.updates
-            .send((name, value))
+            .send(Update::Value(name, value))
+            .await
+            .map_err(|_| Error::Malformed("the server has stopped"))
+    }
+
+    /// Sends an information message: each association whose Information Message Transfer Set is enabled reports it at the
+    /// next poll of the model (503 §7.2.5.5.4).
+    pub async fn send_information(&self, message: InformationMessage) -> Result<(), Error> {
+        self.updates
+            .send(Update::Information(message))
             .await
             .map_err(|_| Error::Malformed("the server has stopped"))
     }
@@ -255,6 +292,119 @@ fn clock() -> Duration {
         .unwrap_or(Duration::ZERO)
 }
 
+/// A change of the application, for the model: a data value, or an information message to report.
+enum Update {
+    /// A data value changes.
+    Value(ObjectName, Data),
+    /// An information message is sent.
+    Information(InformationMessage),
+}
+
+/// The name of the Information Message Transfer Set object of the server (503 §8.3.9): an AA-specific name, which the
+/// model answers to.
+const IM_TRANSFER_SET: &str = "IM_Transfer_Set";
+
+/// A name of a request: a TASE.2 name, the Information Message Transfer Set, or a name that the server does not know.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Named {
+    /// A TASE.2 name: a data value, a data set, a transfer set, or a device with its part.
+    Object(ObjectName),
+    /// The Information Message Transfer Set.
+    InformationTransferSet,
+    /// A name that is none of them.
+    Unknown,
+}
+
+fn named(variable: &VariableSpecification) -> Named {
+    match variable {
+        VariableSpecification::Name(MmsObjectName::AaSpecific(Identifier(name)))
+            if name == IM_TRANSFER_SET =>
+        {
+            Named::InformationTransferSet
+        }
+        VariableSpecification::Name(name) => name_of(name).map_or(Named::Unknown, Named::Object),
+        _ => Named::Unknown,
+    }
+}
+
+/// The part of a device that a name designates: the device itself (the command), its CheckBackID, or its tag.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Part {
+    /// The control point: written by Operate, not read.
+    Command,
+    /// The `<name>_SBO` variable: read by Select.
+    CheckBackId,
+    /// The `<name>_TAG` variable: read by Get Tag and written by Set Tag.
+    Tag,
+}
+
+/// A device of the model, with the commands that close or raise.
+struct Control {
+    device: Device,
+    closing: Vec<i64>,
+}
+
+/// The tag of the two bits of a Tag_Value (802 §7.1).
+fn tag_of(flags: &TagFlags) -> Option<Tag> {
+    let hi = if flags.is_tag_hi() { 1 } else { 0 };
+    let lo = if flags.is_tag_lo() { 2 } else { 0 };
+    Tag::from_code(hi | lo)
+}
+
+/// The Tag_Value of a tag and its state: the two bits of the code, and the state bit (802 §7.1).
+fn tag_data(state: &TagState) -> Option<Data> {
+    let code = state.tag.code();
+    let mut bits = 0;
+    if code & 1 != 0 {
+        bits |= TagFlags::TAG_HI;
+    }
+    if code & 2 != 0 {
+        bits |= TagFlags::TAG_LO;
+    }
+    if state.state == DeviceState::Armed {
+        bits |= TagFlags::TAG_STATE;
+    }
+    let reason = TextString::new(state.reason.clone()).ok()?;
+    Some(
+        TagValue {
+            flags: TagFlags(bits),
+            reason,
+        }
+        .to_mms(),
+    )
+}
+
+/// The command of a value, when it is an integer that fits (the closing commands are integers).
+fn command_of(value: &Data) -> Option<i64> {
+    match value {
+        Data::Integer(value) => i64::try_from(*value).ok(),
+        _ => None,
+    }
+}
+
+/// The report of an information message, as an MMS Information Report of its two variables (503 §7.2.5.5.4).
+fn information_pdu(
+    report: &igs_iec_tase2_link::information::InformationReport,
+) -> UnconfirmedService {
+    let variables = report.variables();
+    let items = variables
+        .iter()
+        .map(|(name, _)| VariableAccessSpecificationListOfVariableItem {
+            variable_specification: VariableSpecification::Name(MmsObjectName::VmdSpecific(
+                Identifier(name.clone()),
+            )),
+            alternate_access: None,
+        })
+        .collect();
+    UnconfirmedService::InformationReport(InformationReport {
+        variable_access_specification: VariableAccessSpecification::ListOfVariable(items),
+        list_of_access_result: variables
+            .into_iter()
+            .map(|(_, value)| AccessResult::Success(value))
+            .collect(),
+    })
+}
+
 /// A data set transfer set in monitoring, with what its reports need.
 struct Monitored {
     set: DataSetTransferSet,
@@ -266,6 +416,8 @@ struct Monitored {
 struct Session {
     designation: String,
     transfer_sets: BTreeMap<ObjectName, Monitored>,
+    /// The Information Message Transfer Set, while it is ENABLED.
+    information: Option<InformationTransferSet>,
 }
 
 /// The TASE.2 model: the state of the server and the services that it serves.
@@ -276,15 +428,12 @@ pub struct TaseModel {
     transfer_sets: BTreeSet<ObjectName>,
     transfer: Policy,
     sessions: BTreeMap<PeerId, Session>,
-    updates: mpsc::Receiver<(ObjectName, Data)>,
+    devices: BTreeMap<ObjectName, Control>,
+    updates: mpsc::Receiver<Update>,
 }
 
 impl TaseModel {
-    fn new(
-        config: TaseServerConfig,
-        vmd: Vmd,
-        updates: mpsc::Receiver<(ObjectName, Data)>,
-    ) -> Self {
+    fn new(config: TaseServerConfig, vmd: Vmd, updates: mpsc::Receiver<Update>) -> Self {
         let mut vcc = Vcc::new(VmdStore { vmd }, config.data_set_capacity);
         for (name, members) in config.data_sets {
             vcc.load_data_set(name, members);
@@ -296,6 +445,19 @@ impl TaseModel {
             transfer_sets: config.transfer_sets,
             transfer: config.transfer,
             sessions: BTreeMap::new(),
+            devices: config
+                .devices
+                .into_iter()
+                .map(|device| {
+                    (
+                        device.name.clone(),
+                        Control {
+                            device: Device::new(device.name, device.class),
+                            closing: device.closing_commands,
+                        },
+                    )
+                })
+                .collect(),
             updates,
         }
     }
@@ -337,24 +499,188 @@ impl TaseModel {
         }
     }
 
-    /// The read of the names of a list (Read with a list of variables).
-    fn read_list(&self, table: &BilateralTable, names: &[ObjectName]) -> Vec<AccessResult> {
-        names
-            .iter()
-            .map(|name| match self.special(name, table) {
-                Some(value) => AccessResult::Success(value),
-                None => match self
-                    .vcc
-                    .get_data_values(table, std::slice::from_ref(name))
-                    .into_iter()
-                    .next()
-                {
-                    Some(Item::Success(value)) => AccessResult::Success(value),
-                    Some(Item::Failure(code)) => AccessResult::Failure(data_error(code)),
+    /// The part of a device that a name designates: the device itself, its `_SBO` or its `_TAG` variable (802 §5.2, 503 §6.15).
+    fn device_part(&self, name: &ObjectName) -> Option<(ObjectName, Part)> {
+        if self.devices.contains_key(name) {
+            return Some((name.clone(), Part::Command));
+        }
+        let base = |suffix: &str| {
+            name.name.strip_suffix(suffix).map(|base| ObjectName {
+                scope: name.scope.clone(),
+                name: base.to_string(),
+            })
+        };
+        if let Some(device) = base("_SBO").filter(|device| self.devices.contains_key(device)) {
+            return Some((device, Part::CheckBackId));
+        }
+        if let Some(device) = base("_TAG").filter(|device| self.devices.contains_key(device)) {
+            return Some((device, Part::Tag));
+        }
+        None
+    }
+
+    /// The read of one name of a list. A Select is the read of the CheckBackID of a device (054 §7.2.6.2): it arms the device.
+    fn read_one(&mut self, id: PeerId, table: &BilateralTable, name: &Named) -> AccessResult {
+        let name = match name {
+            Named::Object(name) => name,
+            // The Information Message Transfer Set is written, not read (503 §7.2.5.2).
+            Named::InformationTransferSet => {
+                return AccessResult::Failure(DataAccessError::OBJECT_ACCESS_DENIED)
+            }
+            Named::Unknown => return AccessResult::Failure(DataAccessError::OBJECT_NON_EXISTENT),
+        };
+        if let Some((device, part)) = self.device_part(name) {
+            return match part {
+                Part::CheckBackId => match self.devices.get_mut(&device) {
+                    Some(control) => match control.device.select(table, ClientId(id.0), clock()) {
+                        Ok(check_back) => AccessResult::Success(check_back.to_mms()),
+                        Err(code) => AccessResult::Failure(data_error(code)),
+                    },
                     None => AccessResult::Failure(DataAccessError::OBJECT_NON_EXISTENT),
                 },
-            })
+                Part::Tag => {
+                    if table.check(&Object::Device(device.clone()), Permission::Visibility)
+                        != Access::Granted
+                    {
+                        return AccessResult::Failure(DataAccessError::OBJECT_NON_EXISTENT);
+                    }
+                    match self
+                        .devices
+                        .get(&device)
+                        .and_then(|control| tag_data(&control.device.tag()))
+                    {
+                        Some(value) => AccessResult::Success(value),
+                        None => AccessResult::Failure(DataAccessError::TYPE_INCONSISTENT),
+                    }
+                }
+                // A control point is written only (802 §5.2: Write Only, except its check-back name, tag, state and reason).
+                Part::Command => AccessResult::Failure(DataAccessError::OBJECT_ACCESS_DENIED),
+            };
+        }
+        match self.special(name, table) {
+            Some(value) => AccessResult::Success(value),
+            None => match self
+                .vcc
+                .get_data_values(table, std::slice::from_ref(name))
+                .into_iter()
+                .next()
+            {
+                Some(Item::Success(value)) => AccessResult::Success(value),
+                Some(Item::Failure(code)) => AccessResult::Failure(data_error(code)),
+                None => AccessResult::Failure(DataAccessError::OBJECT_NON_EXISTENT),
+            },
+        }
+    }
+
+    /// The read of the names of a list (Read with a list of variables), one answer per name.
+    fn read_list(
+        &mut self,
+        id: PeerId,
+        table: &BilateralTable,
+        names: &[Named],
+    ) -> Vec<AccessResult> {
+        names
+            .iter()
+            .map(|name| self.read_one(id, table, name))
             .collect()
+    }
+
+    /// Operate (503 §7.2.6.3): the command of a device is accepted when the device allows it for this client. The device is
+    /// simulated: the command completes at once, and the device returns to IDLE.
+    fn operate(
+        &mut self,
+        id: PeerId,
+        table: &BilateralTable,
+        device: &ObjectName,
+        value: &Data,
+    ) -> Item<()> {
+        let Some(control) = self.devices.get_mut(device) else {
+            return Item::Failure(ErrorCode::ObjectNonExistent);
+        };
+        let close_or_raise =
+            command_of(value).is_some_and(|command| control.closing.contains(&command));
+        match control
+            .device
+            .operate(table, ClientId(id.0), clock(), close_or_raise)
+        {
+            Ok(()) => {
+                control.device.complete(Outcome::Success);
+                Item::Success(())
+            }
+            Err(code) => Item::Failure(code),
+        }
+    }
+
+    /// Set Tag (503 §5.3.12.5): the tag and its reason of a device.
+    fn set_tag(
+        &mut self,
+        id: PeerId,
+        table: &BilateralTable,
+        device: &ObjectName,
+        value: &Data,
+    ) -> Item<()> {
+        let Some(control) = self.devices.get_mut(device) else {
+            return Item::Failure(ErrorCode::ObjectNonExistent);
+        };
+        let Ok(value) = TagValue::from_mms(value) else {
+            return Item::Failure(ErrorCode::TypeInconsistent);
+        };
+        let Some(tag) = tag_of(&value.flags) else {
+            return Item::Failure(ErrorCode::TypeInconsistent);
+        };
+        match control
+            .device
+            .set_tag(table, ClientId(id.0), tag, value.reason.as_str())
+        {
+            Ok(()) => Item::Success(()),
+            Err(code) => Item::Failure(code),
+        }
+    }
+
+    /// Start (true) or Stop (false) of the Information Message Transfer Set of the association (503 §7.2.5.2, §7.2.5.3).
+    fn write_information(&mut self, id: PeerId, value: Data) -> Item<()> {
+        let Ok(IMTransferSet(enabled)) = IMTransferSet::from_mms(&value) else {
+            return Item::Failure(ErrorCode::TypeInconsistent);
+        };
+        let Some(session) = self.sessions.get_mut(&id) else {
+            return Item::Failure(ErrorCode::ObjectNonExistent);
+        };
+        session.information = if enabled {
+            Some(InformationTransferSet::start())
+        } else {
+            None
+        };
+        Item::Success(())
+    }
+
+    /// The write of one name of a list: a transfer set, the Information Message Transfer Set, a device, or a data value.
+    fn write_one(
+        &mut self,
+        id: PeerId,
+        table: &BilateralTable,
+        name: Named,
+        value: Data,
+    ) -> Item<()> {
+        match name {
+            Named::Unknown => Item::Failure(ErrorCode::ObjectNonExistent),
+            Named::InformationTransferSet => self.write_information(id, value),
+            Named::Object(name) => {
+                if self.transfer_sets.contains(&name) {
+                    return self.write_transfer_set(id, table, &name, value);
+                }
+                match self.device_part(&name) {
+                    Some((device, Part::Command)) => self.operate(id, table, &device, &value),
+                    Some((device, Part::Tag)) => self.set_tag(id, table, &device, &value),
+                    Some((_, Part::CheckBackId)) => Item::Failure(ErrorCode::ObjectAccessDenied),
+                    None => self
+                        .vcc
+                        .set_data_values(table, vec![(name, value)])
+                        .into_iter()
+                        .next()
+                        .unwrap_or(Item::Failure(ErrorCode::ObjectNonExistent)),
+                }
+            }
+        }
     }
 
     /// Starts or stops a transfer set that the client writes (503 §7.2.5.2, §7.2.5.3).
@@ -522,6 +848,7 @@ impl Model for TaseModel {
                     Session {
                         designation,
                         transfer_sets: BTreeMap::new(),
+                        information: None,
                     },
                 );
                 true
@@ -546,16 +873,13 @@ impl Model for TaseModel {
         match service {
             ConfirmedServiceRequest::Read(request) => match request.variable_access_specification {
                 VariableAccessSpecification::ListOfVariable(items) => {
-                    let names: Vec<ObjectName> = items
+                    let names: Vec<Named> = items
                         .iter()
-                        .filter_map(|item| match &item.variable_specification {
-                            VariableSpecification::Name(name) => name_of(name),
-                            _ => None,
-                        })
+                        .map(|item| named(&item.variable_specification))
                         .collect();
                     Ok(ConfirmedServiceResponse::Read(ReadResponse {
                         variable_access_specification: None,
-                        list_of_access_result: self.read_list(&table, &names),
+                        list_of_access_result: self.read_list(peer.id, &table, &names),
                     }))
                 }
                 VariableAccessSpecification::VariableListName(name) => {
@@ -580,25 +904,13 @@ impl Model for TaseModel {
             ConfirmedServiceRequest::Write(request) => {
                 let items = match request.variable_access_specification {
                     VariableAccessSpecification::ListOfVariable(items) => {
-                        let names: Vec<ObjectName> = items
+                        let names: Vec<Named> = items
                             .iter()
-                            .filter_map(|item| match &item.variable_specification {
-                                VariableSpecification::Name(name) => name_of(name),
-                                _ => None,
-                            })
+                            .map(|item| named(&item.variable_specification))
                             .collect();
                         let mut answers = Vec::with_capacity(names.len());
                         for (name, value) in names.into_iter().zip(request.list_of_data) {
-                            let answer = if self.transfer_sets.contains(&name) {
-                                self.write_transfer_set(peer.id, &table, &name, value)
-                            } else {
-                                self.vcc
-                                    .set_data_values(&table, vec![(name, value)])
-                                    .into_iter()
-                                    .next()
-                                    .unwrap_or(Item::Failure(ErrorCode::ObjectNonExistent))
-                            };
-                            answers.push(answer);
+                            answers.push(self.write_one(peer.id, &table, name, value));
                         }
                         answers
                     }
@@ -747,25 +1059,49 @@ impl Model for TaseModel {
     fn poll(&mut self, _now: Duration) -> Vec<igs_iso9506_mms::server::Outbound> {
         let now = clock();
         let mut outbound = Vec::new();
-        // The changes of the application reach the transfer sets that monitor them.
-        while let Ok((name, value)) = self.updates.try_recv() {
-            // The application's own write: the table does not apply to it. A change the store refuses (a read-only
-            // variable, a value of another type) is neither kept nor reported.
-            if self.vcc.store_mut().write(&name, value.clone()).is_err() {
-                continue;
-            }
-            for (id, session) in self.sessions.iter_mut() {
-                for monitored in session.transfer_sets.values_mut() {
-                    for report in monitored.set.change(&name, value.clone(), now) {
-                        if let Some(pdu) = Self::report_pdu(monitored, &report) {
+        // The changes of the application reach the transfer sets that monitor them, and its information messages reach the
+        // associations whose Information Message Transfer Set is enabled.
+        while let Ok(update) = self.updates.try_recv() {
+            match update {
+                Update::Value(name, value) => {
+                    // The application's own write: the table does not apply to it. A change the store refuses (a read-only
+                    // variable, a value of another type) is neither kept nor reported.
+                    if self.vcc.store_mut().write(&name, value.clone()).is_err() {
+                        continue;
+                    }
+                    for (id, session) in self.sessions.iter_mut() {
+                        for monitored in session.transfer_sets.values_mut() {
+                            for report in monitored.set.change(&name, value.clone(), now) {
+                                if let Some(pdu) = Self::report_pdu(monitored, &report) {
+                                    outbound.push(Outbound {
+                                        peer: Some(*id),
+                                        report: pdu,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                Update::Information(message) => {
+                    for (id, session) in self.sessions.iter_mut() {
+                        let Some(set) = session.information.as_mut() else {
+                            continue;
+                        };
+                        if let Ok(Some(report)) = set.report(&message, now) {
                             outbound.push(Outbound {
                                 peer: Some(*id),
-                                report: pdu,
+                                report: information_pdu(&report),
                             });
                         }
                     }
                 }
             }
+        }
+        // A selection that times out, or an operation that ends, is a device action: the actions are not sent as MMS events,
+        // which the stack does not serve (see the module documentation).
+        for control in self.devices.values_mut() {
+            control.device.advance(now);
+            let _ = control.device.take_actions();
         }
         for (id, session) in self.sessions.iter_mut() {
             for monitored in session.transfer_sets.values_mut() {

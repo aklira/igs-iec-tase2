@@ -16,13 +16,15 @@ use std::collections::BTreeSet;
 use std::time::Duration;
 
 use igs_iec_tase2::{
-    Agreement, Error, TaseClient, TaseEvent, TaseEvents, TaseServer, TaseServerConfig,
+    Agreement, DeviceConfig, Error, TaseClient, TaseEvent, TaseEvents, TaseServer, TaseServerConfig,
 };
 use igs_iec_tase2_link::association::ServerPolicy;
 use igs_iec_tase2_link::bilateral::{
     BilateralTable, BilateralTables, DeviceAccess, ObjectAccess, ObjectName, Permission, Scope,
 };
 use igs_iec_tase2_link::data::{ErrorCode, Item};
+use igs_iec_tase2_link::device::{DeviceClass, DeviceState, Tag};
+use igs_iec_tase2_link::information::InformationMessage;
 use igs_iec_tase2_link::transfer::Policy;
 use igs_iec_tase2_link::version::{Conflict, Versions, STANDARD_VERSION};
 use igs_iec_tase2_model::builtin::{Integer16, Integer32, MmsIdentifier};
@@ -115,9 +117,38 @@ fn table(table_id: &str) -> BilateralTable {
     .with_device(
         icc("Breaker12"),
         DeviceAccess {
-            permitted: BTreeSet::from([Permission::Visibility, Permission::Select]),
+            permitted: BTreeSet::from([
+                Permission::Visibility,
+                Permission::Select,
+                Permission::Operate,
+                Permission::SetTag,
+            ]),
             check_back_id: SBOCheckBackName::new(7).unwrap(),
             timeout: Duration::from_secs(5),
+        },
+    )
+    .with_device(
+        icc("Valve9"),
+        DeviceAccess {
+            permitted: BTreeSet::from([
+                Permission::Visibility,
+                Permission::Operate,
+                Permission::SetTag,
+            ]),
+            check_back_id: SBOCheckBackName::new(9).unwrap(),
+            timeout: Duration::from_secs(5),
+        },
+    )
+    .with_device(
+        icc("Quick1"),
+        DeviceAccess {
+            permitted: BTreeSet::from([
+                Permission::Visibility,
+                Permission::Select,
+                Permission::Operate,
+            ]),
+            check_back_id: SBOCheckBackName::new(3).unwrap(),
+            timeout: Duration::from_secs(1),
         },
     )
     .with_data_set_creation()
@@ -165,6 +196,23 @@ fn config(table_id: &str) -> TaseServerConfig {
             (icc("DS2"), vec![icc("Flow1")]),
         ],
         data_set_capacity: 4,
+        devices: vec![
+            DeviceConfig {
+                name: icc("Breaker12"),
+                class: DeviceClass::Sbo,
+                closing_commands: vec![2],
+            },
+            DeviceConfig {
+                name: icc("Valve9"),
+                class: DeviceClass::NonSbo,
+                closing_commands: Vec::new(),
+            },
+            DeviceConfig {
+                name: icc("Quick1"),
+                class: DeviceClass::Sbo,
+                closing_commands: Vec::new(),
+            },
+        ],
         transfer: Policy {
             expected_send_delay: Duration::ZERO,
             ack_timeout: Duration::from_secs(30),
@@ -693,6 +741,267 @@ async fn a_transfer_set_on_a_data_set_the_table_does_not_show_is_refused() {
     let set = transfer_set("DSMissing", DSConditions::OBJECT_CHANGE, false);
     let started = client.start_transfer(&icc("TS1"), &set).await.unwrap();
     assert_eq!(started, Item::Failure(ErrorCode::ObjectNonExistent));
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+/// The next information message of the events, within the answer time.
+async fn next_information(events: &mut TaseEvents) -> InformationMessage {
+    loop {
+        match timeout(ANSWER, events.next())
+            .await
+            .expect("an event in time")
+        {
+            Some(Ok(TaseEvent::Information(message))) => return message,
+            Some(Ok(TaseEvent::Connection(_) | TaseEvent::Report(_))) => continue,
+            other => panic!("an information message was expected: {other:?}"),
+        }
+    }
+}
+
+/// Waits for an information message, and returns only when one arrives.
+async fn information_arrives(events: &mut TaseEvents) -> InformationMessage {
+    loop {
+        match events.next().await {
+            Some(Ok(TaseEvent::Information(message))) => return message,
+            Some(Ok(_)) => continue,
+            other => panic!("the events ended: {other:?}"),
+        }
+    }
+}
+
+fn message(stream: Vec<u8>) -> InformationMessage {
+    InformationMessage::new(10, 20, 30, stream).unwrap()
+}
+
+/// Whether an item succeeded.
+trait Succeeded {
+    fn is_success(&self) -> bool;
+}
+
+impl<T> Succeeded for Item<T> {
+    fn is_success(&self) -> bool {
+        matches!(self, Item::Success(_))
+    }
+}
+
+// The devices (task C7, decisions D-063, D-064): the Select-Before-Operate cycle, the tags, and the simulated commands, end to end
+// through the client, over MMS.
+
+#[tokio::test]
+async fn select_returns_the_check_back_id_of_the_table_and_arms_the_device() {
+    let server = serving("BT-2026-001").await;
+    let (client, _events) = client(&server).await;
+    assert_eq!(
+        client.select_device(&icc("Breaker12")).await.unwrap(),
+        Item::Success(SBOCheckBackName::new(7).unwrap())
+    );
+    let state = client.get_tag(&icc("Breaker12")).await.unwrap();
+    assert!(
+        matches!(state, Item::Success(ref s) if s.state == DeviceState::Armed),
+        "{state:?}"
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn a_second_select_of_an_armed_device_is_refused_to_every_client() {
+    let server = serving("BT-2026-001").await;
+    let (first, _) = client(&server).await;
+    let (second, _) = client(&server).await;
+    assert!(first
+        .select_device(&icc("Breaker12"))
+        .await
+        .unwrap()
+        .is_success());
+    assert_eq!(
+        second.select_device(&icc("Breaker12")).await.unwrap(),
+        Item::Failure(ErrorCode::TemporarilyUnavailable)
+    );
+    first.close().await.unwrap();
+    second.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn an_operate_after_the_select_completes_and_returns_the_device_to_idle() {
+    let server = serving("BT-2026-001").await;
+    let (client, _events) = client(&server).await;
+    client.select_device(&icc("Breaker12")).await.unwrap();
+    assert_eq!(
+        client
+            .operate_device(&icc("Breaker12"), Data::Integer(1))
+            .await
+            .unwrap(),
+        Item::Success(())
+    );
+    let state = client.get_tag(&icc("Breaker12")).await.unwrap();
+    assert!(
+        matches!(state, Item::Success(ref s) if s.state == DeviceState::Idle),
+        "the simulated command completes at once: {state:?}"
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn an_operate_without_a_select_of_an_sbo_device_is_refused() {
+    let server = serving("BT-2026-001").await;
+    let (client, _events) = client(&server).await;
+    assert_eq!(
+        client
+            .operate_device(&icc("Breaker12"), Data::Integer(1))
+            .await
+            .unwrap(),
+        Item::Failure(ErrorCode::TemporarilyUnavailable)
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn a_non_sbo_device_is_operated_directly_and_cannot_be_selected() {
+    let server = serving("BT-2026-001").await;
+    let (client, _events) = client(&server).await;
+    assert_eq!(
+        client.select_device(&icc("Valve9")).await.unwrap(),
+        Item::Failure(ErrorCode::ObjectAccessDenied)
+    );
+    assert_eq!(
+        client
+            .operate_device(&icc("Valve9"), Data::Boolean(true))
+            .await
+            .unwrap(),
+        Item::Success(())
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn a_closing_command_is_refused_under_close_only_inhibit_and_another_is_not() {
+    let server = serving("BT-2026-001").await;
+    let (client, _events) = client(&server).await;
+    assert_eq!(
+        client
+            .set_tag(&icc("Breaker12"), Tag::CloseOnlyInhibit, "crew on site")
+            .await
+            .unwrap(),
+        Item::Success(())
+    );
+    // CLOSE-ONLY-INHIBIT does not stop the select.
+    assert!(client
+        .select_device(&icc("Breaker12"))
+        .await
+        .unwrap()
+        .is_success());
+    // 2 is a closing command of the configuration: it is refused, and the selection stays.
+    assert_eq!(
+        client
+            .operate_device(&icc("Breaker12"), Data::Integer(2))
+            .await
+            .unwrap(),
+        Item::Failure(ErrorCode::TemporarilyUnavailable)
+    );
+    assert_eq!(
+        client
+            .operate_device(&icc("Breaker12"), Data::Integer(1))
+            .await
+            .unwrap(),
+        Item::Success(())
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn a_tag_and_its_reason_are_set_and_read_and_inhibit_the_select() {
+    let server = serving("BT-2026-001").await;
+    let (client, _events) = client(&server).await;
+    assert_eq!(
+        client
+            .set_tag(&icc("Breaker12"), Tag::OpenAndCloseInhibit, "maintenance")
+            .await
+            .unwrap(),
+        Item::Success(())
+    );
+    match client.get_tag(&icc("Breaker12")).await.unwrap() {
+        Item::Success(state) => {
+            assert_eq!(state.tag, Tag::OpenAndCloseInhibit);
+            assert_eq!(state.reason, "maintenance");
+            assert_eq!(state.state, DeviceState::Idle);
+        }
+        other => panic!("the tag is read: {other:?}"),
+    }
+    assert_eq!(
+        client.select_device(&icc("Breaker12")).await.unwrap(),
+        Item::Failure(ErrorCode::TemporarilyUnavailable)
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn the_armed_state_of_a_device_ends_at_its_timeout() {
+    let server = serving("BT-2026-001").await;
+    let (client, _events) = client(&server).await;
+    // Quick1 has a timeout of one second in the table.
+    assert!(client
+        .select_device(&icc("Quick1"))
+        .await
+        .unwrap()
+        .is_success());
+    tokio::time::sleep(Duration::from_millis(1600)).await;
+    assert_eq!(
+        client
+            .operate_device(&icc("Quick1"), Data::Integer(1))
+            .await
+            .unwrap(),
+        Item::Failure(ErrorCode::TemporarilyUnavailable),
+        "the selection has timed out"
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+// The Information Message Transfer Set (task C7, decision D-061): started and stopped by the client, reported by the server.
+
+#[tokio::test]
+async fn an_information_message_is_reported_while_its_transfer_set_is_enabled() {
+    let server = serving("BT-2026-001").await;
+    let (client, mut events) = client(&server).await;
+    assert_eq!(
+        client.start_information_transfer().await.unwrap(),
+        Item::Success(())
+    );
+    let sent = message(vec![1, 2, 3, 4]);
+    server.send_information(sent.clone()).await.unwrap();
+    assert_eq!(next_information(&mut events).await, sent);
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn no_information_message_is_reported_before_the_start_or_after_the_stop() {
+    let server = serving("BT-2026-001").await;
+    let (client, mut events) = client(&server).await;
+    server.send_information(message(vec![9])).await.unwrap();
+    assert!(
+        timeout(Duration::from_millis(500), information_arrives(&mut events))
+            .await
+            .is_err(),
+        "a message before the start is not reported"
+    );
+    client.start_information_transfer().await.unwrap();
+    client.stop_information_transfer().await.unwrap();
+    server.send_information(message(vec![8])).await.unwrap();
+    assert!(
+        timeout(Duration::from_millis(500), information_arrives(&mut events))
+            .await
+            .is_err(),
+        "a message after the stop is not reported"
+    );
     client.close().await.unwrap();
     server.shutdown().await;
 }

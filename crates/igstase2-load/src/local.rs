@@ -124,6 +124,7 @@ pub fn server(points: usize) -> Result<(TaseServerConfig, Vmd), String> {
         transfer_sets: BTreeSet::from([icc("TS1")]),
         data_sets: vec![(icc("DS1"), vec![point_name(0)])],
         data_set_capacity: 16,
+        devices: Vec::new(),
         transfer: Policy {
             expected_send_delay: Duration::ZERO,
             ack_timeout: Duration::from_secs(30),
