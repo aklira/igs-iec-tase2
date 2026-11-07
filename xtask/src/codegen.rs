@@ -69,6 +69,8 @@ enum TypeRef {
 #[derive(Deserialize, Debug, Clone)]
 struct Inline {
     kind: Option<String>,
+    /// The base type of an enumeration (`Boolean`: its values are the MMS Boolean, decision D-020).
+    base: Option<String>,
     #[serde(rename = "type")]
     ty: Option<TypeRef>,
     width: Option<Num>,
@@ -153,6 +155,10 @@ enum Shape {
         width: i64,
     },
     Boolean,
+    /// An enumeration whose base is the MMS Boolean: each name stands for true or false (decision D-020).
+    BooleanEnumerated {
+        values: Vec<(String, bool)>,
+    },
     Visible {
         max: i64,
         varying: bool,
@@ -481,6 +487,23 @@ impl Model {
             "bit-string" => Shape::Bits {
                 bits: inline.bits.clone()?,
             },
+            "enumerated" if inline.base.as_deref() == Some("Boolean") => Shape::BooleanEnumerated {
+                values: inline
+                    .values
+                    .as_ref()?
+                    .iter()
+                    .filter_map(|(name, value)| {
+                        let set = match value {
+                            Num::Int(v) => *v != 0,
+                            Num::Text(t) => {
+                                let t = t.trim();
+                                t == "non-zero" || t.parse::<i64>().ok()? != 0
+                            }
+                        };
+                        Some((name.clone(), set))
+                    })
+                    .collect(),
+            },
             "enumerated" => Shape::Enumerated {
                 values: inline
                     .values
@@ -749,12 +772,15 @@ fn render_module(source: &Model, notation: usize) -> Result<String, String> {
     let mut top: Vec<Item> = Vec::new();
     let mut modules: BTreeMap<String, Vec<Item>> = BTreeMap::new();
     let mut rows = Vec::new();
+    // The items that each module holds: a reference to a type of the other file produces none.
+    let mut defined: BTreeSet<(String, String)> = BTreeSet::new();
     for index in 0..model.entries.len() {
         if model.entries[index].notation != notation {
             continue;
         }
         let module = model.placement[index].module.clone();
         let items = model.items_of(index);
+        defined.extend(items.iter().map(|item| (module.clone(), item.name.clone())));
         let entry = model.entries[index].clone();
         let components = match &items.last() {
             Some(Item {
@@ -857,6 +883,23 @@ fn render_module(source: &Model, notation: usize) -> Result<String, String> {
         }
         writeln!(out, "}}").unwrap();
     }
+    // A name defined in several clauses, with exactly one definition in the main text, is also exported at the root
+    // of its file: the main text prevails over the annexes, which describe earlier editions (decision D-022).
+    for indices in source.by_name.values().filter(|indices| indices.len() > 1) {
+        let normative: Vec<usize> = indices
+            .iter()
+            .copied()
+            .filter(|&index| source.entries[index].annex().is_none())
+            .collect();
+        if let [index] = normative.as_slice() {
+            let placed = &source.placement[*index];
+            if source.entries[*index].notation == notation
+                && defined.contains(&(placed.module.clone(), placed.rust.clone()))
+            {
+                writeln!(out, "pub use {}::{};", placed.module, placed.rust).unwrap();
+            }
+        }
+    }
     if !model.errors.is_empty() {
         return Err(model.errors.join("\n"));
     }
@@ -932,6 +975,24 @@ fn render_item(item: &Item) -> String {
             )
             .unwrap();
         }
+        Shape::BooleanEnumerated { values } => {
+            writeln!(out, "{doc}").unwrap();
+            writeln!(
+                out,
+                "#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub struct {name}(pub bool);"
+            )
+            .unwrap();
+            let mut consts = String::new();
+            for (value_name, set) in values {
+                writeln!(
+                    consts,
+                    "    /// The value `{value_name}`.\n    pub const {}: bool = {set};",
+                    snake(value_name).to_uppercase()
+                )
+                .unwrap();
+            }
+            writeln!(out, "impl {name} {{\n{consts}}}").unwrap();
+        }
         Shape::Visible { max, varying } => {
             writeln!(out, "{doc}").unwrap();
             writeln!(
@@ -986,7 +1047,7 @@ fn render_item(item: &Item) -> String {
                 let flag = snake(&bit.name);
                 let constant = flag.to_uppercase();
                 let mask: u64 = if bit.bit < 64 { 1u64 << bit.bit } else { 0 };
-                if !seen.insert(flag.clone()) {
+                if bit.name == "reserved" || !seen.insert(flag.clone()) {
                     continue;
                 }
                 writeln!(consts, "    /// The mask of the flag `{}`.\n    pub const {constant}: u64 = {mask:#x};", bit.name).unwrap();
@@ -1046,7 +1107,7 @@ fn mms_impl(item: &Item) -> String {
             "    fn to_mms(&self) -> {data} {{\n        {data}::Integer(i128::from(self.0))\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::Integer(value) => {{\n                let value = i64::try_from(*value).map_err(|_| crate::value::OutOfRange {{ value: *value, min: i128::from(Self::MIN), max: i128::from(Self::MAX) }})?;\n                Ok(Self::new(value)?)\n            }}\n            other => Err(crate::mms::ValueError::kind_of(\"integer\", other)),\n        }}\n    }}\n"),
         Shape::Unsigned { .. } => format!(
             "    fn to_mms(&self) -> {data} {{\n        {data}::Unsigned(u128::from(self.0))\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::Unsigned(value) => {{\n                let value = u64::try_from(*value).map_err(|_| crate::value::OutOfRange {{ value: i128::try_from(*value).unwrap_or(i128::MAX), min: i128::from(Self::MIN), max: i128::from(Self::MAX) }})?;\n                Ok(Self::new(value)?)\n            }}\n            other => Err(crate::mms::ValueError::kind_of(\"unsigned\", other)),\n        }}\n    }}\n"),
-        Shape::Boolean => format!(
+        Shape::Boolean | Shape::BooleanEnumerated { .. } => format!(
             "    fn to_mms(&self) -> {data} {{\n        {data}::Boolean(self.0)\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::Boolean(value) => Ok(Self(*value)),\n            other => Err(crate::mms::ValueError::kind_of(\"boolean\", other)),\n        }}\n    }}\n"),
         Shape::Visible { .. } => format!(
             "    fn to_mms(&self) -> {data} {{\n        {data}::VisibleString(self.as_str().to_string())\n    }}\n    fn from_mms(data: &{data}) -> Result<Self, crate::mms::ValueError> {{\n        match data {{\n            {data}::VisibleString(text) => Ok(Self::new(text.clone())?),\n            other => Err(crate::mms::ValueError::kind_of(\"visible string\", other)),\n        }}\n    }}\n"),

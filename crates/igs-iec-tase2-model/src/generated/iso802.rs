@@ -7610,3 +7610,7 @@ pub mod clause_b_5 {
         }
     }
 }
+pub use clause_6_2_1::DataDiscrete;
+pub use clause_6_2_1::DataTimeStamp;
+pub use clause_6_3::ScheduleTime;
+pub use clause_6_3::UtilityId;

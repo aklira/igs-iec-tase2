@@ -720,138 +720,111 @@ pub type TimeIntervalL16 = crate::builtin::Integer16;
 pub type TimeIntervalL32 = crate::builtin::Integer32;
 /// IEC 60870-6-503 8.2.7.1 (page 94). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DSTransferSetBlockData(pub i64);
+pub struct DSTransferSetBlockData(pub bool);
 impl DSTransferSetBlockData {
     /// The value `FALSE`.
-    pub const FALSE: i64 = 0;
+    pub const FALSE: bool = false;
+    /// The value `TRUE`.
+    pub const TRUE: bool = true;
 }
 impl crate::mms::MmsValue for DSTransferSetBlockData {
     fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
     }
     fn from_mms(
         data: &igs_iso9506_mms_codec::generated::types::Data,
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                match i64::try_from(*value) {
-                    Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                    _ => Err(crate::mms::ValueError::Format(
-                        "not a value of the enumeration",
-                    )),
-                }
-            }
-            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
         }
     }
 }
 /// IEC 60870-6-503 8.2.7.1 (page 94). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DSTransferSetCritical(pub i64);
+pub struct DSTransferSetCritical(pub bool);
 impl DSTransferSetCritical {
     /// The value `FALSE`.
-    pub const FALSE: i64 = 0;
+    pub const FALSE: bool = false;
+    /// The value `TRUE`.
+    pub const TRUE: bool = true;
 }
 impl crate::mms::MmsValue for DSTransferSetCritical {
     fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
     }
     fn from_mms(
         data: &igs_iso9506_mms_codec::generated::types::Data,
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                match i64::try_from(*value) {
-                    Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                    _ => Err(crate::mms::ValueError::Format(
-                        "not a value of the enumeration",
-                    )),
-                }
-            }
-            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
         }
     }
 }
 /// IEC 60870-6-503 8.2.7.1 (page 94). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DSTransferSetRBE(pub i64);
+pub struct DSTransferSetRBE(pub bool);
 impl DSTransferSetRBE {
     /// The value `FALSE`.
-    pub const FALSE: i64 = 0;
+    pub const FALSE: bool = false;
+    /// The value `TRUE`.
+    pub const TRUE: bool = true;
 }
 impl crate::mms::MmsValue for DSTransferSetRBE {
     fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
     }
     fn from_mms(
         data: &igs_iso9506_mms_codec::generated::types::Data,
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                match i64::try_from(*value) {
-                    Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                    _ => Err(crate::mms::ValueError::Format(
-                        "not a value of the enumeration",
-                    )),
-                }
-            }
-            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
         }
     }
 }
 /// IEC 60870-6-503 8.2.7.1 (page 94). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DSTransferSetAllChangesReported(pub i64);
+pub struct DSTransferSetAllChangesReported(pub bool);
 impl DSTransferSetAllChangesReported {
     /// The value `FALSE`.
-    pub const FALSE: i64 = 0;
+    pub const FALSE: bool = false;
+    /// The value `TRUE`.
+    pub const TRUE: bool = true;
 }
 impl crate::mms::MmsValue for DSTransferSetAllChangesReported {
     fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
     }
     fn from_mms(
         data: &igs_iso9506_mms_codec::generated::types::Data,
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                match i64::try_from(*value) {
-                    Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                    _ => Err(crate::mms::ValueError::Format(
-                        "not a value of the enumeration",
-                    )),
-                }
-            }
-            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
         }
     }
 }
 /// IEC 60870-6-503 8.2.7.1 (page 94). inline definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DSTransferSetStatus(pub i64);
+pub struct DSTransferSetStatus(pub bool);
 impl DSTransferSetStatus {
     /// The value `DISABLED`.
-    pub const DISABLED: i64 = 0;
+    pub const DISABLED: bool = false;
     /// The value `ENABLED`.
-    pub const ENABLED: i64 = 1;
+    pub const ENABLED: bool = true;
 }
 impl crate::mms::MmsValue for DSTransferSetStatus {
     fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-        igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+        igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
     }
     fn from_mms(
         data: &igs_iso9506_mms_codec::generated::types::Data,
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                match i64::try_from(*value) {
-                    Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
-                    _ => Err(crate::mms::ValueError::Format(
-                        "not a value of the enumeration",
-                    )),
-                }
-            }
-            other => Err(crate::mms::ValueError::kind_of("integer", other)),
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+            other => Err(crate::mms::ValueError::kind_of("boolean", other)),
         }
     }
 }
@@ -1180,57 +1153,45 @@ pub mod clause_8_2_7_1 {
 pub mod clause_8_2_7_2 {
     /// IEC 60870-6-503 8.2.7.2 (page 95). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TSTransferSetBlockData(pub i64);
+    pub struct TSTransferSetBlockData(pub bool);
     impl TSTransferSetBlockData {
         /// The value `FALSE`.
-        pub const FALSE: i64 = 0;
+        pub const FALSE: bool = false;
+        /// The value `TRUE`.
+        pub const TRUE: bool = true;
     }
     impl crate::mms::MmsValue for TSTransferSetBlockData {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
     /// IEC 60870-6-503 8.2.7.2 (page 95). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TSTransferSetStatus(pub i64);
+    pub struct TSTransferSetStatus(pub bool);
     impl TSTransferSetStatus {
         /// The value `DISABLED`.
-        pub const DISABLED: i64 = 0;
+        pub const DISABLED: bool = false;
         /// The value `ENABLED`.
-        pub const ENABLED: i64 = 1;
+        pub const ENABLED: bool = true;
     }
     impl crate::mms::MmsValue for TSTransferSetStatus {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
@@ -1281,57 +1242,45 @@ pub mod clause_8_2_7_2 {
     }
     /// IEC 60870-6-503 8.2.7.2 (page 96). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TATransferSetBlockData(pub i64);
+    pub struct TATransferSetBlockData(pub bool);
     impl TATransferSetBlockData {
         /// The value `FALSE`.
-        pub const FALSE: i64 = 0;
+        pub const FALSE: bool = false;
+        /// The value `TRUE`.
+        pub const TRUE: bool = true;
     }
     impl crate::mms::MmsValue for TATransferSetBlockData {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
     /// IEC 60870-6-503 8.2.7.2 (page 96). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TATransferSetStatus(pub i64);
+    pub struct TATransferSetStatus(pub bool);
     impl TATransferSetStatus {
         /// The value `DISABLED`.
-        pub const DISABLED: i64 = 0;
+        pub const DISABLED: bool = false;
         /// The value `ENABLED`.
-        pub const ENABLED: i64 = 1;
+        pub const ENABLED: bool = true;
     }
     impl crate::mms::MmsValue for TATransferSetStatus {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
@@ -1470,8 +1419,6 @@ pub mod clause_8_2_9 {
         pub const BLOCK1: u64 = 0x1;
         /// The mask of the flag `Block2`.
         pub const BLOCK2: u64 = 0x2;
-        /// The mask of the flag `reserved`.
-        pub const RESERVED: u64 = 0x4;
         /// The mask of the flag `Block4`.
         pub const BLOCK4: u64 = 0x8;
         /// The mask of the flag `Block5`.
@@ -1489,10 +1436,6 @@ pub mod clause_8_2_9 {
         /// Whether the flag `Block2` is set.
         pub fn is_block2(self) -> bool {
             self.0 & Self::BLOCK2 != 0
-        }
-        /// Whether the flag `reserved` is set.
-        pub fn is_reserved(self) -> bool {
-            self.0 & Self::RESERVED != 0
         }
         /// Whether the flag `Block4` is set.
         pub fn is_block4(self) -> bool {
@@ -1574,57 +1517,45 @@ pub mod clause_8_5 {}
 pub mod clause_g_2_2 {
     /// IEC 60870-6-503 G.2.2 (page 150). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TSTransferSetBlockData(pub i64);
+    pub struct TSTransferSetBlockData(pub bool);
     impl TSTransferSetBlockData {
         /// The value `FALSE`.
-        pub const FALSE: i64 = 0;
+        pub const FALSE: bool = false;
+        /// The value `TRUE`.
+        pub const TRUE: bool = true;
     }
     impl crate::mms::MmsValue for TSTransferSetBlockData {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
     /// IEC 60870-6-503 G.2.2 (page 150). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TSTransferSetStatus(pub i64);
+    pub struct TSTransferSetStatus(pub bool);
     impl TSTransferSetStatus {
         /// The value `DISABLED`.
-        pub const DISABLED: i64 = 0;
+        pub const DISABLED: bool = false;
         /// The value `ENABLED`.
-        pub const ENABLED: i64 = 1;
+        pub const ENABLED: bool = true;
     }
     impl crate::mms::MmsValue for TSTransferSetStatus {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
@@ -1675,57 +1606,45 @@ pub mod clause_g_2_2 {
     }
     /// IEC 60870-6-503 G.2.2 (page 151). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TATransferSetBlockData(pub i64);
+    pub struct TATransferSetBlockData(pub bool);
     impl TATransferSetBlockData {
         /// The value `FALSE`.
-        pub const FALSE: i64 = 0;
+        pub const FALSE: bool = false;
+        /// The value `TRUE`.
+        pub const TRUE: bool = true;
     }
     impl crate::mms::MmsValue for TATransferSetBlockData {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
     /// IEC 60870-6-503 G.2.2 (page 151). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TATransferSetStatus(pub i64);
+    pub struct TATransferSetStatus(pub bool);
     impl TATransferSetStatus {
         /// The value `DISABLED`.
-        pub const DISABLED: i64 = 0;
+        pub const DISABLED: bool = false;
         /// The value `ENABLED`.
-        pub const ENABLED: i64 = 1;
+        pub const ENABLED: bool = true;
     }
     impl crate::mms::MmsValue for TATransferSetStatus {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
@@ -2014,57 +1933,45 @@ pub mod clause_g_3_7 {}
 pub mod clause_g_4 {
     /// IEC 60870-6-503 G.4 (page 154). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TSTransferSetBlockData(pub i64);
+    pub struct TSTransferSetBlockData(pub bool);
     impl TSTransferSetBlockData {
         /// The value `FALSE`.
-        pub const FALSE: i64 = 0;
+        pub const FALSE: bool = false;
+        /// The value `TRUE`.
+        pub const TRUE: bool = true;
     }
     impl crate::mms::MmsValue for TSTransferSetBlockData {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
     /// IEC 60870-6-503 G.4 (page 154). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TSTransferSetStatus(pub i64);
+    pub struct TSTransferSetStatus(pub bool);
     impl TSTransferSetStatus {
         /// The value `DISABLED`.
-        pub const DISABLED: i64 = 0;
+        pub const DISABLED: bool = false;
         /// The value `ENABLED`.
-        pub const ENABLED: i64 = 1;
+        pub const ENABLED: bool = true;
     }
     impl crate::mms::MmsValue for TSTransferSetStatus {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
@@ -2115,57 +2022,45 @@ pub mod clause_g_4 {
     }
     /// IEC 60870-6-503 G.4 (page 155). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TATransferSetBlockData(pub i64);
+    pub struct TATransferSetBlockData(pub bool);
     impl TATransferSetBlockData {
         /// The value `FALSE`.
-        pub const FALSE: i64 = 0;
+        pub const FALSE: bool = false;
+        /// The value `TRUE`.
+        pub const TRUE: bool = true;
     }
     impl crate::mms::MmsValue for TATransferSetBlockData {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
     /// IEC 60870-6-503 G.4 (page 155). inline definition.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct TATransferSetStatus(pub i64);
+    pub struct TATransferSetStatus(pub bool);
     impl TATransferSetStatus {
         /// The value `DISABLED`.
-        pub const DISABLED: i64 = 0;
+        pub const DISABLED: bool = false;
         /// The value `ENABLED`.
-        pub const ENABLED: i64 = 1;
+        pub const ENABLED: bool = true;
     }
     impl crate::mms::MmsValue for TATransferSetStatus {
         fn to_mms(&self) -> igs_iso9506_mms_codec::generated::types::Data {
-            igs_iso9506_mms_codec::generated::types::Data::Integer(i128::from(self.0))
+            igs_iso9506_mms_codec::generated::types::Data::Boolean(self.0)
         }
         fn from_mms(
             data: &igs_iso9506_mms_codec::generated::types::Data,
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
-                igs_iso9506_mms_codec::generated::types::Data::Integer(value) => {
-                    match i64::try_from(*value) {
-                        Ok(value) if [0, 1].contains(&value) => Ok(Self(value)),
-                        _ => Err(crate::mms::ValueError::Format(
-                            "not a value of the enumeration",
-                        )),
-                    }
-                }
-                other => Err(crate::mms::ValueError::kind_of("integer", other)),
+                igs_iso9506_mms_codec::generated::types::Data::Boolean(value) => Ok(Self(*value)),
+                other => Err(crate::mms::ValueError::kind_of("boolean", other)),
             }
         }
     }
@@ -2216,3 +2111,8 @@ pub mod clause_g_4 {
         }
     }
 }
+pub use clause_8_2_7_1::IMTransferSet;
+pub use clause_8_2_7_2::TATransferSet;
+pub use clause_8_2_7_2::TSTransferSet;
+pub use clause_8_2_8_2::TSConditions;
+pub use clause_8_2_9::SupportedFeatures;
