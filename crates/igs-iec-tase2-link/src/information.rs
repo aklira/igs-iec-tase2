@@ -68,7 +68,7 @@ fn buffer_size(octets: usize) -> Result<usize, MessageError> {
         })
 }
 
-/// The name of the buffer variable that holds `octets` (`Info_Buff_XX`, with XX the size of [`buffer_size`]).
+/// The name of the buffer variable that holds `octets` (`Info_Buff_XX`, with XX the size of the smallest buffer that holds them).
 pub fn buffer_name(octets: usize) -> Result<String, MessageError> {
     Ok(format!("Info_Buff_{}", buffer_size(octets)?))
 }
