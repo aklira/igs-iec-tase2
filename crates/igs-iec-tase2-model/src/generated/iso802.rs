@@ -1338,8 +1338,6 @@ pub struct DataFlags(pub u64);
 impl DataFlags {
     /// The number of bits of the string.
     pub const BIT_COUNT: u32 = 8;
-    /// The mask of the flag `unused`.
-    pub const UNUSED: u64 = 0x1;
     /// The mask of the flag `Validity_hi`.
     pub const VALIDITY_HI: u64 = 0x4;
     /// The mask of the flag `Validity_lo`.
@@ -1354,10 +1352,6 @@ impl DataFlags {
     pub const TIME_STAMP_QUALITY: u64 = 0x80;
 }
 impl DataFlags {
-    /// Whether the flag `unused` is set.
-    pub fn is_unused(self) -> bool {
-        self.0 & Self::UNUSED != 0
-    }
     /// Whether the flag `Validity_hi` is set.
     pub fn is_validity_hi(self) -> bool {
         self.0 & Self::VALIDITY_HI != 0
@@ -2879,8 +2873,6 @@ impl SingleFlags {
     pub const TOPICAL: u64 = 0x8;
     /// The mask of the flag `EventValidity`.
     pub const EVENT_VALIDITY: u64 = 0x10;
-    /// The mask of the flag `unused`.
-    pub const UNUSED: u64 = 0x20;
     /// The mask of the flag `EventState_hi`.
     pub const EVENT_STATE_HI: u64 = 0x40;
     /// The mask of the flag `EventState_lo`.
@@ -2906,10 +2898,6 @@ impl SingleFlags {
     /// Whether the flag `EventValidity` is set.
     pub fn is_event_validity(self) -> bool {
         self.0 & Self::EVENT_VALIDITY != 0
-    }
-    /// Whether the flag `unused` is set.
-    pub fn is_unused(self) -> bool {
-        self.0 & Self::UNUSED != 0
     }
     /// Whether the flag `EventState_hi` is set.
     pub fn is_event_state_hi(self) -> bool {
@@ -2992,8 +2980,6 @@ impl EventFlags {
     pub const EARTH: u64 = 0x10;
     /// The mask of the flag `Reverse`.
     pub const REVERSE: u64 = 0x20;
-    /// The mask of the flag `unused`.
-    pub const UNUSED: u64 = 0x40;
 }
 impl EventFlags {
     /// Whether the flag `General` is set.
@@ -3019,10 +3005,6 @@ impl EventFlags {
     /// Whether the flag `Reverse` is set.
     pub fn is_reverse(self) -> bool {
         self.0 & Self::REVERSE != 0
-    }
-    /// Whether the flag `unused` is set.
-    pub fn is_unused(self) -> bool {
-        self.0 & Self::UNUSED != 0
     }
 }
 impl crate::mms::MmsValue for EventFlags {
@@ -3095,8 +3077,6 @@ impl PackedFlags {
     pub const TOPICAL: u64 = 0x8;
     /// The mask of the flag `EventValidity`.
     pub const EVENT_VALIDITY: u64 = 0x10;
-    /// The mask of the flag `unused`.
-    pub const UNUSED: u64 = 0x20;
 }
 impl PackedFlags {
     /// Whether the flag `ElapsedTimeValidity` is set.
@@ -3118,10 +3098,6 @@ impl PackedFlags {
     /// Whether the flag `EventValidity` is set.
     pub fn is_event_validity(self) -> bool {
         self.0 & Self::EVENT_VALIDITY != 0
-    }
-    /// Whether the flag `unused` is set.
-    pub fn is_unused(self) -> bool {
-        self.0 & Self::UNUSED != 0
     }
 }
 impl crate::mms::MmsValue for PackedFlags {

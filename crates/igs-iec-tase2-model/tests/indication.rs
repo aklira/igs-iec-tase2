@@ -117,7 +117,7 @@ fn every_combination_of_the_quality_flags_is_kept_and_the_unused_bit_too() {
                     assert_eq!(flags.current_source(), source);
                     assert_eq!(flags.normal_value(), abnormal);
                     assert_eq!(flags.time_stamp_quality(), stamp);
-                    assert!(flags.is_unused(), "the unused bit is kept");
+                    assert_eq!(flags.0 & 0x01, 0x01, "the unused bit is kept");
                     round_trip(&flags);
                 }
             }

@@ -1047,7 +1047,8 @@ fn render_item(item: &Item) -> String {
                 let flag = snake(&bit.name);
                 let constant = flag.to_uppercase();
                 let mask: u64 = if bit.bit < 64 { 1u64 << bit.bit } else { 0 };
-                if bit.name == "reserved" || !seen.insert(flag.clone()) {
+                if matches!(bit.name.as_str(), "reserved" | "unused") || !seen.insert(flag.clone())
+                {
                     continue;
                 }
                 writeln!(consts, "    /// The mask of the flag `{}`.\n    pub const {constant}: u64 = {mask:#x};", bit.name).unwrap();

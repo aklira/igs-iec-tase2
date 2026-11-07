@@ -135,7 +135,7 @@ impl TwoBitCode {
 }
 
 /// The bits of a two-bit code at the masks of its high and low bits.
-fn put_code(word: u64, code: TwoBitCode, high: u64, low: u64) -> u64 {
+pub(crate) fn put_code(word: u64, code: TwoBitCode, high: u64, low: u64) -> u64 {
     let cleared = word & !(high | low);
     let value = code.value();
     let with_high = if value & 2 != 0 {
@@ -151,12 +151,12 @@ fn put_code(word: u64, code: TwoBitCode, high: u64, low: u64) -> u64 {
 }
 
 /// The two-bit code at the masks of its high and low bits.
-fn get_code(word: u64, high: u64, low: u64) -> TwoBitCode {
+pub(crate) fn get_code(word: u64, high: u64, low: u64) -> TwoBitCode {
     TwoBitCode::from_bits(word & high != 0, word & low != 0)
 }
 
 /// Sets or clears one flag bit.
-fn put_flag(word: u64, flag: u64, on: bool) -> u64 {
+pub(crate) fn put_flag(word: u64, flag: u64, on: bool) -> u64 {
     if on {
         word | flag
     } else {
