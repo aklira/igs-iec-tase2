@@ -5,7 +5,7 @@
 [package]
 name = "igs-iec-tase2"
 version = "0.1.0"
-description = "Async TASE.2 (ICCP) client and server over igs-iso9506-mms."
+description = "TASE.2 (IEC 60870-6) client on igs-iso9506-mms: association, data values, data sets, transfer sets and reports."
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -18,3 +18,11 @@ workspace = true
 igs-iec-tase2-model = { path = "../igs-iec-tase2-model" }
 igs-iec-tase2-link = { path = "../igs-iec-tase2-link" }
 igs-iso9506-mms.workspace = true
+# The MMS types of the requests and the responses (task T1).
+igs-iso9506-mms-codec.workspace = true
+
+[dev-dependencies]
+# The runtime of the integration tests, which run the client against an in-process server (task T1).
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time"] }
+# The link configuration of the MMS stack, for the client of the tests.
+igs-iso9506-mms-link.workspace = true

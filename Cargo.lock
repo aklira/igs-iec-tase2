@@ -185,6 +185,9 @@ dependencies = [
  "igs-iec-tase2-link",
  "igs-iec-tase2-model",
  "igs-iso9506-mms",
+ "igs-iso9506-mms-codec",
+ "igs-iso9506-mms-link",
+ "tokio",
 ]
 
 [[package]]

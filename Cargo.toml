@@ -28,4 +28,5 @@ arithmetic_side_effects = "deny"
 [workspace.dependencies]
 igs-iso9506-mms = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms" }
 igs-iso9506-mms-codec = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms-codec" }
+igs-iso9506-mms-link = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms-link" }
 igs-iec-tase2-model = { path = "crates/igs-iec-tase2-model" }

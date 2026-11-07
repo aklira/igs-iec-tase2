@@ -55,6 +55,8 @@ pub enum ErrorCode {
     TypeInconsistent,
     /// The object does not support the attribute of the write.
     ObjectAttributeUnsupported,
+    /// Another error code, as the peer sent it: its value, kept without a meaning of its own.
+    Other(i64),
 }
 
 impl ErrorCode {
@@ -70,7 +72,8 @@ impl ErrorCode {
             | Self::ObjectAccessUnsupported
             | Self::HardwareFault
             | Self::TypeInconsistent
-            | Self::ObjectAttributeUnsupported => ErrorClass::Access,
+            | Self::ObjectAttributeUnsupported
+            | Self::Other(_) => ErrorClass::Access,
         }
     }
 }
