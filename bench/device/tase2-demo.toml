@@ -58,6 +58,14 @@ members = ["Flow1", "Level", "Temperature", "Breaker"]
 domain = "ICC1"
 name = "TS1"
 
+# One device, the control point of the demonstration (503 §5.3.12): a Select-Before-Operate breaker. Its command is simulated: an
+# accepted Operate completes at once. The command 2 closes the breaker, and CLOSE-ONLY-INHIBIT refuses it.
+[[device]]
+domain = "ICC1"
+name = "Breaker12"
+class = "sbo"
+closing_commands = [2]
+
 [[table]]
 designation = "1.3.9999.1"
 table_id = "BT-2026-001"
@@ -95,6 +103,13 @@ permissions = ["visibility", "delete-data-set", "get-data-set-element-values", "
 kind = "transfer-set"
 name = "TS1"
 permissions = ["visibility", "start-transfer", "stop-transfer"]
+
+[[table.access]]
+kind = "device"
+name = "Breaker12"
+permissions = ["visibility", "select", "operate", "set-tag"]
+check_back_id = 12
+timeout_s = 5
 
 [[simulate]]
 domain = "ICC1"

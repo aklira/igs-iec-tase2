@@ -9,14 +9,16 @@
 use std::collections::BTreeSet;
 use std::time::Duration;
 
-use igs_iec_tase2::TaseServerConfig;
+use igs_iec_tase2::{DeviceConfig, TaseServerConfig};
 use igs_iec_tase2_link::association::ServerPolicy;
 use igs_iec_tase2_link::bilateral::{
-    BilateralTable, BilateralTables, ObjectAccess, ObjectName, Permission, Scope,
+    BilateralTable, BilateralTables, DeviceAccess, ObjectAccess, ObjectName, Permission, Scope,
 };
+use igs_iec_tase2_link::device::DeviceClass;
 use igs_iec_tase2_link::transfer::Policy;
 use igs_iec_tase2_link::version::{Versions, STANDARD_VERSION};
 use igs_iec_tase2_model::generated::iso503::VisibleString32;
+use igs_iec_tase2_model::generated::iso802::SBOCheckBackName;
 use igs_iec_tase2_model::mms::MmsValue;
 use igs_iso9506_mms::server::ServerConfig;
 use igs_iso9506_mms::vmd::{Identity, MemoryVariable, Name, Target, Vmd};
@@ -48,6 +50,9 @@ pub struct Config {
     /// The transfer set objects of the server.
     #[serde(default, rename = "transfer-set")]
     pub transfer_sets: Vec<TransferSetSection>,
+    /// The devices of the server (503 §5.3.12): their commands are simulated.
+    #[serde(default, rename = "device")]
+    pub devices: Vec<DeviceSection>,
     /// The Bilateral Tables, one per client.
     #[serde(default, rename = "table")]
     pub tables: Vec<TableSection>,
@@ -159,6 +164,31 @@ pub struct DataSetSection {
     pub members: Vec<String>,
 }
 
+/// The class of a device, as the file writes it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum DeviceClassKind {
+    /// Select-Before-Operate: the device must be selected before it is operated.
+    Sbo,
+    /// Direct-Control: the device is operated directly.
+    NonSbo,
+}
+
+/// A device of the server (503 §5.3.12). Its command is simulated: an accepted Operate completes at once.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DeviceSection {
+    /// The domain of the device.
+    pub domain: String,
+    /// The name of the device: its command is the variable `<name>`, its CheckBackID `<name>_SBO`, its tag `<name>_TAG`.
+    pub name: String,
+    /// The class of the device.
+    pub class: DeviceClassKind,
+    /// The commands that close or raise, which CLOSE-ONLY-INHIBIT refuses. Their meaning is local (503 §5.3.12.4).
+    #[serde(default)]
+    pub closing_commands: Vec<i64>,
+}
+
 /// A transfer set object of the server.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -179,6 +209,8 @@ pub enum AccessKind {
     DataSet,
     /// A transfer set.
     TransferSet,
+    /// A device: its permitted operations need `check-back-id` and `timeout-s`.
+    Device,
 }
 
 /// The access of a client to one object of its table.
@@ -195,6 +227,12 @@ pub struct AccessSection {
     /// The shortest interval that the client may ask for, in milliseconds (the maximum exchange rate of the agreement).
     #[serde(default)]
     pub interval_ms: Option<u64>,
+    /// The CheckBackID that a Select returns, for a device: an integer of 16 bits (802 §6.2.2).
+    #[serde(default)]
+    pub check_back_id: Option<i64>,
+    /// The time within which an operation on a device must be performed, in seconds (the Timeout of the table).
+    #[serde(default)]
+    pub timeout_s: Option<u64>,
 }
 
 /// The Bilateral Table of one client.
@@ -323,6 +361,9 @@ fn permission(text: &str, context: &str) -> Result<Permission, ConfigError> {
         "set-data-set-element-values" => Permission::SetDataSetElementValues,
         "start-transfer" => Permission::StartTransfer,
         "stop-transfer" => Permission::StopTransfer,
+        "select" => Permission::Select,
+        "operate" => Permission::Operate,
+        "set-tag" => Permission::SetTag,
         other => {
             return Err(invalid(
                 context,
@@ -455,6 +496,25 @@ pub fn build(config: &Config, max_associations: usize) -> Result<Built, ConfigEr
             .map_err(|e| invalid(&context, format!("{e:?}")))?;
     }
 
+    let mut device_configs = Vec::new();
+    let mut device_names = BTreeSet::new();
+    for section in &config.devices {
+        let context = format!("device {}/{}", section.domain, section.name);
+        domain_known(&section.domain, &context)?;
+        let name = object(&section.domain, &section.name);
+        if !device_names.insert(name.clone()) {
+            return Err(invalid(&context, "the device is declared twice"));
+        }
+        device_configs.push(DeviceConfig {
+            name,
+            class: match section.class {
+                DeviceClassKind::Sbo => DeviceClass::Sbo,
+                DeviceClassKind::NonSbo => DeviceClass::NonSbo,
+            },
+            closing_commands: section.closing_commands.clone(),
+        });
+    }
+
     let mut data_sets = Vec::new();
     let mut data_set_names = BTreeSet::new();
     for set in &config.data_sets {
@@ -536,6 +596,27 @@ pub fn build(config: &Config, max_associations: usize) -> Result<Built, ConfigEr
                     }
                     built.with_transfer_set(object_name, objects)
                 }
+                AccessKind::Device => {
+                    if !device_names.contains(&object_name) {
+                        return Err(invalid(&context, "it is not a device"));
+                    }
+                    let check_back_id = access
+                        .check_back_id
+                        .ok_or_else(|| invalid(&context, "a device needs its check-back-id"))?;
+                    let timeout_s = access
+                        .timeout_s
+                        .ok_or_else(|| invalid(&context, "a device needs its timeout-s"))?;
+                    let check_back_id = SBOCheckBackName::new(check_back_id)
+                        .map_err(|e| invalid(&context, format!("the check-back-id: {e:?}")))?;
+                    built.with_device(
+                        object_name,
+                        DeviceAccess {
+                            permitted: objects.permitted,
+                            check_back_id,
+                            timeout: Duration::from_secs(timeout_s),
+                        },
+                    )
+                }
             };
         }
         if table.initiator {
@@ -608,6 +689,7 @@ pub fn build(config: &Config, max_associations: usize) -> Result<Built, ConfigEr
         transfer_sets,
         data_sets,
         data_set_capacity: config.server.data_set_capacity,
+        devices: device_configs,
         transfer: Policy {
             expected_send_delay: Duration::from_millis(config.server.expected_send_delay_ms),
             ack_timeout: Duration::from_secs(config.server.ack_timeout_s),
@@ -696,6 +778,61 @@ value = -1
         .err()
         .unwrap();
         assert!(error.0.contains("does not fit"), "{error}");
+    }
+
+    #[test]
+    fn a_device_with_its_check_back_id_and_timeout_builds() {
+        let built = build_text(
+            r#"[[device]]
+domain = "ICC1"
+name = "Breaker12"
+class = "sbo"
+closing_commands = [2]
+
+[[table]]
+designation = "1.3.9999.1"
+table_id = "BT-1"
+domain = "ICC1"
+application_references = ["1.3.9999.1"]
+
+[[table.access]]
+kind = "device"
+name = "Breaker12"
+permissions = ["visibility", "select", "operate", "set-tag"]
+check_back_id = 12
+timeout_s = 5
+"#,
+        )
+        .unwrap();
+        assert_eq!(built.server.devices.len(), 1);
+        assert_eq!(built.server.devices[0].class, DeviceClass::Sbo);
+        assert_eq!(built.server.devices[0].closing_commands, vec![2]);
+    }
+
+    #[test]
+    fn a_device_access_without_its_check_back_id_is_refused() {
+        let error = build_text(
+            r#"[[device]]
+domain = "ICC1"
+name = "Valve9"
+class = "non-sbo"
+
+[[table]]
+designation = "1.3.9999.1"
+table_id = "BT-1"
+domain = "ICC1"
+application_references = ["1.3.9999.1"]
+
+[[table.access]]
+kind = "device"
+name = "Valve9"
+permissions = ["visibility", "operate"]
+timeout_s = 5
+"#,
+        )
+        .err()
+        .unwrap();
+        assert!(error.0.contains("needs its check-back-id"), "{error}");
     }
 
     #[test]
