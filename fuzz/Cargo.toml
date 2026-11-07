@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 The igs-iec-tase2 contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# The fuzz targets of task M6, run with `cargo +nightly fuzz run`. A separate workspace: the libfuzzer runtime is not a
+# dependency of the library, and `cargo deny` checks the root workspace only.
+
+[package]
+name = "igs-iec-tase2-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+igs-iec-tase2-model = { path = "../crates/igs-iec-tase2-model" }
+igs-iso9506-mms-codec = { path = "../../igs-iso9506-mms/crates/igs-iso9506-mms-codec" }
+
+[[bin]]
+name = "read_types"
+path = "fuzz_targets/read_types.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]

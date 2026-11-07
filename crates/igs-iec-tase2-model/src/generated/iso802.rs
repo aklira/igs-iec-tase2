@@ -2324,7 +2324,10 @@ impl crate::mms::MmsValue for ControlSetpointReal {
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -4390,7 +4393,10 @@ impl crate::mms::MmsValue for TransactionAmount {
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -4923,7 +4929,10 @@ impl crate::mms::MmsValue for Capacity {
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -5047,7 +5056,10 @@ impl crate::mms::MmsValue for RampRate {
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -6034,7 +6046,10 @@ impl crate::mms::MmsValue for CurveLimit {
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -6191,7 +6206,10 @@ impl crate::mms::MmsValue for Coefficient {
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -6535,7 +6553,10 @@ impl crate::mms::MmsValue for FloatArrayXXElement {
     ) -> Result<Self, crate::mms::ValueError> {
         match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -6874,7 +6895,10 @@ pub mod clause_6_2_1 {
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -6955,7 +6979,10 @@ pub mod clause_6_3 {
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -7275,7 +7302,10 @@ pub mod clause_b_2 {
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -7305,7 +7335,10 @@ pub mod clause_b_2 {
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),
@@ -7480,7 +7513,10 @@ pub mod clause_b_3 {
         ) -> Result<Self, crate::mms::ValueError> {
             match data {
             igs_iso9506_mms_codec::generated::types::Data::FloatingPoint(igs_iso9506_mms_codec::generated::types::FloatingPoint(octets)) => match octets.as_slice() {
-                [8, a, b, c, d] => Ok(Self(f64::from(f32::from_be_bytes([*a, *b, *c, *d])))),
+                [8, a, b, c, d] => {
+                    let value = f64::from(f32::from_be_bytes([*a, *b, *c, *d]));
+                    if value.is_finite() { Ok(Self(value)) } else { Err(crate::mms::ValueError::Format("a real value must be finite")) }
+                }
                 _ => Err(crate::mms::ValueError::Format("a floating point value must be single precision: exponent width 8 and four octets")),
             },
             other => Err(crate::mms::ValueError::kind_of("floating point", other)),

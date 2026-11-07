@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d19ec64c8062012c6ae21faf4292204621183e5c179d808cd5384be888358d97 # shrinks to data = FloatingPoint(FloatingPoint([8, 127, 128, 0, 1]))

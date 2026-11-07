@@ -31,3 +31,6 @@ opencode.json
 docs/spec
 *.asn
 mms_types.yaml
+fuzz/target/
+fuzz/corpus/
+fuzz/artifacts/

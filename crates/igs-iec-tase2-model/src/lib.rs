@@ -15,5 +15,7 @@ pub mod generated;
 pub mod indication;
 pub mod mms;
 pub mod protection;
+#[cfg(feature = "strategy")]
+pub mod strategy;
 pub mod time;
 pub mod value;

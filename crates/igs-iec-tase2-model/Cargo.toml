@@ -17,3 +17,16 @@ workspace = true
 [dependencies]
 # The MMS values that the TASE.2 types convert to and from (task M1). A path dependency until it is published (rule 9).
 igs-iso9506-mms-codec.workspace = true
+
+# Strategies for property tests (task M6), off by default: the library does not depend on the test framework.
+[features]
+strategy = ["dep:proptest", "igs-iso9506-mms-codec/proptest"]
+
+[dependencies.proptest]
+version = "1"
+optional = true
+default-features = false
+features = ["std"]
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }
