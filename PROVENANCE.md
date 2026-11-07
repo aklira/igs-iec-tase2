@@ -868,6 +868,9 @@ silent, to be confirmed by an observation test against other implementations.
   the capabilities matrix.
 - **Confidence**: high: the statuses were read on the page image of Table A.7 (page 19 of the PDF in `docs/standard/IECTASE2/`).
 - **Test**: the tests named above; `crates/igs-iec-tase2-model/tests/information.rs` for the information types of C2.
+  C5 checks the end-to-end path of the block-2 conditions in `crates/igs-iec-tase2/tests/server.rs`: the integrity check, the buffer time and the TLE
+  (`an_integrity_check_reports_the_entire_data_set_with_rbe_when_nothing_changed`, `a_buffered_object_change_is_reported_once_with_its_last_value_after_the_buffer_time`,
+  `a_report_within_its_tle_is_sent`). The critical acknowledgement is not end to end: see `docs/ai-log/C5.md`.
 
 ### D-061 — Information messages are reported by the server; the trigger is local; the Information Message block is required for both roles (task C3)
 
