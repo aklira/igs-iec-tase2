@@ -20,7 +20,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use igs_iec_tase2_link::association::{server_on_initiate, Decision, ServerPolicy};
 use igs_iec_tase2_link::bilateral::{
-    Access, BilateralTable, BilateralTables, Object, ObjectName, Permission, Scope,
+    Access, BilateralTable, BilateralTables, Object, ObjectAccess, ObjectName, Permission, Scope,
 };
 use igs_iec_tase2_link::data::{ErrorCode, Item, Store, Vcc};
 use igs_iec_tase2_link::transfer::{DataSetTransferSet, Parameters, Payload, Policy, Report};
@@ -653,8 +653,29 @@ impl Model for TaseModel {
                         })?);
                 }
                 self.vcc
-                    .create_data_set(&table, name, members)
+                    .create_data_set(&table, name.clone(), members)
                     .map_err(service_error)?;
+                // The client that created the data set may see and use it (decision D-055).
+                let designation = self
+                    .sessions
+                    .get(&peer.id)
+                    .map(|session| session.designation.clone());
+                if let Some(designation) = designation {
+                    if let Some(granted) = self.tables.table_mut(&designation) {
+                        granted.grant_data_set(
+                            name,
+                            ObjectAccess {
+                                permitted: BTreeSet::from([
+                                    Permission::Visibility,
+                                    Permission::DeleteDataSet,
+                                    Permission::GetDataSetElementValues,
+                                    Permission::SetDataSetElementValues,
+                                ]),
+                                minimum_interval: None,
+                            },
+                        );
+                    }
+                }
                 Ok(ConfirmedServiceResponse::DefineNamedVariableList(
                     DefineNamedVariableListResponse(()),
                 ))

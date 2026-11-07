@@ -390,6 +390,28 @@ async fn a_data_set_is_created_by_the_client_and_refused_when_it_exists() {
 }
 
 #[tokio::test]
+async fn a_data_set_the_client_created_is_visible_to_it_and_deletable_by_it() {
+    // DS4 is not in the table: the client that creates it is granted it (decision D-055).
+    let server = serving("BT-2026-001").await;
+    let (client, _events) = client(&server).await;
+    client
+        .create_data_set(&icc("DS4"), &[icc("Flow1")])
+        .await
+        .unwrap();
+    assert_eq!(
+        client.data_set_members(&icc("DS4")).await.unwrap(),
+        vec![icc("Flow1")]
+    );
+    assert_eq!(client.delete_data_sets(&[icc("DS4")]).await.unwrap(), 1);
+    assert!(
+        client.data_set_members(&icc("DS4")).await.is_err(),
+        "DS4 is gone"
+    );
+    client.close().await.unwrap();
+    server.shutdown().await;
+}
+
+#[tokio::test]
 async fn a_data_set_is_deleted_when_the_table_allows_it_and_an_unknown_one_is_refused() {
     let server = serving("BT-2026-001").await;
     let (client, _events) = client(&server).await;

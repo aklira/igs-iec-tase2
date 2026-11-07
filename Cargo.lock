@@ -245,6 +245,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "igstase2-client"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "igs-iec-tase2",
+ "igs-iec-tase2-link",
+ "igs-iec-tase2-model",
+ "igs-iso9506-mms",
+ "igs-iso9506-mms-codec",
+ "igs-iso9506-mms-link",
+ "tokio",
+]
+
+[[package]]
 name = "igstase2-server"
 version = "0.1.0"
 dependencies = [

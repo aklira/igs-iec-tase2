@@ -196,6 +196,11 @@ impl BilateralTable {
         self
     }
 
+    /// Grants a data set to the client: the access of a data set that the client has just created (decision D-055).
+    pub fn grant_data_set(&mut self, name: ObjectName, access: ObjectAccess) {
+        self.data_sets.insert(name, access);
+    }
+
     /// Adds a transfer set and its access control specification.
     #[must_use]
     pub fn with_transfer_set(mut self, name: ObjectName, access: ObjectAccess) -> Self {
@@ -328,6 +333,11 @@ impl BilateralTables {
     /// The table of a remote control centre, by its designation.
     pub fn table(&self, designation: &str) -> Option<&BilateralTable> {
         self.tables.get(designation)
+    }
+
+    /// The table of a remote control centre, for its changes.
+    pub fn table_mut(&mut self, designation: &str) -> Option<&mut BilateralTable> {
+        self.tables.get_mut(designation)
     }
 
     /// The admission of a client: its designation must have a table, and the application reference of the request must
