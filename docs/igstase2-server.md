@@ -41,8 +41,9 @@ in the order of the example `bench/device/tase2-demo.toml`:
 | `[[point]]` | `domain`, `name`, `type`, `bits`, `value`, `writable` | A data value. `writable` is false by default. |
 | `[[data-set]]` | `domain`, `name`, `members` | A data set, configured at the start (the clients may also create some). `members` are points of the same domain. |
 | `[[transfer-set]]` | `domain`, `name` | A transfer set object. A client starts or stops it by writing it. |
+| `[[device]]` | `domain`, `name`, `class`, `closing_commands` | A device (503 §5.3.12): `class` is `sbo` or `non-sbo`; `closing_commands` are the commands that close or raise, which CLOSE-ONLY-INHIBIT refuses. Its command is simulated: an accepted Operate completes at once. |
 | `[[table]]` | `designation`, `table_id`, `domain`, `application_references`, `data_set_creation`, `initiator` | The Bilateral Table of one client (below). |
-| `[[table.access]]` | `kind`, `name`, `permissions`, `interval_ms` | What the client may do with one object of its table. |
+| `[[table.access]]` | `kind`, `name`, `permissions`, `interval_ms`, `check_back_id`, `timeout_s` | What the client may do with one object of its table. A device needs `check_back_id` (the value a Select returns, an integer of 16 bits) and `timeout_s`. |
 | `[[simulate]]` | `domain`, `name`, `kind`, `period_ms`, `min`, `max`, `step` | A change that the server makes by itself, at each period. |
 
 Types of a point (`type`):
@@ -56,9 +57,9 @@ Types of a point (`type`):
 
 Permissions of a table access (`permissions`): `visibility` (without it the object does not exist for the client),
 `get-data-value`, `set-data-value`, `get-data-value-type`, `delete-data-set`, `get-data-set-element-values`,
-`set-data-set-element-values`, `start-transfer`, `stop-transfer`.
+`set-data-set-element-values`, `start-transfer`, `stop-transfer`, `select`, `operate`, `set-tag`.
 
-Kinds of an access (`kind`): `data-value`, `data-set`, `transfer-set`. `interval_ms` is the shortest interval the client may ask
+Kinds of an access (`kind`): `data-value`, `data-set`, `transfer-set`, `device`. `interval_ms` is the shortest interval the client may ask
 for in a transfer set on that data value (the maximum exchange rate of the agreement).
 
 Kinds of a simulation (`kind`):
@@ -89,10 +90,16 @@ and compares them with its agreement. `data_set_creation = true` lets the client
 - **Transfer sets** are started and stopped by the client, by a write of the whole transfer set. Their reports go to the
   association that started them: each change of a monitored point (`OBJECT_CHANGE`), the interval, the integrity check, the
   operator request and the other events, with the rules of IEC 60870-6-503 §7.2.5.
+- **Devices** are served under the table of the client: a Select reads `<name>_SBO` (the CheckBackID of the table, and the device is
+  armed for the client for `timeout_s`); an Operate writes the command of the device (it completes at once, the device simulated);
+  a Set Tag and a Get Tag use `<name>_TAG`. The tag refuses the commands as IEC 60870-6-503 §5.3.12 gives them (decision D-064).
+- **Information messages**: the client starts and stops its Information Message Transfer Set (`IM_Transfer_Set`), and the server
+  reports the messages that the application sends (decision D-061).
 - **Application changes** come from the simulations. A change that the store refuses (a point that is not writable) is neither
   kept nor reported.
 - **Not served**: GetNameList (the listing of the names a table shows), the blocked transfer reports (`block_data`), the
-  Data_failure event, and the dual-use mode of IEC 60870-6-503 §5.3.3.3: an association has one role, the server's, and the
+  Data_failure event, the device actions (Timeout, Local Reset, Success, Failure) as MMS event conditions (the stack serves no event
+  conditions), the Local Reset as an operation of the application, and the dual-use mode of IEC 60870-6-503 §5.3.3.3: an association has one role, the server's, and the
   server cannot send requests to its client on it (decision D-054). A critical report's acknowledgement is not sent by the server's client side (the MMS client has no
   unconfirmed send): the server signals the data failure after `ack_timeout_s`, internally.
 

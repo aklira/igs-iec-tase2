@@ -978,3 +978,29 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: the unit tests of `crates/igs-iec-tase2/src/client.rs` (the device variables, the tag codes, the information report) and of
   `crates/igstase2-client/src/main.rs` (the tag names, the command lines of the new commands).
 
+### D-066 — The server's devices and information messages: simulated commands, the timeout as the only release, reports per association (task C7)
+
+- **Decision**:
+  - **Devices** are configured (`DeviceConfig`, `[[device]]`), and served under the table of each client. A Select is the read of
+    `<name>_SBO`; an Operate is the write of the command to `<name>`; Get Tag and Set Tag read and write `<name>_TAG`. The commands are
+    **simulated**: an accepted Operate completes at once (the device returns to IDLE, and the Success action is produced).
+  - **The device actions** (Timeout, Local Reset, Success, Failure) are taken by the model at each poll and dropped: the stack serves no MMS
+    event conditions, so they are not sent. This is recorded as a gap, not as a behaviour.
+  - **A selection is released by its timeout only**: the conclusion of an association does not clear the selection of its client. I did not
+    find a clause of 6-503 that releases a device selection at the conclusion of the association (the transfer sets are released, §7.2.2.3.3);
+    the timeout of the selecting client's table ends it.
+  - **A control point is written only**: a Read of `<name>` is refused with OBJECT-ACCESS-DENIED (802 §5.2: Write Only, except its check-back
+    name, tag, state and reason).
+  - **Information messages**: the client's write of `IM_Transfer_Set` (a Boolean) starts or stops the transfer set of its association.
+    `TaseServer::send_information` gives a message to every association whose transfer set is enabled, at the next poll. The table has no
+    access check for an information message (6-503 §5.2.3.6).
+  - **Names of a request keep their positions**: a request's names are answered one by one. A name that is not a TASE.2 name, such as the AA-specific
+    `IM_Transfer_Set`, used to be dropped from the list, which shifted the answers of the other names; it now has its own answer.
+- **Why**: the simulated commands are what the plan asks for ("a simulated control point for the demonstration", task C7); the stack does not
+  give the server a way to execute a command on a real device, nor to send event conditions, and the plan does not add one.
+- **Confidence**: high for the mapping of the names and the access rules; medium for the release of a selection by its timeout only, which
+  rests on the absence of a clause that I found, and should be checked in the PDF before R1.
+- **Test**: `crates/igs-iec-tase2/tests/server.rs` (ten tests: the select and its CheckBackID, the second select, the operate after the select,
+  the operate without it, a non-SBO device, the closing command under CLOSE-ONLY-INHIBIT, the tag and its reason, the timeout, the information
+  message while enabled, and no message before the start or after the stop).
+
