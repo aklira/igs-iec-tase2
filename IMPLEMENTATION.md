@@ -290,7 +290,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | M2 Indication points | [x] |
 | M3 Control points and device outage | [x] |
 | M4 Transfer sets, conditions, data set types | [x] |
-| M5 Other types of the chosen blocks | [ ] |
+| M5 Other types of the chosen blocks | [x] |
 | M6 Property tests and fuzzing | [ ] |
 | B1 Bilateral table | [ ] |
 | B2 Association | [ ] |

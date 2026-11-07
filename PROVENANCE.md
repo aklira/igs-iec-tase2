@@ -288,10 +288,10 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: `tests/transfer.rs`, `a_boolean_enumeration_is_a_boolean_with_the_names_of_the_standard` and
   `a_status_is_enabled_or_disabled`.
 
-### D-021 — The reserved bits of a bit string have no name, and Block1 is not enforced
+### D-021 — The reserved and unused bits of a bit string have no name, and Block1 is not enforced
 
-- **Decision**: a bit named `reserved` has no constant and no accessor: its bit is kept as received, so every value of
-  the string round-trips. `SupportedFeatures` has eight reserved bits (2, 5 to 9): the generator had kept one of them
+- **Decision**: a bit named `reserved` or `unused` has no constant and no accessor: its bit is kept as received, so every
+  value of the string round-trips. (The protection flags of M5 and the `Data_Flags` of M2 have such bits.) `SupportedFeatures` has eight reserved bits (2, 5 to 9): the generator had kept one of them
   under the name `RESERVED`, which named only bit 2. `Block1` is always 1 in the text; the type does not refuse a
   value with it cleared, since the peer's value is the one to report (the link decides what to do with it).
 - **Why**: a constant for one of several bits called `reserved` suggests a single meaning; the reserved bits have none.
@@ -313,3 +313,39 @@ silent, to be confirmed by an observation test against other implementations.
 - **Sources**: D-003; IEC 60870-6-503 §8.2 (main text) and annex G (earlier edition).
 - **Confidence**: high.
 - **Test**: `tests/transfer.rs`, `the_main_text_names_prevail_over_the_annexes`.
+
+### D-023 — The scope of M5: the protection equipment types of Basic Services
+
+- **Decision**: M5 covers the protection equipment types of 6-802 §6.2.3 (`SingleFlags`, `EventFlags`, `PackedFlags`,
+  `SingleProtectionEvent`, `PackedProtectionEvent`). They are the data value types of the block Basic Services, whose
+  table of data values (702 A.4) carries the object `ProtectionEquipmentEvent` with the optional base `o`. The
+  object's behaviour in the link is decided at B-tasks.
+  The types of 6-802 §6.4 (InformationBuffer) and of annex B (transfer accounts, power plant, matrix, general data)
+  belong to blocks that D-009 leaves out of 1.0 (Information Message, Accounts, Programs, Time Series). They stay
+  generated, and their round trip is tested when their block is chosen.
+- **Why**: the scope of 1.0 is D-009; the protection types are the only 6-802 types of the data-value part of Basic
+  Services that M1 to M4 do not cover.
+- **Sources**: IEC 60870-6-702 A.3 (Table A.4, whose scope footnote names block 1), IEC 60870-6-802 §6.2.3, §6.4, annex B.
+- **Confidence**: medium for the reading of Table A.4 as the data values of block 1 (the footnote names block 1 for
+  the scope of the data values); high for the exclusion of the other blocks (D-009).
+- **Test**: `tests/protection.rs`, the bit positions of the three flag types, the round trips of the two events, and the
+  refusals of a malformed bit string and structure.
+
+### D-024 — The protection flags and the event state, as the mapping of 802 §7.1.3 gives them
+
+- **Decision**: the event state is the two-bit code of bits 6 and 7 (`EventState_hi`, `EventState_lo`) of
+  `SingleFlags`, with the three named values of the mapping: OFF for code 1, ON for code 2, INVALID for code 0 or 3
+  (written as 0). The first five flags of `SingleFlags` and `PackedFlags` have accessors named by their condition, and a
+  set bit is that condition: `elapsed_time_invalid`, `blocked`, `substituted`, `event_invalid`. The exception is
+  `Topical`, whose bit is inverted in the mapping (a set bit is NOTTOPICAL): the accessor is `not_topical`.
+  `EventFlags` has one accessor per bit (`general`, `phase1` to `phase3`, `earth`, `reverse`), each meaning the start
+  or the trip of its phase by the attribute: the mapping maps both `StartX` and `TripX` on the same bit.
+- **Why**: the mapping gives the named values of the event state, which replace the device-dependent codes of the
+  state (D-017) for these bits; the inverted flag is named by its condition so that no reader takes its bit for the
+  opposite condition.
+- **Sources**: IEC 60870-6-802 §6.2.3 (the bit tables), §7.1.3 (the attributes ElapsedTimeValidity, Blocked,
+  Substituted, Topical, EventValidity, EventState, StartX, TripX).
+- **Confidence**: high for the bit positions and the event state; medium for the mapping of the packed flags' start and
+  trip, which the bits share.
+- **Test**: `tests/protection.rs`, `an_event_state_is_off_on_or_invalid_as_the_mapping_says`,
+  `the_state_is_written_and_the_other_bits_are_kept`, `an_inverted_attribute_is_named_by_its_condition`.
