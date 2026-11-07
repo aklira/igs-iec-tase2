@@ -8,6 +8,9 @@ Scope of 1.0: TASE.2 (ICCP) client and server on `igs-iso9506-mms`: bilateral ta
 types of IEC 60870-6-802, data sets, transfer sets, and the conformance blocks chosen in task F3.
 The MMS stack itself lives in `igs-iso9506-mms`.
 
+Not supported in 1.0: the dual-use mode of IEC 60870-6-503 §5.3.3.3 (one association for both the client and the server
+directions). Each association has one role. See decision D-054 in `PROVENANCE.md`.
+
 ---
 
 ## 1. Rules for the agent (read before every task)

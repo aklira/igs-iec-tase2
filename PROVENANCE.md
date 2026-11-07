@@ -759,3 +759,25 @@ silent, to be confirmed by an observation test against other implementations.
 - **Confidence**: high for the run; the probe is a demonstration, not the interop matrix (T3).
 - **Test**: the probe, run against the device (above); `tests/binary.rs` runs the same kind of exchange against a process.
 
+### D-054 — The dual-use mode is not supported
+
+- **Decision**: the implementation does not support the dual-use mode of IEC 60870-6-503 §5.3.3.3, in which one association
+  carries the client and the server directions of two TASE.2 users. Each association has one role: `TaseClient` (T1) on the
+  initiating side, `TaseServer` (S1) on the responding side. The client and the server can run in one process, each on its own
+  association, but this multiple-association mode is not tested together. The dual-use mode is outside 1.0.
+- **What the standard requires, and what is met**: a TASE.2 implementation shall be able to act as client or as server over a
+  single association; dual use is optional, and a dual-use site falls back to single-use associations with a peer that does not
+  support it (503 §5.3.3.3). The single-role associations of 1.0 meet the mandatory part.
+- **What is missing**:
+  - the server side of an association cannot send a confirmed request and receive its answer: `igs_iso9506_mms::Server` has no
+    API for it, although the link layer does not restrict requests by role;
+  - the client side of an association cannot answer the requests of its peer: `igs_iso9506_mms::Client` handles only the
+    unconfirmed reports of the peer;
+  - no type unites `TaseClient` and `TaseServer` on one association, and the initiator rule of 503 §5.3.3.3 (the side designated
+    to initiate, by prior agreement) is applied only on the server side (D-031).
+- **Why outside 1.0**: the standard makes it optional, and the plan (`IMPLEMENTATION.md`) did not include it. Adding it means
+  changes in the MMS stack (sibling repository) on both sides of the association.
+- **Confidence**: high: the code has no path for it, and the MMS API has none.
+- **Test**: none; the absence is checked by the review of the API (`crates/igs-iec-tase2/src/client.rs`,
+  `crates/igs-iec-tase2/src/server.rs`).
+

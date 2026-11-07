@@ -91,8 +91,9 @@ and compares them with its agreement. `data_set_creation = true` lets the client
   operator request and the other events, with the rules of IEC 60870-6-503 §7.2.5.
 - **Application changes** come from the simulations. A change that the store refuses (a point that is not writable) is neither
   kept nor reported.
-- **Not served**: GetNameList (the listing of the names a table shows), the blocked transfer reports (`block_data`), and the
-  Data_failure event. A critical report's acknowledgement is not sent by the server's client side (the MMS client has no
+- **Not served**: GetNameList (the listing of the names a table shows), the blocked transfer reports (`block_data`), the
+  Data_failure event, and the dual-use mode of IEC 60870-6-503 §5.3.3.3: an association has one role, the server's, and the
+  server cannot send requests to its client on it (decision D-054). A critical report's acknowledgement is not sent by the server's client side (the MMS client has no
   unconfirmed send): the server signals the data failure after `ack_timeout_s`, internally.
 
 ## Bench run
