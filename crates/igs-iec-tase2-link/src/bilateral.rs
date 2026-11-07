@@ -135,6 +135,7 @@ pub struct BilateralTable {
     versions: Versions,
     domain: String,
     application_references: BTreeSet<String>,
+    data_set_creation: bool,
     data_values: BTreeMap<ObjectName, ObjectAccess>,
     data_sets: BTreeMap<ObjectName, ObjectAccess>,
     transfer_sets: BTreeMap<ObjectName, ObjectAccess>,
@@ -153,6 +154,7 @@ impl BilateralTable {
             versions,
             domain: domain.into(),
             application_references: BTreeSet::new(),
+            data_set_creation: false,
             data_values: BTreeMap::new(),
             data_sets: BTreeMap::new(),
             transfer_sets: BTreeMap::new(),
@@ -165,6 +167,19 @@ impl BilateralTable {
     pub fn with_application_reference(mut self, reference: impl Into<String>) -> Self {
         self.application_references.insert(reference.into());
         self
+    }
+
+    /// Allows the client to create data sets (the Create Data Set access permission, 503 §7.2.4.2). The permission is not in
+    /// the list of an object, since the object does not exist yet: the table grants it for all.
+    #[must_use]
+    pub fn with_data_set_creation(mut self) -> Self {
+        self.data_set_creation = true;
+        self
+    }
+
+    /// Whether the client may create data sets.
+    pub fn may_create_data_sets(&self) -> bool {
+        self.data_set_creation
     }
 
     /// Adds a data value and its access control specification.

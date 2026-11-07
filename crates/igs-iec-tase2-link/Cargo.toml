@@ -14,6 +14,8 @@ repository.workspace = true
 [dependencies]
 # The model of the TASE.2 types (tasks M1 to M6). A path dependency until it is published (rule 9).
 igs-iec-tase2-model.workspace = true
+# The MMS values of the data (`Data`) and the type descriptions, for the data values (task B3).
+igs-iso9506-mms-codec.workspace = true
 
 [lints]
 workspace = true
