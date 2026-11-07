@@ -35,3 +35,22 @@ impl From<ValueError> for Error {
         Self::Value(error)
     }
 }
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Mms(error) => write!(f, "the MMS connection or request failed: {error:?}"),
+            Self::Conflict(conflict) => write!(
+                f,
+                "the server's versions do not match the agreement: {conflict:?}"
+            ),
+            Self::Variable(code) => {
+                write!(f, "a variable read after the association failed: {code:?}")
+            }
+            Self::Value(error) => write!(f, "a value does not have its type: {error:?}"),
+            Self::Malformed(text) => write!(f, "the response is malformed: {text}"),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
