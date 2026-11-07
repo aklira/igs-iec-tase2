@@ -295,7 +295,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | B1 Bilateral table | [x] |
 | B2 Association | [x] |
 | B3 Data values and data sets | [x] |
-| B4 Transfer sets | [ ] |
+| B4 Transfer sets | [x] |
 | B5 Controls and messages of the chosen blocks | [ ] |
 | T1 Client API | [ ] |
 | T2 `igstase2-client` binary | [ ] |

@@ -537,3 +537,82 @@ silent, to be confirmed by an observation test against other implementations.
 - **Confidence**: low: the standard does not say; to be confirmed by the interop tests (T3).
 - **Test**: `tests/data.rs`, `set_data_set_element_values_refuses_a_list_of_another_length`.
 
+### D-038 — The timing of a Data Set Transfer Set: the start time, the intervals and the buffer
+
+- **Decision**: a zero start time means now; otherwise the monitoring begins at the start time, and the interval (and the
+  integrity check) is counted from it. A change before the start time is applied to the values but is neither reported
+  nor kept for the first report. The timers that expired by the time of an input run first, in time order, so that a late
+  clock gives the reports of every interval that expired (each with its own time). The buffer of the ObjectChange condition
+  starts at the first change in it and ends `Buffer Time` later. Stop Transfer ends the monitoring at once: no further report,
+  and the buffered changes are dropped (the name returned to the pool is the caller's).
+- **Why**: the standard gives the start, the interval counted from the start time, the buffer that starts with the first
+  change, and the end of monitoring by Stop Transfer (503 §5.3.10.2.2, §7.2.5.2.3, §7.2.5.3.3, §7.2.5.4.1, §7.2.5.4.2).
+  The catch-up reports are the consequence of the periodic interval, not a choice.
+- **Confidence**: high for the start and the interval; medium for dropping the buffered changes at Stop Transfer, which the
+  standard does not say.
+- **Test**: `crates/igs-iec-tase2-link/tests/transfer.rs`: the interval, the late clock, the future and the zero start time,
+  the stop, the change before the start time, and the buffer.
+
+### D-039 — The contents of a report, by the condition that triggers it
+
+- **Decision**: IntervalTimeOut with RBE: the members changed since the last report, and no report when none changed; without
+  RBE: the entire data set. ObjectChange without a buffer: the changed member with RBE, the entire data set without. ObjectChange
+  with a buffer: the last value of each changed member, or every change in order when All Changes Reported is set; the
+  entire data set without RBE. IntegrityTimeOut (with RBE): the entire data set. OperatorRequest and OtherExternalEvent (the
+  code requested): the entire data set. A report clears the changes it carries.
+- **Why**: the standard gives the content for the interval (current state of all, or of the changed objects), for the buffer,
+  and for the integrity check (503 §5.3.10.2.2, §5.3.10.2.3, §7.2.5.5.3). For the two requests it gives no content; the
+  entire data set is the one that answers a request for the state.
+- **Confidence**: high for the interval, the buffer and the integrity check; medium for "no report when none changed" and for
+  the content of the two requests, which the standard does not state.
+- **Test**: `tests/transfer.rs`: the interval with RBE and no change, the object change with and without RBE, the buffer with
+  the last value and with all changes, the integrity, the operator request, and the other event with and without the
+  requested code.
+
+### D-040 — The blocked report: its rule, and its values not yet encoded as octets
+
+- **Decision**: a blocked report (BlockData true) is the rule and its values: rule 0 without RBE (the values of all the members,
+  in order); with RBE, rule 1 when every position of the changed members fits in one octet, else rule 2 (the positions of the
+  members in the data set). The values are kept as MMS data. The octet string of the standard, in which each value is encoded
+  by its storage type of IEC 60870-6-802, is not built here.
+- **Why**: the rules and the positions are the part of the blocking that the transfer set decides; the encoding of a value by
+  its storage type belongs to the model of 802 and the link that sends the report (S1). The special transfer identifiers are
+  not included in the report yet, for the same reason.
+- **Sources**: IEC 60870-6-503 §7.2.5.5.3 (the blocked report, the header, rules 0, 1 and 2).
+- **Confidence**: high for the rules; the encoding is open.
+- **Test**: `tests/transfer.rs`, `a_blocked_report_without_rbe_carries_the_values_in_rule_0` and
+  `a_blocked_report_with_rbe_carries_the_positions_of_the_changed_members_in_rule_1`.
+
+### D-041 — The critical report: the acknowledgement, the negative acknowledgement, and the data failure
+
+- **Decision**: a critical report waits for an acknowledgement of its sequence number; an acknowledgement of another number is
+  refused. A negative acknowledgement (Transfer_Report_NACK), or the absence of the acknowledgement for the ack timeout (a
+  policy of the server), raises a data failure (`Data_failure`) for the report, once.
+- **Why**: the standard gives the acknowledgement that the server expects, the Transfer_Report_NACK, and the data failure
+  (503 §7.2.5.5.2, §7.2.5.5.3). The time of the wait is local: the standard leaves it to the server.
+- **Confidence**: high for the acknowledgement and the data failure; the timeout value is the policy's.
+- **Test**: `tests/transfer.rs`, the critical acknowledgement, the unexpected acknowledgement, the timeout, and the negative
+  acknowledgement.
+
+### D-042 — The TLE: a report that would take longer is discarded
+
+- **Decision**: when the TLE is not zero and the server expects to take longer than it to send a report, the report and its data
+  are discarded and counted; a zero TLE is ignored. The expected send delay is a policy of the server.
+- **Why**: the standard gives the rule: the server does not generate a report it cannot send within the TLE, and discards its
+  data (503 §5.3.10.2.2, §7.2.5.5.3).
+- **Confidence**: high. The rule that a report due after an earlier one exceeded the TLE is always generated is not
+  implemented: it needs the time of the previous report, which the caller gives at the send.
+- **Test**: `tests/transfer.rs`, `a_report_that_would_take_longer_than_its_tle_is_discarded` and
+  `a_report_within_its_tle_is_sent`.
+
+### D-043 — The parameters refused at the start
+
+- **Decision**: the Start Transfer is refused with `OBJECT-ATTRIBUTE-INCONSISTENT` when the IntervalTimeOut condition is
+  requested with a zero interval, or when the IntegrityTimeOut condition is requested with RBE and a zero integrity check. A
+  refusal is the answer of the write of the transfer set.
+- **Why**: the standard gives the error code for a Reporting Interval that the checks refuse (503 §7.2.5.2.3); a zero interval
+  cannot expire, and the integrity check applies only with RBE.
+- **Confidence**: medium: the standard names the check and the code, not the value that fails it.
+- **Test**: `tests/transfer.rs`, `a_zero_interval_is_refused_at_the_start_of_the_interval_condition` and
+  `a_zero_integrity_check_is_refused_with_rbe`.
+
