@@ -616,3 +616,17 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: `tests/transfer.rs`, `a_zero_interval_is_refused_at_the_start_of_the_interval_condition` and
   `a_zero_integrity_check_is_refused_with_rbe`.
 
+### D-044 — B5 has no operation in 1.0: the device control and the information messages are blocks left out by D-009
+
+- **Decision**: task B5 ("controls and messages of the chosen blocks, as far as F3 includes them") adds no operation to 1.0.
+  The device operations (Select, Operate, Set Tag, with their CheckBackID and Timeout) belong to the block SBO Device Control
+  (base `o`), and the information messages to the block Information Message (base `o`); D-009 leaves both out of 1.0, and no
+  later decision adds them (criterion 2 of F3 waits for the reference peer, and its observation is recorded only as D-010).
+  What these blocks need is already in place: the control types of M3 round-trip, the device entries of the bilateral table
+  and their CheckBackID and Timeout (B1), and the transfer report of the transfer sets (B4).
+- **Why**: the plan gives B5 the scope that F3 gives it; the scope of F3 is the Basic Services block.
+- **Sources**: D-009; IEC 60870-6-702 (the blocks and their base); IEC 60870-6-503 §5.3.12.2 and §7.2.6 (the device operations,
+  which are the content of the block).
+- **Confidence**: high for the exclusion (D-009); the blocks come in a later decision, after the observation of the peer.
+- **Test**: none in B5. The control types are tested in `igs-iec-tase2-model/tests/control.rs` (M3).
+
