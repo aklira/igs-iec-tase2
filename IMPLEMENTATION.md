@@ -306,7 +306,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | S1 Server | [x] |
 | S2 `igstase2-server` binary | [x] |
 | S3 Server interop and load | [ ] |
-| X1 Documentation and capabilities | [ ] |
+| X1 Documentation and capabilities | [x] |
 | R1 Legal review and release ⛔ | [ ] |
 
 Suggested order: F1, F2, F3, M1–M6 (in parallel with the MMS plan), B1–B5, F4, T1–T3, S1–S3, X1, R1.

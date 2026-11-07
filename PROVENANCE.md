@@ -807,3 +807,13 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: `crates/igstase2-client/tests/cli.rs` (the help, the usage status, the per-item answer with status 0, the refused
   association with status 1), and the transcript `bench/transcripts/T2-run.txt`.
 
+### D-057 — The capabilities matrix is checked by a test, and its gaps are decisions
+
+- **Decision**: `docs/capabilities.md` lists the blocks, the operations of the client and of the server, and the test that covers
+  each row, between the markers `matrix:begin` and `matrix:end`. A test checks that every name in backticks in the matrix exists as
+  a Rust `fn` of the crates or a Python `def` of the bench tests. Each known gap names the decision that records it, and the
+  matrix states the blocks left out of 1.0.
+- **Why**: the rows must not drift from the tests they name; a name check is mechanical and fails on any rename.
+- **Confidence**: high: the check is the same as the one of the MMS repository (its capabilities matrix).
+- **Test**: `crates/igs-iec-tase2/tests/capabilities.rs`, `every_test_named_in_the_capabilities_matrix_exists`.
+

@@ -1,0 +1,33 @@
+# Changelog
+
+All notable changes to this project are recorded in this file. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+### Added
+
+- `igs-iec-tase2-model`: the types of IEC 60870-6-802 and 60870-6-503, generated from their data files, with their conversions
+  to and from MMS values: scalars and times, the quality flags and the two-bit codes, the indication and control points, the
+  device outages, the protection events, the data set transfer sets and their conditions. The reals are single precision, and a
+  real that is not finite is refused. The strategies and the property tests are behind the `strategy` feature.
+- `igs-iec-tase2-link`: sans-I/O bilateral tables with their access checks and the version checks; the association (the client's
+  check after the Initiate, the server's admission, the release); the data values and the data sets, operation by operation; the
+  data set transfer set, with its conditions, its reports, its blocking, its acknowledgement and its TLE.
+- `igs-iec-tase2`: `TaseClient` (association, data values, data sets, transfer sets, the event stream of reports) and
+  `TaseServer` (the same services under the table of each client, the reports to the association that started the transfer set).
+- `igstase2-server`: the demonstration server, with its configuration file and simulated changes (the device under test of the bench).
+- `igstase2-client`: the command-line client (get, set, type, members, read, write, create, delete, start, stop).
+- The interop bench (`bench/`): the device and the client in their containers, and the client interop matrix.
+- The documentation: `docs/capabilities.md` (the blocks, the operations, the test of each row, the known gaps), the client
+  and server documents, and the decisions of `PROVENANCE.md`.
+
+### Known limits
+
+- The dual-use mode (one association for both directions) is not supported (decision D-054).
+- The scope of 1.0 is the Basic Services block. The optional blocks and the Programs, Events, Accounts and Time Series blocks are
+  not implemented (decisions D-009 and D-044).
+- GetNameList, the blocked transfer reports and the Data_failure event are not served; a critical report's acknowledgement is not
+  sent by the client (decisions D-046 and D-049).
+- The name of the TASE.2 version variable is `TASE2_Version`, without the dot of the printed name (decision D-045).
+- The interop with a third-party TASE.2 peer is not verified: the reference peer does not serve TASE.2 yet (decision D-010).
