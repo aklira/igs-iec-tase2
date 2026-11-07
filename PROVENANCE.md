@@ -955,3 +955,26 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: `crates/igs-iec-tase2-link/tests/device.rs`, 23 tests: one per transition, the timeout, the local reset, the tags, and the
   owner of a VCC-specific device.
 
+### D-065 — The client's mapping of the devices and of the information messages (task C6)
+
+- **Decision**: the client reads and writes the variables that 503 §6.15 and §8.3 name, and receives the reports of §7.2.5.5.4.
+  - **Select** reads `<Device_Name>_SBO`, the CheckBackID (type SBO_CheckBackName) (054 §7.2.6.2.2). **Operate** writes the command to the
+    device's variable (054 §7.2.6.3.2). **Get Tag** reads `<Device_Name>_TAG` and **Set Tag** writes it, as a Tag_Value (6.15, 054 §7.2.6.1).
+    The `_SBO` and `_TAG` variables have the scope of the device.
+  - **Tag bits**: the client writes the two code bits (`Tag_hi`, `Tag_lo`) of the tag, and leaves `Tag_state` at 0: the server gives the state
+    (802 §7.1). Get Tag reads the code and the state bit; a code of 3 is refused as a malformed value.
+  - **The information transfer set** is the AA-specific variable `IM_Transfer_Set` (503 §8.3.9). Start and Stop write its Boolean status:
+    ENABLED (true) and DISABLED (false) (054 §7.2.5.2, §7.2.5.3). The name carries the AA-specific scope, which the link's names do not have:
+    it is written directly as an MMS name.
+  - **The information messages** are the reports whose variables are `Info_Mess_Header` (VMD scope) and the buffer (6-503 §7.2.5.5.4). The
+    client decodes them into an `InformationMessage` (its header, and the first `Size` octets of the buffer). Any other report is a transfer
+    report, as before.
+  - **The command line** `operate` selects the device first, in the same association, unless `--direct` is given: the server refuses the
+    Operate of an SBO device that is not armed for the client (D-064).
+- **Why**: the names and the statuses are those of the clauses cited; the scope of `IM_Transfer_Set` is AA-specific in 503 §8.3.9, and only
+  the MMS name type can carry it.
+- **Confidence**: high for the variable names and the status values (the clauses are explicit); medium for the AA-specific name written
+  directly, which the server must match (C7). The end-to-end test of these operations is C8, after the server (C7).
+- **Test**: the unit tests of `crates/igs-iec-tase2/src/client.rs` (the device variables, the tag codes, the information report) and of
+  `crates/igstase2-client/src/main.rs` (the tag names, the command lines of the new commands).
+

@@ -368,7 +368,7 @@ out. Each task below names its clauses in its log; the behaviour is decided agai
 | C3 Information messages (link) | [x] |
 | C4 Device control, SBO (link) | [x] |
 | C5 Extended data set conditions (link) | [x] |
-| C6 Client API and `igstase2-client` | [ ] |
+| C6 Client API and `igstase2-client` | [x] |
 | C7 Server | [ ] |
 | C8 Bench and client matrix | [ ] |
 | C9 Documentation | [ ] |
