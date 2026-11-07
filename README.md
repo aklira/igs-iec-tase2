@@ -15,6 +15,21 @@ An industrial-grade IEC 60870-6 ICCP TASE.2 protocol stack for SCADA and telecon
 The standards are licensed and are not distributed with this repository. The references point to their clauses; no text of the
 standards is in the code or the documents.
 
+## Architecture
+
+![Architecture of igs-iec-tase2: the crates by layer, and their dependencies](docs/diagram.png)
+
+The diagram groups the crates by layer:
+
+- **Standards model** (`igs-iec-tase2-model`): the types of IEC 60870-6-802 and 60870-6-503, and their conversions to and from MMS values.
+- **TASE.2 protocol** (`igs-iec-tase2-link`, `igs-iec-tase2`): the sans-I/O bilateral tables, association, data values and data sets,
+  transfer sets, devices and information messages; `TaseClient` and `TaseServer` run them over the MMS stack.
+- **Applications** (`igstase2-server`, `igstase2-client`): the demonstration server, with its configuration and simulated changes, and the
+  command-line client.
+- **Load driver** (`igstase2-load`): many associations at once, with their latencies measured.
+
+The MMS stack is the sibling repository `igs-iso9506-mms`, which carries the MMS services.
+
 ## Limits
 
 - **Dual use is not supported.** An association has one role, client or server, as IEC 60870-6-503 §5.3.3.3 allows. The dual-use
