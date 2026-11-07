@@ -433,3 +433,42 @@ silent, to be confirmed by an observation test against other implementations.
 - **Confidence**: high.
 - **Test**: none in B1; B2 and B5 test these parts.
 
+### D-030 — The client checks the server's variables after the MMS Initiate, in the order of the standard
+
+- **Decision**: after a positive MMS Initiate, the client reads `Bilateral_Table_ID`, `TASE.2_Version` and
+  `Supported_Features`. It compares the table identifier with the one of the Bilateral Agreement; only when they are
+  identical, it compares the TASE.2 version. A mismatch of either is a conflict: the client concludes and makes no further
+  Initiate until it is resolved. The features read are recorded with the association. The order of the reads, and whether
+  they are interleaved with the checks, is outside the standard (503 §7.2.2.2.2).
+- **Why**: the standard gives the checks in this order, and the second only when the first passes.
+- **Sources**: IEC 60870-6-503 §7.2.2.2.2 (the client role), §5.3.3.3, §8.3.2 to §8.3.4.
+- **Confidence**: high.
+- **Test**: `crates/igs-iec-tase2-link/tests/association.rs`: the matching table and version, a mismatching table identifier
+  (also when the version differs too), and a mismatching TASE.2 version.
+
+### D-031 — The server accepts or declines an association request, and refuses a peer it is the initiator with
+
+- **Decision**: a server that is the designated initiator of the associations with a peer refuses the Initiate request
+  with an MMS Initiate-ErrorPDU (error class INITIATE, error code OTHER), whatever the table says. Otherwise the Bilateral
+  Table decides: a client designation without a table, or an application reference not listed in its table, is declined
+  with a negative MMS Initiate response. The designation of the initiator is a prior agreement between the control
+  centres; the policy holds it, the tables do not (503 §5.3.2 and §7.2.2.2.1 leave it outside the table).
+- **Why**: the two refusals are two different responses on the wire; the table cannot hold the initiator role, which is
+  not an attribute of the Bilateral Table object model (503 §5.3.4.2).
+- **Sources**: IEC 60870-6-503 §5.3.2, §7.2.2.2.1 (the initiator and the Initiate-ErrorPDU), §7.2.2.2.3 (the server role).
+- **Confidence**: high for the two responses; medium for keeping the initiator agreement outside the table, which the
+  standard does not state.
+- **Test**: `tests/association.rs`: acceptance, an unknown client, an unlisted reference, and the initiator refusal.
+
+### D-032 — The release on Conclude or Abort disables the transfer sets and deselects the devices
+
+- **Decision**: when an association is concluded or aborted by the peer, the server releases what it holds on that
+  association: every active transfer set becomes DISABLED and its name returns to the pool, and every device the client
+  selected is deselected. The association holds nothing afterwards. The client, after a Conclude or Abort, attempts to
+  re-establish the association (503 §7.2.2.2.2, §7.2.2.3.2, §7.2.2.4.2); the retry is the caller's.
+- **Why**: the standard gives these as the outcome of the release on the server, for both the Conclude and the Abort.
+- **Sources**: IEC 60870-6-503 §7.2.2.3.3 (the server role of the Conclude), §7.2.2.4.3 (the server role of the Abort).
+- **Confidence**: high.
+- **Test**: `tests/association.rs`: the release of the transfer sets and the devices, and a second release, which has
+  nothing left.
+

@@ -293,7 +293,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | M5 Other types of the chosen blocks | [x] |
 | M6 Property tests and fuzzing | [ ] |
 | B1 Bilateral table | [x] |
-| B2 Association | [ ] |
+| B2 Association | [x] |
 | B3 Data values and data sets | [ ] |
 | B4 Transfer sets | [ ] |
 | B5 Controls and messages of the chosen blocks | [ ] |
