@@ -100,7 +100,8 @@ permissions = ["visibility", "start-transfer", "stop-transfer"]
 domain = "ICC1"
 name = "Flow1"
 kind = "ramp"
-period_ms = 1000
+# One minute: a value that a client writes stays visible for the matrix (bench/tests/test_t3_client_matrix.py).
+period_ms = 60000
 min = 0
 max = 10
 step = 1

@@ -43,6 +43,16 @@ services:
       bench:
         ipv4_address: 172.31.110.11
 
+  # The TASE.2 client under test (task T3): igstase2-client, built by device/build-tase2.sh. It runs the matrix's commands.
+  client-tase2:
+    <<: *debian
+    command: ["sleep", "infinity"]
+    volumes:
+      - ./client/bin/igstase2-client:/usr/local/bin/igstase2-client:ro
+    networks:
+      bench:
+        ipv4_address: 172.31.110.22
+
   capture:
     image: docker.io/nicolaka/netshoot@sha256:a20c2531bf35436ed3766cd6cfe89d352b050ccc4d7005ce6400adf97503da1b
     network_mode: "service:device"
