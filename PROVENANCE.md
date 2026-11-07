@@ -673,3 +673,54 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: `tests/client.rs`, `a_transfer_report_of_the_server_is_received_as_an_event` and
   `the_connection_state_is_an_event`.
 
+### D-048 — The designation and the application reference of a client
+
+- **Decision**: the Client Control Centre Designation is the dotted form of the calling AP-title of the AARQ (an object
+  identifier). The application reference is the AE-title: the designation, followed by `/` and the AE qualifier when the
+  AARQ gives one, else the designation alone. A table lists the references of its client; the server admits a client whose
+  designation has a table and whose reference is listed (503 §5.3.2, §7.2.2.2.3). An AP-title or AE qualifier that is not in
+  object-identifier or integer form is refused.
+- **Why**: the standard gives the designation as an AP-title (503 §6.5) and each application reference as an AE-title (§6.3.4),
+  without the text of the AE-title's form; the dotted form is the object identifier's own written form, and the qualifier is
+  the least change that keeps two AE-titles of one AP-title apart.
+- **Sources**: IEC 60870-6-503 §5.3.2, §6.3.4, §6.5; ISO 8650-1 (the AARQ fields `calling-AP-title`, `calling-AE-qualifier`).
+- **Confidence**: medium: the written form of the designation is a choice; the interop tests (T3) and a real peer decide it.
+- **Test**: `crates/igs-iec-tase2/tests/server.rs`, `the_association_is_established_with_the_special_objects_of_the_server`
+  and `a_client_without_a_table_is_refused_the_association`.
+
+### D-049 — The services of the TASE.2 server, and what S1 does not serve
+
+- **Decision**: the server serves through a model of the MMS server (D-031 of the MMS stack, in the sibling repository on its
+  branch `tase2-association-context`), which names the association of each call. Each request is checked against the table of
+  the association's client and answered as the standard gives it per item: Read and Write of the data values (503 §7.2.3.2,
+  §7.2.3.3), of the data sets (§7.2.4.4, §7.2.4.5), Get Data Value Type (§7.2.3.5), Create and Delete Data Set (§7.2.4.2,
+  §7.2.4.3), GetNamedVariableListAttributes (the members of a visible data set), and Identify (the stack's answer). The
+  special objects (`Bilateral_Table_ID` of the client's domain, `TASE2_Version`, `Supported_Features`) are answered from the
+  table and the standard's version (503 §8.3.2 to §8.3.4). A Write to a configured transfer set starts it (ENABLED) or stops
+  it (DISABLED), as the client writes the whole structure. The errors of a negative response are the MMS service errors of the
+  standard's classes (ACCESS, DEFINITION, RESOURCE); an item error is the MMS data access error.
+  Not served by S1: GetNameList (a listing of the names visible to a table, 503 §7.2.3.4, §7.2.4.6), the blocked transfer
+  reports (BlockData), the Data_failure event condition, and the sending of an acknowledgement (which the MMS client cannot yet
+  send, D-046 of the client). A transfer set whose BlockData is set is refused per item (`OBJECT-ATTRIBUTE-UNSUPPORTED`, which
+  the MMS data access codes do not name: `OBJECT-ATTRIBUTE-INCONSISTENT` is sent on the wire).
+- **Why**: the access checks of the standard need the identity of the association (MMS D-031); the services are the ones the
+  client of T1 uses, so that each operation is tested through it.
+- **Sources**: IEC 60870-6-503 §5.2.3.2, §7.2.2.2.2, §7.2.2.3.3, §7.2.3, §7.2.4, §7.2.5.2 to §7.2.5.5.
+- **Confidence**: high for the mapping and the checks; medium for the error classes of the negative responses, which the
+  standard names by codes the MMS stack gives in its own tables.
+- **Test**: `crates/igs-iec-tase2/tests/server.rs` (15 tests, one or more per operation, through the client over TCP).
+
+### D-050 — Application changes of a data value reach the transfer sets that monitor it
+
+- **Decision**: the application changes a data value with `TaseServer::set_value`. The change is queued, and the model applies
+  it at its next poll (`ServerConfig::poll_interval`): it is written to the store (the variable of the VMD, which must be
+  writable), and each transfer set of each association that monitors the value receives it. A change that the store refuses is
+  neither kept nor reported. The reports of the transfer sets, time-driven and change-driven, go to the association that
+  started them. The clock is the wall clock (GMT seconds since the epoch, 503 §8.2.4).
+- **Why**: the MMS stack's model task is the only owner of the state; a change made outside it passes through its poll, which
+  keeps the order of the reports. A store that refuses a write holds no new value, so a report of it would be false.
+- **Confidence**: high for the order and the refusal; the latency is one poll interval (50 ms by default).
+- **Test**: `tests/server.rs`: `a_change_of_a_monitored_value_is_reported_to_its_association`,
+  `a_report_by_exception_carries_the_changed_member_only`, `a_stopped_transfer_set_sends_no_further_report`,
+  `a_change_the_store_refuses_is_neither_kept_nor_reported`.
+

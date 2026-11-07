@@ -300,7 +300,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | T1 Client API | [x] |
 | T2 `igstase2-client` binary | [ ] |
 | T3 Client interop matrix | [ ] |
-| S1 Server | [ ] |
+| S1 Server | [x] |
 | S2 `igstase2-server` binary | [ ] |
 | S3 Server interop and load | [ ] |
 | X1 Documentation and capabilities | [ ] |
