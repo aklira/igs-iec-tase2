@@ -17,7 +17,7 @@ use std::time::Duration;
 use clap::Parser;
 use igs_iec_tase2::TaseServer;
 
-use crate::config::{build, parse, Simulation};
+use crate::config::{build, parse, InformationSource, Simulation};
 use crate::simulate::Stepper;
 
 /// The command line.
@@ -51,6 +51,27 @@ async fn run(simulation: Simulation, server: Arc<TaseServer>) {
             .await
             .is_err()
         {
+            return;
+        }
+    }
+}
+
+/// Sends an information message at each period, until the server stops. The MessageId counts the messages from 1.
+async fn announce(source: InformationSource, server: Arc<TaseServer>) {
+    let mut ticker = tokio::time::interval(source.period.max(Duration::from_millis(1)));
+    let mut message_id: i64 = 0;
+    loop {
+        ticker.tick().await;
+        message_id = message_id.saturating_add(1);
+        let Ok(message) = igs_iec_tase2_link::information::InformationMessage::new(
+            source.info_reference,
+            source.local_reference,
+            message_id,
+            source.stream.clone(),
+        ) else {
+            return;
+        };
+        if server.send_information(message).await.is_err() {
             return;
         }
     }
@@ -98,6 +119,12 @@ async fn main() -> ExitCode {
         .simulations
         .into_iter()
         .map(|simulation| tokio::spawn(run(simulation, Arc::clone(&server))))
+        .chain(
+            built
+                .information
+                .into_iter()
+                .map(|source| tokio::spawn(announce(source, Arc::clone(&server)))),
+        )
         .collect();
     if let Err(error) = tokio::signal::ctrl_c().await {
         eprintln!("igstase2-server: the Ctrl-C signal is not available: {error}");

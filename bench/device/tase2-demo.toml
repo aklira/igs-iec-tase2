@@ -143,3 +143,10 @@ domain = "ICC1"
 name = "Breaker"
 kind = "toggle"
 period_ms = 10000
+
+# An information message every three seconds: the Information Message Transfer Set of a client reports it (task C8).
+[[information]]
+info_reference = 7
+local_reference = 1
+stream = "bench-demo"
+period_ms = 3000

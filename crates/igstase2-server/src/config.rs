@@ -59,6 +59,9 @@ pub struct Config {
     /// The changes that the server makes by itself, to demonstrate the transfer sets.
     #[serde(default, rename = "simulate")]
     pub simulations: Vec<SimulationSection>,
+    /// The information messages that the server sends by itself, to demonstrate the Information Message Transfer Set.
+    #[serde(default, rename = "information")]
+    pub information: Vec<InformationSection>,
 }
 
 /// The server's timing and limits.
@@ -310,6 +313,33 @@ fn invalid(context: &str, message: impl std::fmt::Display) -> ConfigError {
     ConfigError(format!("{context}: {message}"))
 }
 
+/// An information message that the server sends at each period (503 §7.2.5.5.4).
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InformationSection {
+    /// The Info Reference of the messages (an integer of 32 bits).
+    pub info_reference: i64,
+    /// The Local Reference of the messages (an integer of 32 bits).
+    pub local_reference: i64,
+    /// The text of the stream, as its octets (UTF-8).
+    pub stream: String,
+    /// The period between two messages, in milliseconds.
+    pub period_ms: u64,
+}
+
+/// An information message to send at each period, ready to run: its MessageId is counted from 1.
+#[derive(Debug, Clone, PartialEq)]
+pub struct InformationSource {
+    /// The Info Reference.
+    pub info_reference: i64,
+    /// The Local Reference.
+    pub local_reference: i64,
+    /// The stream.
+    pub stream: Vec<u8>,
+    /// The period between two messages.
+    pub period: Duration,
+}
+
 /// A simulated change, ready to run.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Simulation {
@@ -337,6 +367,8 @@ pub struct Built {
     pub server: TaseServerConfig,
     /// The changes to make by themselves.
     pub simulations: Vec<Simulation>,
+    /// The information messages to send by themselves.
+    pub information: Vec<InformationSource>,
 }
 
 fn scope_of(domain: &str) -> Scope {
@@ -695,10 +727,33 @@ pub fn build(config: &Config, max_associations: usize) -> Result<Built, ConfigEr
             ack_timeout: Duration::from_secs(config.server.ack_timeout_s),
         },
     };
+    let mut information = Vec::new();
+    for section in &config.information {
+        let context = format!("information {}", section.info_reference);
+        if section.period_ms == 0 {
+            return Err(invalid(&context, "the period is zero"));
+        }
+        // The message is built once to check its references and its stream (the MessageId is only a value here).
+        igs_iec_tase2_link::information::InformationMessage::new(
+            section.info_reference,
+            section.local_reference,
+            1,
+            section.stream.clone().into_bytes(),
+        )
+        .map_err(|e| invalid(&context, format!("{e:?}")))?;
+        information.push(InformationSource {
+            info_reference: section.info_reference,
+            local_reference: section.local_reference,
+            stream: section.stream.clone().into_bytes(),
+            period: Duration::from_millis(section.period_ms),
+        });
+    }
+
     Ok(Built {
         vmd,
         server,
         simulations,
+        information,
     })
 }
 
@@ -778,6 +833,37 @@ value = -1
         .err()
         .unwrap();
         assert!(error.0.contains("does not fit"), "{error}");
+    }
+
+    #[test]
+    fn an_information_message_source_builds_with_its_references_and_stream() {
+        let built = build_text(
+            r#"[[information]]
+info_reference = 7
+local_reference = 1
+stream = "demo"
+period_ms = 3000
+"#,
+        )
+        .unwrap();
+        assert_eq!(built.information.len(), 1);
+        assert_eq!(built.information[0].info_reference, 7);
+        assert_eq!(built.information[0].stream, b"demo".to_vec());
+    }
+
+    #[test]
+    fn an_information_message_source_with_a_zero_period_is_refused() {
+        let error = build_text(
+            r#"[[information]]
+info_reference = 7
+local_reference = 1
+stream = "demo"
+period_ms = 0
+"#,
+        )
+        .err()
+        .unwrap();
+        assert!(error.0.contains("the period is zero"), "{error}");
     }
 
     #[test]

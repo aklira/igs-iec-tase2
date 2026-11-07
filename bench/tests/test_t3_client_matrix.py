@@ -178,7 +178,8 @@ def test_a_transfer_set_on_a_data_set_that_does_not_exist_is_refused(bench):
 def test_every_test_the_client_matrix_names_exists_here():
     text = MATRIX.read_text(encoding="utf-8")
     names = set(re.findall(r"`(test_[a-z0-9_]+)`", text))
-    here = Path(__file__).read_text(encoding="utf-8")
+    # The tests of the matrix are in every bench test file (T3 and the blocks of C8).
+    here = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path(__file__).parent.glob("test_*.py")))
     missing = sorted(name for name in names if f"def {name}(" not in here)
     assert names, "the matrix names its tests"
     assert missing == [], f"named in the matrix but not found: {missing}"

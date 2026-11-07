@@ -1,0 +1,39 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/aklira/Dev/igs-iec-tase2/bench
+configfile: pyproject.toml
+plugins: anyio-4.14.2, typeguard-4.4.4
+collecting ... collected 29 items
+
+tests/test_t3_client_matrix.py::test_association_is_established_and_points_are_read PASSED
+tests/test_t3_client_matrix.py::test_an_ap_title_without_a_table_is_refused_with_status_1 PASSED
+tests/test_t3_client_matrix.py::test_a_table_identifier_that_differs_is_concluded_with_status_1 PASSED
+tests/test_t3_client_matrix.py::test_a_point_that_does_not_exist_is_an_item_error PASSED
+tests/test_t3_client_matrix.py::test_a_permitted_write_is_applied_and_read_back PASSED
+tests/test_t3_client_matrix.py::test_a_write_the_table_does_not_permit_is_refused_per_item PASSED
+tests/test_t3_client_matrix.py::test_the_type_of_a_point_is_described PASSED
+tests/test_t3_client_matrix.py::test_the_members_of_a_data_set_are_listed PASSED
+tests/test_t3_client_matrix.py::test_a_data_set_is_read_member_by_member PASSED
+tests/test_t3_client_matrix.py::test_a_data_set_write_answers_each_member PASSED
+tests/test_t3_client_matrix.py::test_a_data_set_the_client_creates_can_be_read_and_deleted PASSED
+tests/test_t3_client_matrix.py::test_a_data_set_the_table_does_not_show_is_refused_with_status_1 PASSED
+tests/test_t3_client_matrix.py::test_a_data_set_that_does_not_exist_cannot_be_deleted PASSED
+tests/test_t3_client_matrix.py::test_a_transfer_set_reports_each_change_of_its_data_set PASSED
+tests/test_t3_client_matrix.py::test_an_interval_transfer_set_reports_at_its_interval PASSED
+tests/test_t3_client_matrix.py::test_a_report_by_exception_names_only_the_changed_members PASSED
+tests/test_t3_client_matrix.py::test_a_stop_of_a_transfer_set_that_is_not_active_is_refused PASSED
+tests/test_t3_client_matrix.py::test_a_transfer_set_on_a_data_set_that_does_not_exist_is_refused PASSED
+tests/test_t3_client_matrix.py::test_every_test_the_client_matrix_names_exists_here PASSED
+tests/test_c8_blocks.py::test_a_select_returns_the_check_back_id_of_the_table PASSED
+tests/test_c8_blocks.py::test_a_device_armed_for_one_client_refuses_another_select_and_releases_at_its_timeout PASSED
+tests/test_c8_blocks.py::test_an_operate_selects_then_operates_the_sbo_device PASSED
+tests/test_c8_blocks.py::test_an_operate_of_an_sbo_device_without_its_select_is_refused PASSED
+tests/test_c8_blocks.py::test_a_close_only_inhibit_tag_refuses_the_closing_command_and_not_another PASSED
+tests/test_c8_blocks.py::test_a_tag_and_its_reason_are_read_and_inhibit_the_select PASSED
+tests/test_c8_blocks.py::test_an_information_message_is_reported_to_the_client PASSED
+tests/test_c8_blocks.py::test_the_stop_of_the_information_transfer_set_is_accepted PASSED
+tests/test_c8_blocks.py::test_an_integrity_check_reports_the_entire_data_set_with_rbe PASSED
+tests/test_c8_blocks.py::test_a_buffered_object_change_is_reported_with_its_tle PASSED
+
+======================== 29 passed in 63.46s (0:01:03) =========================
