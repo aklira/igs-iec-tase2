@@ -1,0 +1,129 @@
+# SPDX-FileCopyrightText: 2026 The igs-iec-tase2 contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# The configuration of igstase2-server in the bench (task S2): the device under test of the TASE.2 interop. Format:
+# docs/igstase2-server.md. The client of the bench is the one with the AP-title 1.3.9999.1 (its table, below).
+
+[identity]
+vendor = "igs"
+model = "igstase2 demo"
+revision = "0.1"
+
+[server]
+poll_ms = 50
+ack_timeout_s = 30
+
+[[domain]]
+name = "ICC1"
+
+# Points. The simulated ones are writable, so that the simulation can change them; the table below decides what the
+# client may do with each.
+[[point]]
+domain = "ICC1"
+name = "Flow1"
+type = "integer"
+bits = 32
+value = 5
+writable = true
+
+[[point]]
+domain = "ICC1"
+name = "Level"
+type = "unsigned"
+bits = 16
+value = 100
+writable = true
+
+[[point]]
+domain = "ICC1"
+name = "Temperature"
+type = "float"
+value = 21.5
+writable = true
+
+[[point]]
+domain = "ICC1"
+name = "Breaker"
+type = "boolean"
+value = false
+writable = true
+
+[[data-set]]
+domain = "ICC1"
+name = "DS1"
+members = ["Flow1", "Level", "Temperature", "Breaker"]
+
+[[transfer-set]]
+domain = "ICC1"
+name = "TS1"
+
+[[table]]
+designation = "1.3.9999.1"
+table_id = "BT-2026-001"
+domain = "ICC1"
+application_references = ["1.3.9999.1"]
+data_set_creation = true
+
+[[table.access]]
+kind = "data-value"
+name = "Flow1"
+permissions = ["visibility", "get-data-value", "set-data-value", "get-data-value-type"]
+
+[[table.access]]
+kind = "data-value"
+name = "Level"
+permissions = ["visibility", "get-data-value", "get-data-value-type"]
+interval_ms = 1000
+
+[[table.access]]
+kind = "data-value"
+name = "Temperature"
+permissions = ["visibility", "get-data-value", "get-data-value-type"]
+
+[[table.access]]
+kind = "data-value"
+name = "Breaker"
+permissions = ["visibility", "get-data-value", "get-data-value-type"]
+
+[[table.access]]
+kind = "data-set"
+name = "DS1"
+permissions = ["visibility", "delete-data-set", "get-data-set-element-values", "set-data-set-element-values"]
+
+[[table.access]]
+kind = "transfer-set"
+name = "TS1"
+permissions = ["visibility", "start-transfer", "stop-transfer"]
+
+[[simulate]]
+domain = "ICC1"
+name = "Flow1"
+kind = "ramp"
+period_ms = 1000
+min = 0
+max = 10
+step = 1
+
+[[simulate]]
+domain = "ICC1"
+name = "Level"
+kind = "ramp"
+period_ms = 2000
+min = 90
+max = 110
+step = 5
+
+[[simulate]]
+domain = "ICC1"
+name = "Temperature"
+kind = "sine"
+period_ms = 500
+min = 20
+max = 23
+
+[[simulate]]
+domain = "ICC1"
+name = "Breaker"
+kind = "toggle"
+period_ms = 10000

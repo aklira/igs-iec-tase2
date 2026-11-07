@@ -30,6 +30,19 @@ services:
       bench:
         ipv4_address: 172.31.110.10
 
+  # The TASE.2 device under test (task S2): igstase2-server, built by device/build-tase2.sh.
+  device-tase2:
+    <<: *debian
+    command: ["/usr/local/bin/igstase2-server", "--listen", "0.0.0.0:102", "--config", "/etc/igstase2/tase2-demo.toml"]
+    volumes:
+      - ./device/bin/igstase2-server:/usr/local/bin/igstase2-server:ro
+      - ./device/tase2-demo.toml:/etc/igstase2/tase2-demo.toml:ro
+    ports:
+      - "127.0.0.1:10103:102"
+    networks:
+      bench:
+        ipv4_address: 172.31.110.11
+
   capture:
     image: docker.io/nicolaka/netshoot@sha256:a20c2531bf35436ed3766cd6cfe89d352b050ccc4d7005ce6400adf97503da1b
     network_mode: "service:device"

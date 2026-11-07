@@ -724,3 +724,37 @@ silent, to be confirmed by an observation test against other implementations.
   `a_report_by_exception_carries_the_changed_member_only`, `a_stopped_transfer_set_sends_no_further_report`,
   `a_change_the_store_refuses_is_neither_kept_nor_reported`.
 
+### D-052 — The configuration of the demonstration server, and what it refuses
+
+- **Decision**: the server's file is TOML, with the sections of `docs/igstase2-server.md`. Unknown keys are refused. Every
+  reference is checked when the file is read: a domain, a point, a data set member, a table access and a simulation must name
+  a declared object, and the refusal names it. A point's value must fit its type and its bits (1 to 127). A point is not
+  writable unless its file says so. A simulation needs a writable point of a type that suits its kind (ramp: integer,
+  unsigned or float with a step above zero and min below max; toggle: boolean; sine: float with min below max). The table's
+  designation is the dotted AP-title; its identifier is at most 32 characters.
+- **Why**: a demonstration server that starts with an invalid object would answer the clients of the bench with false values;
+  the refusal names the object so that the file is corrected, not guessed. The format follows the file of the MMS server
+  (`docs/igsmms-server.md`), so that the two benches read alike.
+- **Sources**: the types of the points, from the MMS value types of the codec; the table and the access rules of IEC 60870-6-503
+  §5.2.3, §5.3.4 (through D-027 and D-048). No standard text beyond these is used.
+- **Confidence**: high for the checks (they are the ones of the types); the simulation kinds are a demonstration's choice.
+- **Test**: `crates/igstase2-server/src/config.rs` (the refusals, one per check, and a valid file) and
+  `tests/binary.rs` (a bad file exits with status 2 and names the object).
+
+### D-053 — The bench device under test: the server built in the bookworm image, and the probe that reads it
+
+- **Decision**: the device under test of the TASE.2 bench is `igstase2-server`, built by `bench/device/build-tase2.sh` in
+  `rust:1.90-bookworm` (the workspace states a minimum of 1.85, which the local toolchain 1.85 also builds), and run as the
+  compose service `device-tase2` (container `172.31.110.11`, host `127.0.0.1:10103`), with `bench/device/tase2-demo.toml`.
+  The probe `crates/igs-iec-tase2/examples/probe.rs` associates with it as the client of the demonstration table, reads its
+  points, starts its transfer set, and prints reports.
+- **Result, recorded on 2026-11-07 in the bench**: the container starts and listens; the probe associates (supported features
+  `0x1`), reads the four points (`Flow1` 6, `Level` 110, `Temperature` 21.5 as a single-precision real, `Breaker` true), and
+  receives three transfer reports driven by the simulations, with the values of the points at each report.
+- **Why**: the bench of the MMS stack runs its device in the same way (D-029 of the MMS repository); the probe is the client
+  of the bench for the TASE.2 device until the client binary (T2) exists.
+- **Sources**: the bench design of F4 (`bench/README.md`); D-010 (the reference peer does not serve TASE.2 yet, so the device
+  is tested with our own client).
+- **Confidence**: high for the run; the probe is a demonstration, not the interop matrix (T3).
+- **Test**: the probe, run against the device (above); `tests/binary.rs` runs the same kind of exchange against a process.
+

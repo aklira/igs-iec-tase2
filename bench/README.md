@@ -20,6 +20,18 @@ cd bench
 sh device/build.sh      # writes device/bin/igsmms-server; the sibling repository is read, not changed
 ```
 
+## TASE.2 device under test
+
+`igstase2-server` (`docs/igstase2-server.md`) serves `device/tase2-demo.toml`. It is built by `device/build-tase2.sh` in the
+bookworm image, and runs as the compose service `device-tase2` (container `172.31.110.11`, host `127.0.0.1:10103`).
+
+```bash
+cd bench
+sh device/build-tase2.sh
+podman-compose up -d device-tase2
+cd .. && cargo run -p igs-iec-tase2 --example probe -- 127.0.0.1:10103
+```
+
 ## Needs
 
 - Podman with `podman-compose` (or Docker with the compose plugin, set `BENCH_COMPOSE`).
