@@ -1,0 +1,89 @@
+# igstase2-client, run against the TASE.2 device under test (igstase2-server, container device-tase2, bench/device/tase2-demo.toml)
+# Date: 2026-11-07. Options that are not given keep their defaults: AP-title 1.3.9999.1, domain ICC1, table BT-2026-001.
+
+$ igstase2-client -s 127.0.0.1:10103 get Flow1 Level Temperature Breaker
+Flow1: 7
+Level: 105
+Temperature: 22.713525772094727
+Breaker: false
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 type Flow1
+Flow1: Integer(Unsigned8(32))
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 members DS1
+Flow1
+Level
+Temperature
+Breaker
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 read DS1
+7
+105
+22.713525772094727
+false
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 set Flow1=7 Temperature=1.5
+Flow1: written
+Temperature: error ObjectAccessDenied
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 get Flow1
+Flow1: 7
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 write DS1 1 2 3.0 true
+Flow1: written
+Level: error ObjectAccessDenied
+Temperature: error ObjectAccessDenied
+Breaker: error ObjectAccessDenied
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 create DS9 Flow1 Breaker
+created DS9
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 members DS9
+Flow1
+Breaker
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 delete DS9
+deleted 1
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 --timeout-s 15 start TS1 DS1 --object-change --reports 2
+started TS1 on DS1
+report 1: data set DS1: 1, 105, 22.79903793334961, false
+report 2: data set DS1: 8, 105, 22.79903793334961, false
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 stop TS1 DS1
+igstase2-client: the server refused the stop: ObjectNonExistent
+[exit 1]
+
+$ igstase2-client -s 127.0.0.1:10103 get Missing
+Missing: error ObjectNonExistent
+[exit 0]
+
+$ igstase2-client -s 127.0.0.1:10103 --ap-title 1.3.9999.9 get Flow1
+igstase2-client: the server refused the association: no Bilateral Table for this AP-title, or the application reference is not listed
+[exit 1]
+
+$ igstase2-client -s 127.0.0.1:10103 --table-id BT-OTHER get Flow1
+igstase2-client: the server's versions do not match the agreement: TableId
+[exit 1]
+
+$ igstase2-client -s 127.0.0.1:10103 start
+error: the following required arguments were not provided:
+  <TRANSFER_SET>
+  <DATA_SET>
+
+Usage: igstase2-client start <TRANSFER_SET> <DATA_SET>
+
+For more information, try '--help'.
+[exit 2]
+

@@ -301,7 +301,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | B4 Transfer sets | [x] |
 | B5 Controls and messages of the chosen blocks | [x] |
 | T1 Client API | [x] |
-| T2 `igstase2-client` binary | [ ] |
+| T2 `igstase2-client` binary | [x] |
 | T3 Client interop matrix | [ ] |
 | S1 Server | [x] |
 | S2 `igstase2-server` binary | [x] |

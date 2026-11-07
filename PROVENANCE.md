@@ -781,3 +781,29 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: none; the absence is checked by the review of the API (`crates/igs-iec-tase2/src/client.rs`,
   `crates/igs-iec-tase2/src/server.rs`).
 
+### D-055 — A client may use the data set it creates
+
+- **Decision**: when a client creates a data set, the server grants that client the access to it: visibility, deletion, and
+  the reads and writes of its elements. The table of the client is updated for the rest of the association and of the
+  server's life.
+- **Why**: the agreement allows the client to create data sets (`data_set_creation`), and a data set that the client cannot
+  see or delete after its creation is not usable. The found fault: the bench client created `DS9` and then could neither read
+  its members nor delete it.
+- **Sources**: IEC 60870-6-503 §7.2.4.2 (the creation and its checks), §5.2.3.4 (the access control of data sets). The standard
+  does not say which access the creator receives; this is a choice of the implementation.
+- **Confidence**: medium: the grant is the natural reading, but another server may keep the created data set private.
+- **Test**: `crates/igs-iec-tase2/tests/server.rs`, `a_data_set_the_client_created_is_visible_to_it_and_deletable_by_it`.
+
+### D-056 — The command-line client: one association per command, and the exit status of each answer
+
+- **Decision**: `igstase2-client` runs one operation per association, then concludes it. A per-item answer (a point, a member)
+  is printed with its error and does not change the exit status; a refusal of the whole request, of the association, or of a
+  command that cannot start is an error with status 1. A Stop Transfer is refused when the transfer set is not active on the
+  association of the command (the server releases it when the association of the Start ended).
+- **Why**: the standard answers item by item (503 §7.2.3, §7.2.4), so the exit status follows the request, not the items; a
+  Start and its reports need one association, which the command keeps for its duration.
+- **Sources**: IEC 60870-6-503 §7.2.2.3.3 (the release of the transfer sets at the end of an association), §7.2.5.3.3.
+- **Confidence**: high for the status rule; the limit of a stop in another association follows from D-032.
+- **Test**: `crates/igstase2-client/tests/cli.rs` (the help, the usage status, the per-item answer with status 0, the refused
+  association with status 1), and the transcript `bench/transcripts/T2-run.txt`.
+
