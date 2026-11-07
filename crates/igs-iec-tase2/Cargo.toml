@@ -4,7 +4,7 @@
 
 [package]
 name = "igs-iec-tase2"
-version = "0.1.0"
+version = "1.0.0"
 description = "TASE.2 (IEC 60870-6) client on igs-iso9506-mms: association, data values, data sets, transfer sets and reports."
 edition.workspace = true
 rust-version.workspace = true
@@ -15,8 +15,8 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-igs-iec-tase2-model = { path = "../igs-iec-tase2-model" }
-igs-iec-tase2-link = { path = "../igs-iec-tase2-link" }
+igs-iec-tase2-model = { path = "../igs-iec-tase2-model", version = "1.0.0" }
+igs-iec-tase2-link = { path = "../igs-iec-tase2-link", version = "1.0.0" }
 igs-iso9506-mms.workspace = true
 # The MMS types of the requests and the responses (task T1).
 igs-iso9506-mms-codec.workspace = true

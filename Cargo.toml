@@ -29,7 +29,7 @@ arithmetic_side_effects = "deny"
 
 # The MMS stack is a sibling repository, a path dependency until it is published (rule 9).
 [workspace.dependencies]
-igs-iso9506-mms = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms" }
-igs-iso9506-mms-codec = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms-codec" }
-igs-iso9506-mms-link = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms-link" }
-igs-iec-tase2-model = { path = "crates/igs-iec-tase2-model" }
+igs-iso9506-mms = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms", version = "1.0.0" }
+igs-iso9506-mms-codec = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms-codec", version = "1.0.0" }
+igs-iso9506-mms-link = { path = "../igs-iso9506-mms/crates/igs-iso9506-mms-link", version = "1.0.0" }
+igs-iec-tase2-model = { path = "crates/igs-iec-tase2-model", version = "1.0.0" }

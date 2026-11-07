@@ -5,6 +5,8 @@ All notable changes to this project are recorded in this file. The format follow
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-07
+
 ### Added
 
 - `igs-iec-tase2-model`: the types of IEC 60870-6-802 and 60870-6-503, generated from their data files, with their conversions

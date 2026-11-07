@@ -4,7 +4,7 @@
 
 [package]
 name = "igs-iec-tase2-link"
-version = "0.1.0"
+version = "1.0.0"
 description = "TASE.2 (IEC 60870-6) sans-I/O bilateral tables, data sets and transfer sets."
 edition.workspace = true
 rust-version.workspace = true
