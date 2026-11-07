@@ -870,3 +870,33 @@ silent, to be confirmed by an observation test against other implementations.
   was not re-read in this decision. Re-check it against the clause before R1.
 - **Test**: the tests named above; `crates/igs-iec-tase2-model/tests/information.rs` for the information types of C2.
 
+### D-061 — Information messages are reported by the server; the trigger is local; the Information Message block is required for both roles (task C3)
+
+- **Decision**: the Information Message Transfer Set is a server object for one association. The Start Transfer sets it ENABLED and
+  begins the monitoring at once; the Stop Transfer sets it DISABLED. While it is ENABLED, the server reports each message whose
+  condition occurs, as an MMS Information Report of two named variables: `Info_Mess_Header`, then `Info_Buff_XX`. A client does not
+  send information messages: the mapping of 6-503 §6.8 says that messages "are only reported by the server". The condition that
+  triggers a report is local: the link's `report` is called when the server's condition occurs (6-503 §7.2.5.4.1: "the mechanism for
+  performing condition monitoring is a local matter").
+  The conformance table of 702 (A.10) prints the Information Message Transfer Set Model and the InformationBuffer Object with the
+  status `I4` for both roles. This is read as mandatory for block 4, for both roles, as the other tables print the block number as
+  the superscript of a mandatory status (`m1`, `m2`).
+- **Why**: the mapping of 6-503 §6.8 and §7.2.5.5.4 is the normative description of the report; the trigger is local by the standard's
+  own words; the table's status for both roles follows the reading of the superscript that the other tables use.
+- **Confidence**: high for the report (the mapping gives the variables and their order); medium for the reading of `I4` as mandatory
+  for block 4, since the printed status is not a legend in the extracted data. Check the PDF (page 20 of 702, table A.10) before R1.
+  The client's sending of information messages is out of 1.0: the mapping gives no MMS form for it; recorded as a gap.
+- **Test**: `crates/igs-iec-tase2-link/tests/information.rs`, 15 tests, including the round trip of a message through its report.
+
+### D-062 — The sizes of the information buffers (task C3)
+
+- **Decision**: the buffer variable is named `Info_Buff_XX`, where XX is the smallest of the sizes 64, 256, 1024, 4096, 16384 and 65536
+  octets that holds the stream. The stream is padded with zeros to that size, and the header's `Size` gives the count of valid
+  octets. A stream longer than 65536 octets is refused.
+- **Why**: 6-802 §6.4 says that XX is "any number of bytes" and gives 64, 256 and 1024 as examples, and 6-503 §6.8 says that the
+  buffer is the smallest of the "InfoBuf type sizes" without listing them. The list extends the examples by a factor of four; it is a
+  local choice. The standard recommends that the buffer not exceed the MMS PDU size, which the link does not know: the caller must
+  keep the stream below the negotiated PDU size.
+- **Confidence**: medium: the list is local. The numbers of the names are the only thing a peer can see.
+- **Test**: `buffer_name` and `the_greatest_stream_is_the_greatest_buffer` in `crates/igs-iec-tase2-link/tests/information.rs`.
+

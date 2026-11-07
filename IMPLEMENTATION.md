@@ -365,7 +365,7 @@ out. Each task below names its clauses in its log; the behaviour is decided agai
 | X1 Documentation and capabilities | [x] |
 | C1 Scope change (D-059) | [x] |
 | C2 Types of blocks 2, 4 and 5 | [x] |
-| C3 Information messages (link) | [ ] |
+| C3 Information messages (link) | [x] |
 | C4 Device control, SBO (link) | [ ] |
 | C5 Extended data set conditions (link) | [ ] |
 | C6 Client API and `igstase2-client` | [ ] |
