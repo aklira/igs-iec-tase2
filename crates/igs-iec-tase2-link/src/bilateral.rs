@@ -14,6 +14,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::Duration;
 
 use igs_iec_tase2_model::generated::iso503::VisibleString32;
+use igs_iec_tase2_model::generated::iso802::SBOCheckBackName;
 
 use crate::version::Versions;
 
@@ -83,8 +84,9 @@ pub struct ObjectAccess {
 pub struct DeviceAccess {
     /// The operations the client may perform, the visibility included.
     pub permitted: BTreeSet<Permission>,
-    /// The value returned in response to Select (the CheckBackID attribute, 503 §5.2.3.8).
-    pub check_back_id: String,
+    /// The value returned in response to Select (the CheckBackID attribute, 503 §5.2.3.8). Its MMS type is SBO_CheckBackName, an
+    /// integer of 16 bits (IEC 60870-6-802 §6.2.2, and page 27 of the standard).
+    pub check_back_id: SBOCheckBackName,
     /// The time within which an operation on the device must be performed (the Timeout attribute, 503 §5.2.3.8).
     pub timeout: Duration,
 }
@@ -295,16 +297,20 @@ impl BilateralTable {
         }
     }
 
+    /// The Timeout of a device in the table: the time within which an operation on it must be performed. `None` when the
+    /// device is not in the table.
+    pub fn device_timeout(&self, name: &ObjectName) -> Option<Duration> {
+        self.devices.get(name).map(|device| device.timeout)
+    }
+
     /// The CheckBackID of a device, returned in response to Select: `None` when the device is not in the table or not
     /// visible to the client.
-    pub fn check_back_id(&self, name: &ObjectName) -> Option<&str> {
+    pub fn check_back_id(&self, name: &ObjectName) -> Option<SBOCheckBackName> {
         let object = Object::Device(name.clone());
         if self.check(&object, Permission::Select) != Access::Granted {
             return None;
         }
-        self.devices
-            .get(name)
-            .map(|device| device.check_back_id.as_str())
+        self.devices.get(name).map(|device| device.check_back_id)
     }
 
     /// Whether a value of the table identifier (`Bilateral_Table_ID`) is the one of this table.

@@ -31,6 +31,7 @@ use igs_iec_tase2_model::generated::iso503::{
     DSTransferSetCritical, DSTransferSetRBE, DSTransferSetStatus, MMSObjectName,
     MMSObjectNameScope, VisibleString32,
 };
+use igs_iec_tase2_model::generated::iso802::SBOCheckBackName;
 use igs_iso9506_mms::client::{in_scope_capabilities, ClientConfig, Reconnect};
 use igs_iso9506_mms::server::ServerConfig;
 use igs_iso9506_mms::vmd::{Identity, MemoryVariable, Name, Target, Vmd};
@@ -115,7 +116,7 @@ fn table(table_id: &str) -> BilateralTable {
         icc("Breaker12"),
         DeviceAccess {
             permitted: BTreeSet::from([Permission::Visibility, Permission::Select]),
-            check_back_id: "cb".to_string(),
+            check_back_id: SBOCheckBackName::new(7).unwrap(),
             timeout: Duration::from_secs(5),
         },
     )

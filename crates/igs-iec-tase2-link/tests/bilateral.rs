@@ -22,6 +22,7 @@ use igs_iec_tase2_link::version::{
     check_versions, Conflict, Tase2Version, Versions, STANDARD_VERSION,
 };
 use igs_iec_tase2_model::generated::iso503::VisibleString32;
+use igs_iec_tase2_model::generated::iso802::SBOCheckBackName;
 
 fn permissions(list: &[Permission]) -> BTreeSet<Permission> {
     list.iter().copied().collect()
@@ -94,7 +95,7 @@ fn table() -> BilateralTable {
                 Permission::Select,
                 Permission::Operate,
             ]),
-            check_back_id: "cb-12".to_string(),
+            check_back_id: SBOCheckBackName::new(12).unwrap(),
             timeout: Duration::from_secs(5),
         },
     )
@@ -102,7 +103,7 @@ fn table() -> BilateralTable {
         domain_name("Meter3"),
         DeviceAccess {
             permitted: permissions(&[Permission::Visibility]),
-            check_back_id: "not-selectable".to_string(),
+            check_back_id: SBOCheckBackName::new(99).unwrap(),
             timeout: Duration::from_secs(5),
         },
     )
@@ -238,7 +239,7 @@ fn a_device_that_is_not_in_the_table_is_unknown() {
 fn the_check_back_id_is_returned_for_a_selectable_device_only() {
     assert_eq!(
         table().check_back_id(&domain_name("Breaker12")),
-        Some("cb-12")
+        Some(SBOCheckBackName::new(12).unwrap())
     );
     // Meter3 is visible but has no Select: the CheckBackID is not returned to the client.
     assert_eq!(table().check_back_id(&domain_name("Meter3")), None);
