@@ -258,3 +258,19 @@ silent, to be confirmed by an observation test against other implementations.
 - **Test**: `tests/indication.rs`, the validity, current source, normal value and time stamp quality tests, and the
   64 combinations.
 
+### D-019 — The ranges of the data narrow the integers
+
+- **Decision**: an integer of the data that has a `constraint: range least .. greatest` is generated with those bounds
+  (`MIN` and `MAX` of the newtype, and the refusal of a value outside them), not with the bounds of its width. The
+  width still gives the bits of the MMS value. Nine items of the 802 data carry a range (among them the point type,
+  the quality class, the normal source, the time stamp class, the COV class, the control point type and the set point
+  type); the others keep the bounds of their width.
+- **Why**: a control point type of 0 to 2 that accepted 127 would let a malformed command through; the standard
+  constrains these values, and the data file records the constraint next to the type. The generator reads the
+  constraint, so no value is typed by hand.
+- **Sources**: the `constraint: range` entries of the 6-802 data file (`docs/spec/6-802/data/mms_types.yaml`, outside this
+  repository); the generator in `xtask/src/codegen.rs` (`parse_range`, `render_integer`).
+- **Confidence**: high for the bounds (they are the data's); medium for the reading that the constraint applies to the
+  whole type, not to one use: the data gives it on the type, and the clauses that use the type were not re-read here.
+- **Test**: `tests/control.rs`, `a_control_point_type_outside_its_range_is_refused_by_the_type_and_by_mms` and
+  `a_control_configuration_round_trips_within_its_ranges`; `tests/generated.rs` checks the counts of the generated items.

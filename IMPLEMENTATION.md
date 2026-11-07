@@ -288,7 +288,7 @@ Each task lists: **Depends**, **Read**, **Produce**, **Done when**.
 | F4 Interop bench skeleton | [x] |
 | M1 Scalars and time | [x] |
 | M2 Indication points | [x] |
-| M3 Control points and device outage | [ ] |
+| M3 Control points and device outage | [x] |
 | M4 Transfer sets, conditions, data set types | [ ] |
 | M5 Other types of the chosen blocks | [ ] |
 | M6 Property tests and fuzzing | [ ] |
