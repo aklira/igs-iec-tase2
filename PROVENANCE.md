@@ -630,3 +630,46 @@ silent, to be confirmed by an observation test against other implementations.
 - **Confidence**: high for the exclusion (D-009); the blocks come in a later decision, after the observation of the peer.
 - **Test**: none in B5. The control types are tested in `igs-iec-tase2-model/tests/control.rs` (M3).
 
+### D-045 — The name of the TASE.2 version variable: `TASE2_Version`
+
+- **Decision**: the client reads the variable `TASE2_Version`, in the VMD scope, where 503 §8.3.4 prints `TASE.2_Version`.
+- **Why**: an identifier of MMS, without the `char` building block, is drawn from letters, digits, `$` and `_` (ISO 9506-2,
+  the production of `Identifier`). The dot of the printed name is not in that set, so the codec refuses to encode or decode it.
+  The Basic Services parameter CBBs of 702 (Table A.19) do not list `char`. The maintainer chose the spelling without the dot
+  (question of the T1 session).
+- **Sources**: IEC 60870-6-503 §8.3.4 (the printed name); ISO 9506-2 (the production of `Identifier`, and the `char` CBB);
+  IEC 60870-6-702 Table A.19.
+- **Confidence**: medium. A real TASE.2 peer may print or name the variable differently; the interop tests (T3) decide. The
+  printed name remains the one of the standard; the choice is a deviation, to be revisited with `char` (a later decision).
+- **Test**: `crates/igs-iec-tase2/tests/client.rs`, all association tests (the stub names the variable so).
+
+### D-046 — The client's operations on MMS, and what it does not do yet
+
+- **Decision**: each operation of the data values and the data sets is one MMS service: Read and Write for the values (per
+  item: `AccessResult` and `WriteResponseItemItem`), with the data access error codes mapped to the link's `ErrorCode`; an
+  unknown code is kept as `ErrorCode::Other`. The members of a data set are read with GetNamedVariableListAttributes; Create
+  and Delete Data Set are DefineNamedVariableList and DeleteNamedVariableList, and their negative responses are returned as
+  the MMS error. Start Transfer and Stop Transfer write the whole DSTransferSet structure with its Status set to ENABLED or
+  DISABLED. The client does not send the acknowledgement of a critical transfer report (503 §7.2.5.5.2): the MMS client has no
+  unconfirmed send.
+- **Why**: the standard maps the operations on these services (503 §7.2.3 to §7.2.5). The whole-structure write is a
+  simplification: the standard writes the Status alone (§7.2.5.3.2), which needs a component address in the Write, not in the
+  client yet.
+- **Confidence**: high for the mapping; the whole-structure write and the missing acknowledgement are open (see below).
+- **Open**: (1) the Stop Transfer writes the whole structure, not the Status component (alternate access); (2) the
+  acknowledgement of a critical report, which needs an unconfirmed send in the MMS client (a gap of the sibling stack, to be
+  recorded there); (3) the negative responses of Create and Delete are not yet mapped to the TASE.2 error codes.
+- **Test**: `crates/igs-iec-tase2/tests/client.rs`: the reads and the writes per item, the data sets, the server's definition
+  refusal, the transfer set the server does not hold, and the report received.
+
+### D-047 — The events and their back-pressure
+
+- **Decision**: the events of an association are a stream of connection states and transfer reports, from the bounded event
+  channel of the MMS client (`ClientConfig::event_capacity`). A caller that does not drain the stream fills the channel; the
+  connection then waits to deliver the next report. A critical report whose acknowledgement waits is then delayed, and the
+  server's acknowledgement timeout may raise a data failure. This is documented in `client.rs`.
+- **Why**: the MMS client bounds its channels (back-pressure of the stack); the TASE.2 client keeps it, and says so.
+- **Confidence**: high.
+- **Test**: `tests/client.rs`, `a_transfer_report_of_the_server_is_received_as_an_event` and
+  `the_connection_state_is_an_event`.
+
