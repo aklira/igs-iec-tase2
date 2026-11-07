@@ -11,3 +11,8 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 publish = false
+
+[dependencies]
+# Reads the YAML data files of the standards (task F2). serde-saphyr is MIT or Apache-2.0, as in igs-iso9506-mms.
+serde = { version = "1", features = ["derive"] }
+serde-saphyr = "2.1"
