@@ -190,6 +190,9 @@ dependencies = [
 [[package]]
 name = "igs-iec-tase2-link"
 version = "0.1.0"
+dependencies = [
+ "igs-iec-tase2-model",
+]
 
 [[package]]
 name = "igs-iec-tase2-model"

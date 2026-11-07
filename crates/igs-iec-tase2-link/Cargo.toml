@@ -11,5 +11,9 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[dependencies]
+# The model of the TASE.2 types (tasks M1 to M6). A path dependency until it is published (rule 9).
+igs-iec-tase2-model.workspace = true
+
 [lints]
 workspace = true
