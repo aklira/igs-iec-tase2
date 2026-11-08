@@ -5,6 +5,11 @@ All notable changes to this project are recorded in this file. The format follow
 
 ## [Unreleased]
 
+### Added
+
+- `igs-iec-tase2`: `Client::names_in_domain`, the GetNameList of the variables or the data sets of the client's domain, every
+  page of the list. `igstase2-client names [--data-sets]` prints them.
+
 ## [1.0.0] - 2026-11-07
 
 ### Added

@@ -27,10 +27,10 @@ use igs_iso9506_mms::client::{Client, ClientConfig, ConnectionState, Event, Even
 use igs_iso9506_mms_codec::generated::types::{
     AccessResult, Data, DataAccessError, DefineNamedVariableListRequest,
     DefineNamedVariableListRequestListOfVariableItem, DeleteNamedVariableListRequest,
-    DeleteNamedVariableListRequestScopeOfDelete, GetNamedVariableListAttributesRequest,
-    GetVariableAccessAttributesRequest, InformationReport, ReadRequest, TypeDescription,
-    UnconfirmedService, VariableAccessSpecification, VariableSpecification, WriteRequest,
-    WriteResponseItemItem,
+    DeleteNamedVariableListRequestScopeOfDelete, GetNameListRequest, GetNameListRequestObjectScope,
+    GetNamedVariableListAttributesRequest, GetVariableAccessAttributesRequest, InformationReport,
+    ObjectClass, ObjectClassBasicObjectClass, ReadRequest, TypeDescription, UnconfirmedService,
+    VariableAccessSpecification, VariableSpecification, WriteRequest, WriteResponseItemItem,
 };
 use igs_iso9506_mms_codec::generated::types::{
     Identifier, ObjectName as MmsObjectName, VariableAccessSpecificationListOfVariableItem,
@@ -278,6 +278,39 @@ impl TaseClient {
             })
             .await?;
         Ok(response.0.iter().map(write_item_of).collect())
+    }
+
+    /// The names of the objects of a class in the domain of the client, every page of the list (GetNameList): the named
+    /// variables (`NamedVariable`) or the data sets (`NamedVariableList`).
+    pub async fn names_in_domain(
+        &self,
+        class: ObjectClassBasicObjectClass,
+    ) -> Result<Vec<String>, Error> {
+        let mut names = Vec::new();
+        let mut continue_after = None;
+        loop {
+            let response = self
+                .mms
+                .get_name_list(GetNameListRequest {
+                    object_class: ObjectClass::BasicObjectClass(class.clone()),
+                    object_scope: GetNameListRequestObjectScope::DomainSpecific(Identifier(
+                        self.domain().to_string(),
+                    )),
+                    continue_after: continue_after.clone(),
+                })
+                .await?;
+            let last = response.list_of_identifier.last().cloned();
+            names.extend(
+                response
+                    .list_of_identifier
+                    .into_iter()
+                    .map(|identifier| identifier.0),
+            );
+            match last {
+                Some(last) if response.more_follows != Some(false) => continue_after = Some(last),
+                _ => return Ok(names),
+            }
+        }
     }
 
     /// The members of a data set, as the server holds them (GetNamedVariableListAttributes).

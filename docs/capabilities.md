@@ -73,7 +73,7 @@ The matrix covers the client (`igs-iec-tase2::TaseClient`, `igstase2-client`) an
 Each gap is recorded with its decision; none is hidden.
 
 - **Dual use** is not supported (D-054).
-- **GetNameList** is not served by the server, and the client does not call it (D-049).
+- **GetNameList** is not served by the server (D-049). The client calls it to list the variables and the data sets of its domain.
 - **Blocked transfer reports** (`BlockData`) are refused per item by the server, and the client does not decode them (D-049).
 - **The Data_failure event** is not sent by the server (D-049).
 - **The acknowledgement of a critical report** is not sent by the client: the MMS client has no unconfirmed send (D-046).

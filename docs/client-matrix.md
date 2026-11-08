@@ -48,8 +48,8 @@ device. It is not a third-party interop result.
 - **Acknowledgement of a critical report**: the client does not send it, because the MMS client has no unconfirmed send
   (decision D-046 of the client; the MMS stack's gap).
 - **Blocked transfer reports** (`BlockData`): the server refuses them per item; the client does not decode them.
-- **GetNameList**: the client does not call it (the members are read with GetNamedVariableListAttributes); the server does not
-  serve it (decision D-049).
+- **GetNameList**: the client calls it to list the variables and the data sets of its domain (`names`, every page of the list);
+  the server does not serve it (decision D-049), so the listing is checked against the peer's server only.
 - **Data_failure event**: not sent by the server (decision D-049).
 - **Stop in the same association as the start**: the command line starts and reports in one association and concludes it, so
   the stop of an active transfer set cannot be shown in one command (decision D-056).

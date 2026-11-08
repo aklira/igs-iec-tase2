@@ -26,6 +26,7 @@ Global options (before the command):
 | `get POINT...` | Reads the values of points. |
 | `set NAME=VALUE...` | Writes values. A value is `true`, `false`, an integer, or a finite real. |
 | `type POINT` | Shows the MMS type of a point. |
+| `names [--data-sets]` | Lists the variables of the domain, or with `--data-sets` its data sets (GetNameList, every page). |
 | `members DATASET` | Lists the members of a data set. |
 | `read DATASET` | Reads the values of the members, in member order. |
 | `write DATASET VALUE...` | Writes one value per member, in member order. Each member's answer is printed with its name. |

@@ -30,7 +30,9 @@ use igs_iec_tase2_model::generated::iso503::{
 use igs_iec_tase2_model::generated::iso802::clause_6_2_1::DataReal as DataRealValue;
 use igs_iec_tase2_model::mms::MmsValue;
 use igs_iso9506_mms::client::{in_scope_capabilities, ClientConfig, Reconnect};
-use igs_iso9506_mms_codec::generated::types::{Data, ServiceError, ServiceErrorErrorClass};
+use igs_iso9506_mms_codec::generated::types::{
+    Data, ObjectClassBasicObjectClass, ServiceError, ServiceErrorErrorClass,
+};
 use igs_iso9506_mms_codec::schema::ObjectIdentifier;
 use igs_iso9506_mms_link::config::LinkConfig;
 
@@ -96,6 +98,12 @@ enum Command {
     Type {
         /// The name of the point.
         point: String,
+    },
+    /// Lists the names of the variables of the domain, or with --data-sets the names of its data sets (GetNameList).
+    Names {
+        /// Lists the data sets instead of the variables.
+        #[arg(long)]
+        data_sets: bool,
     },
     /// Lists the members of a data set.
     Members {
@@ -491,6 +499,16 @@ async fn execute(
         Command::Type { point } => {
             let ty = client.get_data_value_type(&object(point)).await?;
             println!("{point}: {ty:?}");
+        }
+        Command::Names { data_sets } => {
+            let class = if *data_sets {
+                ObjectClassBasicObjectClass::NAMED_VARIABLE_LIST
+            } else {
+                ObjectClassBasicObjectClass::NAMED_VARIABLE
+            };
+            for name in client.names_in_domain(class).await? {
+                println!("{name}");
+            }
         }
         Command::Members { data_set } => {
             for member in client.data_set_members(&object(data_set)).await? {
