@@ -66,6 +66,15 @@ struct Cli {
     /// Proposes the application context of the 2002 edition (1.0.9506.2.3) instead of the current one, for the servers of that edition.
     #[arg(long)]
     legacy_application_context: bool,
+    /// The AP-title of the server, in dotted form (for example `1.1.1.999`); absent by default. Some servers match on it.
+    #[arg(long)]
+    called_ap_title: Option<String>,
+    /// The AE-qualifier of this client; absent by default. Some servers match on it.
+    #[arg(long)]
+    calling_ae_qualifier: Option<i64>,
+    /// The AE-qualifier of the server; absent by default. Some servers match on it.
+    #[arg(long)]
+    called_ae_qualifier: Option<i64>,
     #[command(subcommand)]
     command: Command,
 }
@@ -413,6 +422,15 @@ async fn run(cli: &Cli) -> Result<(), Failure> {
                     .map(parse_selector)
                     .transpose()
                     .map_err(Failure)?,
+                called_ap_title: cli
+                    .called_ap_title
+                    .as_deref()
+                    .map(parse_designation)
+                    .transpose()
+                    .map_err(Failure)?
+                    .map(ObjectIdentifier),
+                calling_ae_qualifier: cli.calling_ae_qualifier,
+                called_ae_qualifier: cli.called_ae_qualifier,
                 application_context: if cli.legacy_application_context {
                     igs_iso9506_mms_link::config::ApplicationContext::Legacy
                 } else {
