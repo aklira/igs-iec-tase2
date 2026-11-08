@@ -57,6 +57,12 @@ struct Cli {
     /// How long to wait for the server's answers, in seconds.
     #[arg(long, default_value_t = 10, value_parser = clap::value_parser!(u64).range(1..=600))]
     timeout_s: u64,
+    /// The calling transport selector, in hexadecimal (for example `0001`); absent by default. Some servers require it.
+    #[arg(long)]
+    calling_tsap: Option<String>,
+    /// The called transport selector, in hexadecimal (for example `0001`); absent by default. Some servers require it.
+    #[arg(long)]
+    called_tsap: Option<String>,
     #[command(subcommand)]
     command: Command,
 }
@@ -284,6 +290,23 @@ fn show_item(item: &Item<Data>) -> String {
     }
 }
 
+/// A transport selector written in hexadecimal: an even number of digits, one or two octets long (the length the standard allows).
+fn parse_selector(text: &str) -> Result<Vec<u8>, String> {
+    if text.len() % 2 != 0 || text.is_empty() || text.len() > 4 {
+        return Err(format!(
+            "{text:?} is not a selector: one or two octets in hexadecimal"
+        ));
+    }
+    (0..text.len())
+        .step_by(2)
+        .map(|start| {
+            text.get(start..start.saturating_add(2))
+                .and_then(|pair| u8::from_str_radix(pair, 16).ok())
+                .ok_or_else(|| format!("{text:?} is not hexadecimal"))
+        })
+        .collect()
+}
+
 fn parse_designation(text: &str) -> Result<Vec<u64>, String> {
     text.split('.')
         .map(|part| {
@@ -375,6 +398,18 @@ async fn run(cli: &Cli) -> Result<(), Failure> {
         ..ClientConfig::new(
             LinkConfig {
                 ap_title: Some(ObjectIdentifier(designation)),
+                calling_tsap: cli
+                    .calling_tsap
+                    .as_deref()
+                    .map(parse_selector)
+                    .transpose()
+                    .map_err(Failure)?,
+                called_tsap: cli
+                    .called_tsap
+                    .as_deref()
+                    .map(parse_selector)
+                    .transpose()
+                    .map_err(Failure)?,
                 ..LinkConfig::default()
             },
             in_scope_capabilities(),
@@ -775,5 +810,15 @@ mod tests {
             parse(&["start-info", "--messages", "0"]).is_err(),
             "at least one message"
         );
+    }
+
+    #[test]
+    fn a_selector_is_one_or_two_hexadecimal_octets() {
+        assert_eq!(parse_selector("0001"), Ok(vec![0x00, 0x01]));
+        assert_eq!(parse_selector("01"), Ok(vec![0x01]));
+        assert!(parse_selector("001").is_err(), "an odd number of digits");
+        assert!(parse_selector("00010203").is_err(), "more than two octets");
+        assert!(parse_selector("zz").is_err(), "not hexadecimal");
+        assert!(parse_selector("").is_err(), "empty");
     }
 }
