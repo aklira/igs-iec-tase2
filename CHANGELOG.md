@@ -5,6 +5,13 @@ All notable changes to this project are recorded in this file. The format follow
 
 ## [Unreleased]
 
+### Fixed
+
+- `igs-iec-tase2`: the two bits of a tag are read and written in the order of the standard: `Tag_hi` is the high bit of the
+  code, so that CLOSE-ONLY-INHIBIT is the string `1 0`. The earlier order read and wrote the two codes swapped; an interoperability
+  test with a third-party implementation found it.
+- `igstase2-server`: the configuration may name VMD-specific objects with the empty domain, and gives an access its own domain.
+
 ### Added
 
 - `igs-iec-tase2`: `Client::names_in_domain`, the GetNameList of the variables or the data sets of the client's domain, every

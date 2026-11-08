@@ -87,14 +87,41 @@ def reverse_bench():
 
 
 def test_the_example_client_of_the_peer_associates_with_our_server(reverse_bench):
-    # The client's own log reports the association: it is accepted, and the client is connected. Its later requests name
-    # objects that the configuration of our server does not hold; that is not checked here.
+    # The client's own log reports the association: it is accepted, and the client is connected.
     result = reverse_bench.exec(
         "peer-client-example", "timeout", "20", "stdbuf", "-o0", "-e0", "/opt/peer/example-client", "172.31.110.15", timeout=60, check=False
     )
     output = result.stdout + result.stderr
     assert "association accepted" in output, output[-2000:]
     assert "Connected." in output, output[-2000:]
+
+
+@pytest.fixture
+def fresh_reverse_bench():
+    """Our server again, from its configuration: a tag that a client set stays until its owner clears it (503 §5.3.12.5), so
+    the data operations start from a server that no association has changed."""
+    instance = Bench("i1-reverse-data.pcap")
+    instance.down()
+    instance.up("device-interop", "peer-client-example")
+    try:
+        yield instance
+    finally:
+        instance.down()
+
+
+def test_the_example_client_of_the_peer_operates_and_reads_our_server(fresh_reverse_bench):
+    # The data operations of the client's example, against the objects of our configuration: its tag and its command on a
+    # VMD-specific device, a read of a VMD-specific point, and a read of a data set. Its transfer-set step (the next transfer-set name)
+    # is not served by our server: that answer is the one known gap of this direction (see docs/ai-log/I2.md).
+    result = fresh_reverse_bench.exec(
+        "peer-client-example", "timeout", "20", "stdbuf", "-o0", "-e0", "/opt/peer/example-client", "172.31.110.15", timeout=60, check=False
+    )
+    output = result.stdout + result.stderr
+    assert not re.search(r"Set tag for \S+ failed", output), output[-2000:]
+    assert "Send command success!" in output, output[-2000:]
+    assert re.search(r"Read \S+: -?\d+", output), output[-2000:]
+    assert "Read data set failed" not in output, output[-2000:]
+    assert output.count("  value: ") == 2, output[-2000:]
 
 
 
