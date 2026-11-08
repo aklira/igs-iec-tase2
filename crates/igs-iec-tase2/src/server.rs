@@ -346,8 +346,9 @@ struct Control {
 
 /// The tag of the two bits of a Tag_Value (802 §7.1).
 fn tag_of(flags: &TagFlags) -> Option<Tag> {
-    let hi = if flags.is_tag_hi() { 1 } else { 0 };
-    let lo = if flags.is_tag_lo() { 2 } else { 0 };
+    // Tag_hi is the high bit of the code, Tag_lo its low bit (802 §7.1): CLOSE-ONLY-INHIBIT (2) is the string 1 0.
+    let hi = if flags.is_tag_hi() { 2 } else { 0 };
+    let lo = if flags.is_tag_lo() { 1 } else { 0 };
     Tag::from_code(hi | lo)
 }
 
@@ -355,10 +356,10 @@ fn tag_of(flags: &TagFlags) -> Option<Tag> {
 fn tag_data(state: &TagState) -> Option<Data> {
     let code = state.tag.code();
     let mut bits = 0;
-    if code & 1 != 0 {
+    if code & 2 != 0 {
         bits |= TagFlags::TAG_HI;
     }
-    if code & 2 != 0 {
+    if code & 1 != 0 {
         bits |= TagFlags::TAG_LO;
     }
     if state.state == DeviceState::Armed {

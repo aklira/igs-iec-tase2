@@ -554,8 +554,9 @@ fn device_variable(device: &ObjectName, suffix: &str) -> ObjectName {
 
 /// The tag of a Tag_Value: its two bits give the code of the tag (802 §7.1), and its state bit whether the device is ARMED.
 fn tag_state(value: &TagValue) -> Result<TagState, Error> {
-    let hi = if value.flags.is_tag_hi() { 1 } else { 0 };
-    let lo = if value.flags.is_tag_lo() { 2 } else { 0 };
+    // Tag_hi is the high bit of the code, Tag_lo its low bit (802 §7.1): CLOSE-ONLY-INHIBIT (2) is the string 1 0.
+    let hi = if value.flags.is_tag_hi() { 2 } else { 0 };
+    let lo = if value.flags.is_tag_lo() { 1 } else { 0 };
     let tag = Tag::from_code(hi | lo).ok_or(Error::Malformed(
         "a tag of the standard: NO-TAG, OPEN-AND-CLOSE-INHIBIT or CLOSE-ONLY-INHIBIT",
     ))?;
@@ -575,10 +576,10 @@ fn tag_state(value: &TagValue) -> Result<TagState, Error> {
 fn tag_value(tag: Tag, reason: &str) -> Result<TagValue, Error> {
     let code = tag.code();
     let mut bits = 0;
-    if code & 1 != 0 {
+    if code & 2 != 0 {
         bits |= TagFlags::TAG_HI;
     }
-    if code & 2 != 0 {
+    if code & 1 != 0 {
         bits |= TagFlags::TAG_LO;
     }
     Ok(TagValue {
@@ -765,5 +766,28 @@ mod tests {
             information_message(&report),
             Err(Error::Malformed(_))
         ));
+    }
+}
+
+#[cfg(test)]
+mod tag_bits {
+    use super::*;
+
+    /// CLOSE-ONLY-INHIBIT is the string 1 0 (802 §7.1): its first bit is set and its second is clear.
+    #[test]
+    fn close_only_inhibit_is_the_first_bit_then_the_second_is_clear() -> Result<(), Error> {
+        let value = tag_value(Tag::CloseOnlyInhibit, "maintenance")?;
+        assert_eq!(value.flags, TagFlags(TagFlags::TAG_HI));
+        assert_eq!(tag_state(&value)?.tag, Tag::CloseOnlyInhibit);
+        Ok(())
+    }
+
+    /// OPEN-AND-CLOSE-INHIBIT is the string 0 1: its second bit is set.
+    #[test]
+    fn open_and_close_inhibit_is_the_second_bit() -> Result<(), Error> {
+        let value = tag_value(Tag::OpenAndCloseInhibit, "maintenance")?;
+        assert_eq!(value.flags, TagFlags(TagFlags::TAG_LO));
+        assert_eq!(tag_state(&value)?.tag, Tag::OpenAndCloseInhibit);
+        Ok(())
     }
 }
