@@ -1030,5 +1030,9 @@ silent, to be confirmed by an observation test against other implementations.
 - **Why**: the archive delivered by the peer's vendor does not compile, and a peer is needed to test the interoperability of our client and
   server.
 - **Confidence**: high for the scope; the maintainer's authorisation is the basis.
+- **Result**: the delivered archive has two build defects: a logging macro expands to a block, which breaks two conditional statements of its
+  server sources (each is wrapped in braces), and the example programs need the library's debug option, which the build leaves on by
+  default. The corrections are a patch kept outside the repository, applied by `bench/third-party-peer/build.sh` through
+  `THIRD_PARTY_PEER_PATCH`. The example programs then build, and run as separate processes.
 - **Test**: `bench/third-party-peer/build.sh` builds the example programs of the peer from the archive that the environment gives.
 
