@@ -111,17 +111,23 @@ def fresh_reverse_bench():
 
 def test_the_example_client_of_the_peer_operates_and_reads_our_server(fresh_reverse_bench):
     # The data operations of the client's example, against the objects of our configuration: its tag and its command on a
-    # VMD-specific device, a read of a VMD-specific point, and a read of a data set. Its transfer-set step (the next transfer-set name)
-    # is not served by our server: that answer is the one known gap of this direction (see docs/ai-log/I2.md).
+    # VMD-specific device, a read of a VMD-specific point, a read of a data set, and the configuration of a transfer set that
+    # is started (its name from Next_DSTransfer_Set, its attributes written component by component, then its start).
     result = fresh_reverse_bench.exec(
         "peer-client-example", "timeout", "20", "stdbuf", "-o0", "-e0", "/opt/peer/example-client", "172.31.110.15", timeout=60, check=False
     )
     output = result.stdout + result.stderr
+    failures = [
+        line
+        for line in output.splitlines()
+        if re.search(r"fail", line, re.IGNORECASE) and "Failed to load" not in line and "CRL" not in line and "LOG (" not in line
+    ]
+    assert not failures, output[-2000:]
     assert not re.search(r"Set tag for \S+ failed", output), output[-2000:]
     assert "Send command success!" in output, output[-2000:]
     assert re.search(r"Read \S+: -?\d+", output), output[-2000:]
-    assert "Read data set failed" not in output, output[-2000:]
     assert output.count("  value: ") == 2, output[-2000:]
+    assert "DSTransferSet " in output and "Start DSTransferSet" in output, output[-2000:]
 
 
 
