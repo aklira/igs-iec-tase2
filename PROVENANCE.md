@@ -1018,3 +1018,17 @@ silent, to be confirmed by an observation test against other implementations.
 - **Confidence**: high: the 29 bench tests of T3 and C8 pass in one run (`bench/transcripts/C8-run.txt`).
 - **Test**: `bench/tests/test_c8_blocks.py` (ten scenarios), `bench/tests/test_t3_client_matrix.py::test_every_test_the_client_matrix_names_exists_here`.
 
+### D-068 — An exception to the clean-room rule, for the build of a licensed third-party peer (task I1)
+
+- **Decision**: the rule 1 of `IMPLEMENTATION.md` (no reading of another TASE.2 implementation's source) is set aside, for one purpose: to
+  make a licensed third-party peer of the interop bench compile. The maintainer authorised it, and the peer's licence (article 2.2) allows
+  modifications made to establish interoperability. The exception covers the reading of the lines that the compiler reports, and the minimal
+  correction of their syntax, in a copy outside this repository. The peer runs as a separate process, as a black box.
+- **Scope, and what it does not cover**: no code of the peer enters this repository, and no code of the peer is used to write the crates of
+  this repository. The corrections are kept outside the repository, and their description is recorded in the bench's log, without the name
+  of the peer. The exception ends with the build: any further reading of the peer's source needs a new decision.
+- **Why**: the archive delivered by the peer's vendor does not compile, and a peer is needed to test the interoperability of our client and
+  server.
+- **Confidence**: high for the scope; the maintainer's authorisation is the basis.
+- **Test**: `bench/third-party-peer/build.sh` builds the example programs of the peer from the archive that the environment gives.
+
