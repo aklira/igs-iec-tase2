@@ -18,4 +18,4 @@ pub mod server;
 
 pub use client::{Agreement, ReceivedReport, ReportAccess, TaseClient, TaseEvent, TaseEvents};
 pub use error::Error;
-pub use server::{DeviceConfig, TaseServer, TaseServerConfig};
+pub use server::{mms_capabilities, DeviceConfig, TaseServer, TaseServerConfig};

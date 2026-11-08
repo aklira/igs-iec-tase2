@@ -98,6 +98,9 @@ and compares them with its agreement. `data_set_creation = true` lets the client
   reports the messages that the application sends (decision D-061).
 - **Application changes** come from the simulations. A change that the store refuses (a point that is not writable) is neither
   kept nor reported.
+- **Transfer sets** are configured whole, or component by component (alternate access): a Status of ENABLED starts the monitoring with
+  the attributes written so far, and a Status of DISABLED stops it. `Next_DSTransfer_Set` names the first transfer set of the domain
+  that no association monitors.
 - **Not served**: GetNameList (the listing of the names a table shows), the blocked transfer reports (`block_data`), the
   Data_failure event, the device actions (Timeout, Local Reset, Success, Failure) as MMS event conditions (the stack serves no event
   conditions), the Local Reset as an operation of the application, and the dual-use mode of IEC 60870-6-503 §5.3.3.3: an association has one role, the server's, and the

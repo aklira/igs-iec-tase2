@@ -36,18 +36,24 @@ use igs_iec_tase2_link::device::{
 use igs_iec_tase2_link::information::{InformationMessage, InformationTransferSet};
 use igs_iec_tase2_link::transfer::{DataSetTransferSet, Parameters, Payload, Policy, Report};
 use igs_iec_tase2_link::version::STANDARD_VERSION;
-use igs_iec_tase2_model::builtin::Integer16;
+use igs_iec_tase2_model::builtin::{Integer16, Integer32, MmsIdentifier};
 use igs_iec_tase2_model::generated::iso503::{
-    DSConditions, DSTransferSet, IMTransferSet, SupportedFeatures,
+    DSConditions, DSTransferSet, DSTransferSetAllChangesReported, DSTransferSetBlockData,
+    DSTransferSetCritical, DSTransferSetRBE, DSTransferSetStatus, IMTransferSet, MMSObjectName,
+    MMSObjectNameScope, SupportedFeatures,
 };
 use igs_iec_tase2_model::generated::iso802::{TagFlags, TagValue, TextString};
 use igs_iec_tase2_model::mms::MmsValue;
-use igs_iso9506_mms::server::{Model, Outbound, Peer, PeerId, Server, ServerConfig};
+use igs_iso9506_mms::server::{
+    server_capabilities, Model, Outbound, Peer, PeerId, Server, ServerConfig,
+};
 use igs_iso9506_mms::vmd::{Name, Target, Vmd};
 use igs_iso9506_mms_codec::generated::types::Identifier;
 use igs_iso9506_mms_codec::generated::types::ObjectName as MmsObjectName;
 use igs_iso9506_mms_codec::generated::types::{
-    AEQualifier, AEQualifierForm2, APTitle, APTitleForm2, AccessResult, ConfirmedServiceRequest,
+    AEQualifier, AEQualifierForm2, APTitle, APTitleForm2, AccessResult, AlternateAccess,
+    AlternateAccessItemItem, AlternateAccessSelection, AlternateAccessSelectionSelectAccess,
+    AlternateAccessSelectionSelectAlternateAccessAccessSelection, ConfirmedServiceRequest,
     ConfirmedServiceResponse, Data, DataAccessError, DefineNamedVariableListResponse,
     DeleteNamedVariableListResponse, GetNamedVariableListAttributesResponse,
     GetNamedVariableListAttributesResponseListOfVariableItem, GetVariableAccessAttributesRequest,
@@ -58,7 +64,9 @@ use igs_iso9506_mms_codec::generated::types::{
     VariableAccessSpecificationListOfVariableItem, VariableSpecification, WriteResponse,
     WriteResponseItemItem,
 };
+use igs_iso9506_mms_codec::schema::BitString;
 use igs_iso9506_mms_link::association::Calling;
+use igs_iso9506_mms_link::association::Capabilities;
 use tokio::sync::mpsc;
 
 use crate::error::Error;
@@ -76,6 +84,36 @@ pub struct DeviceConfig {
     pub class: DeviceClass,
     /// The commands that close or raise, which CLOSE-ONLY-INHIBIT refuses. The meaning of the commands is local (503 §5.3.12.4).
     pub closing_commands: Vec<i64>,
+}
+
+/// The MMS capabilities of a TASE.2 server: those of the MMS server, and alternate access (`valt`), by which a client writes
+/// one component of a transfer set (503 §6.9.2, §8.2.7). The other objects have no component: a component access to them is refused.
+pub fn mms_capabilities() -> Capabilities {
+    let mut capabilities = server_capabilities();
+    let valt = igs_iso9506_mms_codec::generated::tables::PARAMETER_SUPPORT_OPTIONS
+        .iter()
+        .find(|named| named.name == "valt")
+        .and_then(|named| usize::try_from(named.position).ok());
+    if let Some(position) = valt {
+        capabilities.parameter_cbb = with_bit(&capabilities.parameter_cbb, position);
+    }
+    capabilities
+}
+
+/// The bit string with one more bit set at `position`, the other bits kept (the string grows when it must).
+fn with_bit(bits: &BitString, position: usize) -> BitString {
+    let kept = (bits.bytes.len().saturating_mul(8)).saturating_sub(usize::from(bits.unused));
+    let length = kept.max(position.saturating_add(1));
+    let octets = length.div_ceil(8);
+    let mut bytes = bits.bytes.clone();
+    bytes.resize(octets, 0);
+    if let Some(octet) = bytes.get_mut(position / 8) {
+        *octet |= 0x80u8 >> (position % 8);
+    }
+    BitString {
+        unused: u8::try_from(octets.saturating_mul(8).saturating_sub(length)).unwrap_or(0),
+        bytes,
+    }
 }
 
 /// The configuration of a TASE.2 server.
@@ -254,6 +292,31 @@ impl Store for VmdStore {
     }
 }
 
+/// Whether a name is the next-transfer-set variable of the domain of the table (503 §8.3.7).
+fn is_next_transfer_set(name: &ObjectName, table: &BilateralTable) -> bool {
+    name.name == "Next_DSTransfer_Set" && in_domain(name, table.domain())
+}
+
+/// Whether a name is in the given domain.
+fn in_domain(name: &ObjectName, domain: &str) -> bool {
+    matches!(&name.scope, Scope::Domain(scope) if scope == domain)
+}
+
+/// The value of a transfer set name: an MMS ObjectName, domain-specific (503 §6.10, §8.2.3).
+fn transfer_set_value(name: &ObjectName) -> Option<Data> {
+    let Scope::Domain(domain) = &name.scope else {
+        return None;
+    };
+    Some(
+        MMSObjectName {
+            scope: MMSObjectNameScope(MMSObjectNameScope::DOMAIN_SPECIFIC),
+            domain_name: MmsIdentifier::new(domain.as_str()).ok()?,
+            name: MmsIdentifier::new(name.name.as_str()).ok()?,
+        }
+        .to_mms(),
+    )
+}
+
 /// The TASE.2 name of an MMS object name of a request.
 fn name_of(name: &MmsObjectName) -> Option<ObjectName> {
     from_mms(name)
@@ -313,6 +376,126 @@ enum Named {
     InformationTransferSet,
     /// A name that is none of them.
     Unknown,
+}
+
+/// The component that an access names, when the access is to a component (an alternate access, 9506 §14.6): the component of
+/// a selection by name, or of a selection of the access that names the component.
+fn component_of(alternate: &Option<AlternateAccess>) -> Option<String> {
+    match alternate.as_ref()?.0.first()? {
+        AlternateAccessItemItem::Named(named) => Some(named.component_name.0.clone()),
+        AlternateAccessItemItem::Unnamed(AlternateAccessSelection::SelectAccess(
+            AlternateAccessSelectionSelectAccess::Component(component),
+        )) => Some(component.0.clone()),
+        AlternateAccessItemItem::Unnamed(AlternateAccessSelection::SelectAlternateAccess(
+            select,
+        )) => match &select.access_selection {
+            AlternateAccessSelectionSelectAlternateAccessAccessSelection::Component(component) => {
+                Some(component.0.clone())
+            }
+            _ => None,
+        },
+        AlternateAccessItemItem::Unnamed(_) => None,
+    }
+}
+
+/// A transfer set with defaults for the components that the client has not written (503 §8.2.7.1).
+fn default_transfer_set(domain: &str) -> Option<DSTransferSet> {
+    Some(DSTransferSet {
+        data_set_name: MMSObjectName {
+            scope: MMSObjectNameScope(MMSObjectNameScope::DOMAIN_SPECIFIC),
+            domain_name: MmsIdentifier::new(domain).ok()?,
+            name: MmsIdentifier::new("Data_Set").ok()?,
+        },
+        start_time: Integer32::new(0).ok()?,
+        interval: Integer32::new(0).ok()?,
+        tle: Integer32::new(0).ok()?,
+        buffer_time: Integer32::new(0).ok()?,
+        integrity_check: Integer32::new(0).ok()?,
+        ds_conditions_requested: DSConditions(0),
+        block_data: DSTransferSetBlockData(false),
+        critical: DSTransferSetCritical(false),
+        rbe: DSTransferSetRBE(false),
+        all_changes_reported: DSTransferSetAllChangesReported(false),
+        status: DSTransferSetStatus(DSTransferSetStatus::DISABLED),
+        event_code_requested: Integer16::new(0).ok()?,
+    })
+}
+
+/// The value of one component of a transfer set, by its name in the MMS structure (503 §8.2.7.1).
+fn component_value(set: &DSTransferSet, component: &str) -> Option<Data> {
+    Some(match component {
+        "DataSetName" => set.data_set_name.to_mms(),
+        "StartTime" => set.start_time.to_mms(),
+        "Interval" => set.interval.to_mms(),
+        "TLE" => set.tle.to_mms(),
+        "BufferTime" => set.buffer_time.to_mms(),
+        "IntegrityCheck" => set.integrity_check.to_mms(),
+        "DSConditionsRequested" => set.ds_conditions_requested.to_mms(),
+        "BlockData" => set.block_data.to_mms(),
+        "Critical" => set.critical.to_mms(),
+        "RBE" => set.rbe.to_mms(),
+        "AllChangesReported" => set.all_changes_reported.to_mms(),
+        "Status" => set.status.to_mms(),
+        "EventCodeRequested" => set.event_code_requested.to_mms(),
+        _ => return None,
+    })
+}
+
+/// An MMS ObjectName of a value: the structure of its scope, domain and name (503 §8.2.3). The scope is read as an integer or as
+/// an unsigned integer: the peers write either.
+fn object_name_of(value: &Data) -> Option<MMSObjectName> {
+    let Data::Structure(items) = value else {
+        return None;
+    };
+    let [scope, domain, name] = items.as_slice() else {
+        return None;
+    };
+    let scope = match scope {
+        Data::Integer(value) => i64::try_from(*value).ok()?,
+        Data::Unsigned(value) => i64::try_from(*value).ok()?,
+        _ => return None,
+    };
+    if !(0..=1).contains(&scope) {
+        return None;
+    }
+    let identifier = |item: &Data| match item {
+        Data::VisibleString(text) => MmsIdentifier::new(text.as_str()).ok(),
+        _ => None,
+    };
+    Some(MMSObjectName {
+        scope: MMSObjectNameScope(scope),
+        domain_name: identifier(domain)?,
+        name: identifier(name)?,
+    })
+}
+
+/// Writes one component of a transfer set; a component that the structure does not hold does not exist.
+fn set_component(set: &mut DSTransferSet, component: &str, value: Data) -> Result<(), ErrorCode> {
+    let mismatch = |_| ErrorCode::TypeInconsistent;
+    match component {
+        "DataSetName" => {
+            set.data_set_name = object_name_of(&value).ok_or(ErrorCode::TypeInconsistent)?
+        }
+        "StartTime" => set.start_time = MmsValue::from_mms(&value).map_err(mismatch)?,
+        "Interval" => set.interval = MmsValue::from_mms(&value).map_err(mismatch)?,
+        "TLE" => set.tle = MmsValue::from_mms(&value).map_err(mismatch)?,
+        "BufferTime" => set.buffer_time = MmsValue::from_mms(&value).map_err(mismatch)?,
+        "IntegrityCheck" => set.integrity_check = MmsValue::from_mms(&value).map_err(mismatch)?,
+        "DSConditionsRequested" => {
+            set.ds_conditions_requested = MmsValue::from_mms(&value).map_err(mismatch)?
+        }
+        "BlockData" => set.block_data = MmsValue::from_mms(&value).map_err(mismatch)?,
+        "Critical" => set.critical = MmsValue::from_mms(&value).map_err(mismatch)?,
+        "RBE" => set.rbe = MmsValue::from_mms(&value).map_err(mismatch)?,
+        "AllChangesReported" => {
+            set.all_changes_reported = MmsValue::from_mms(&value).map_err(mismatch)?
+        }
+        "EventCodeRequested" => {
+            set.event_code_requested = MmsValue::from_mms(&value).map_err(mismatch)?
+        }
+        _ => return Err(ErrorCode::ObjectNonExistent),
+    }
+    Ok(())
 }
 
 fn named(variable: &VariableSpecification) -> Named {
@@ -419,6 +602,14 @@ struct Session {
     transfer_sets: BTreeMap<ObjectName, Monitored>,
     /// The Information Message Transfer Set, while it is ENABLED.
     information: Option<InformationTransferSet>,
+    /// The transfer sets that the client configures, component by component (503 §6.9.2, §8.2.7).
+    drafts: BTreeMap<ObjectName, Draft>,
+}
+
+/// A transfer set that the client configures component by component: its attributes, and the components it has written.
+struct Draft {
+    set: DSTransferSet,
+    written: BTreeSet<String>,
 }
 
 /// The TASE.2 model: the state of the server and the services that it serves.
@@ -470,6 +661,23 @@ impl TaseModel {
     }
 
     /// The names of the data sets that an active transfer set references.
+    /// The transfer sets that an association monitors, of any association.
+    fn transfer_sets_in_use(&self) -> BTreeSet<ObjectName> {
+        self.sessions
+            .values()
+            .flat_map(|session| session.transfer_sets.keys().cloned())
+            .collect()
+    }
+
+    /// The first transfer set of the domain of the table that no association monitors, in the order of the configuration.
+    fn next_transfer_set(&self, table: &BilateralTable) -> Option<ObjectName> {
+        let in_use = self.transfer_sets_in_use();
+        self.transfer_sets
+            .iter()
+            .find(|name| in_domain(name, table.domain()) && !in_use.contains(*name))
+            .cloned()
+    }
+
     fn data_sets_in_use(&self) -> BTreeSet<ObjectName> {
         self.sessions
             .values()
@@ -521,7 +729,13 @@ impl TaseModel {
     }
 
     /// The read of one name of a list. A Select is the read of the CheckBackID of a device (054 §7.2.6.2): it arms the device.
-    fn read_one(&mut self, id: PeerId, table: &BilateralTable, name: &Named) -> AccessResult {
+    fn read_one(
+        &mut self,
+        id: PeerId,
+        table: &BilateralTable,
+        name: &Named,
+        component: Option<&str>,
+    ) -> AccessResult {
         let name = match name {
             Named::Object(name) => name,
             // The Information Message Transfer Set is written, not read (503 §7.2.5.2).
@@ -530,6 +744,23 @@ impl TaseModel {
             }
             Named::Unknown => return AccessResult::Failure(DataAccessError::OBJECT_NON_EXISTENT),
         };
+        if self.transfer_sets.contains(name) {
+            return self.read_transfer_set(id, name, component);
+        }
+        if component.is_some() {
+            // Only the transfer sets have components (503 §6.9): another object is not accessed by one.
+            return AccessResult::Failure(DataAccessError::OBJECT_ACCESS_UNSUPPORTED);
+        }
+        if is_next_transfer_set(name, table) {
+            // Next_DSTransfer_Set (503 §8.3.7): the next transfer set of the domain that no association monitors.
+            return match self
+                .next_transfer_set(table)
+                .and_then(|set| transfer_set_value(&set))
+            {
+                Some(value) => AccessResult::Success(value),
+                None => AccessResult::Failure(data_error(ErrorCode::TemporarilyUnavailable)),
+            };
+        }
         if let Some((device, part)) = self.device_part(name) {
             return match part {
                 Part::CheckBackId => match self.devices.get_mut(&device) {
@@ -578,11 +809,11 @@ impl TaseModel {
         &mut self,
         id: PeerId,
         table: &BilateralTable,
-        names: &[Named],
+        names: &[(Named, Option<String>)],
     ) -> Vec<AccessResult> {
         names
             .iter()
-            .map(|name| self.read_one(id, table, name))
+            .map(|(name, component)| self.read_one(id, table, name, component.as_deref()))
             .collect()
     }
 
@@ -660,6 +891,7 @@ impl TaseModel {
         id: PeerId,
         table: &BilateralTable,
         name: Named,
+        component: Option<String>,
         value: Data,
     ) -> Item<()> {
         match name {
@@ -667,7 +899,15 @@ impl TaseModel {
             Named::InformationTransferSet => self.write_information(id, value),
             Named::Object(name) => {
                 if self.transfer_sets.contains(&name) {
-                    return self.write_transfer_set(id, table, &name, value);
+                    return match component {
+                        Some(component) => {
+                            self.write_component(id, table, &name, &component, value)
+                        }
+                        None => self.write_transfer_set(id, table, &name, value),
+                    };
+                }
+                if component.is_some() {
+                    return Item::Failure(ErrorCode::ObjectAttributeUnsupported);
                 }
                 match self.device_part(&name) {
                     Some((device, Part::Command)) => self.operate(id, table, &device, &value),
@@ -685,6 +925,96 @@ impl TaseModel {
     }
 
     /// Starts or stops a transfer set that the client writes (503 §7.2.5.2, §7.2.5.3).
+    /// The draft of a transfer set of a client: its attributes, with the defaults until the client writes them.
+    fn draft_mut(&mut self, id: PeerId, name: &ObjectName) -> Option<&mut Draft> {
+        let session = self.sessions.get_mut(&id)?;
+        if !session.drafts.contains_key(name) {
+            let Scope::Domain(domain) = &name.scope else {
+                return None;
+            };
+            let set = default_transfer_set(domain)?;
+            session.drafts.insert(
+                name.clone(),
+                Draft {
+                    set,
+                    written: BTreeSet::new(),
+                },
+            );
+        }
+        session.drafts.get_mut(name)
+    }
+
+    /// Read of a transfer set: the whole set, or one of its components (503 §6.9, §8.2.7).
+    fn read_transfer_set(
+        &mut self,
+        id: PeerId,
+        name: &ObjectName,
+        component: Option<&str>,
+    ) -> AccessResult {
+        let Some(draft) = self.draft_mut(id, name) else {
+            return AccessResult::Failure(DataAccessError::OBJECT_NON_EXISTENT);
+        };
+        let value = match component {
+            None => Some(draft.set.to_mms()),
+            Some(component) => component_value(&draft.set, component),
+        };
+        match value {
+            Some(value) => AccessResult::Success(value),
+            None => AccessResult::Failure(DataAccessError::OBJECT_NON_EXISTENT),
+        }
+    }
+
+    /// Write of one component of a transfer set. Status ENABLED starts the monitoring with the attributes written so far.
+    fn write_component(
+        &mut self,
+        id: PeerId,
+        table: &BilateralTable,
+        name: &ObjectName,
+        component: &str,
+        value: Data,
+    ) -> Item<()> {
+        if component != "Status" {
+            let Some(draft) = self.draft_mut(id, name) else {
+                return Item::Failure(ErrorCode::ObjectNonExistent);
+            };
+            return match set_component(&mut draft.set, component, value) {
+                Ok(()) => {
+                    draft.written.insert(component.to_string());
+                    Item::Success(())
+                }
+                Err(code) => Item::Failure(code),
+            };
+        }
+        let Ok(status) = DSTransferSetStatus::from_mms(&value) else {
+            return Item::Failure(ErrorCode::TypeInconsistent);
+        };
+        if !status.0 {
+            let Some(draft) = self.draft_mut(id, name) else {
+                return Item::Failure(ErrorCode::ObjectNonExistent);
+            };
+            let mut set = draft.set.clone();
+            set.status = DSTransferSetStatus(DSTransferSetStatus::DISABLED);
+            return self.write_transfer_set(id, table, name, set.to_mms());
+        }
+        let Some(draft) = self.draft_mut(id, name) else {
+            return Item::Failure(ErrorCode::ObjectNonExistent);
+        };
+        if !draft.written.contains("DataSetName") {
+            return Item::Failure(ErrorCode::TypeInconsistent);
+        }
+        let mut set = draft.set.clone();
+        set.status = DSTransferSetStatus(DSTransferSetStatus::ENABLED);
+        match self.start_monitoring(table, name, &set) {
+            Ok(monitored) => {
+                if let Some(session) = self.sessions.get_mut(&id) {
+                    session.transfer_sets.insert(name.clone(), monitored);
+                }
+                Item::Success(())
+            }
+            Err(code) => Item::Failure(code),
+        }
+    }
+
     fn write_transfer_set(
         &mut self,
         id: PeerId,
@@ -850,6 +1180,7 @@ impl Model for TaseModel {
                         designation,
                         transfer_sets: BTreeMap::new(),
                         information: None,
+                        drafts: BTreeMap::new(),
                     },
                 );
                 true
@@ -874,9 +1205,14 @@ impl Model for TaseModel {
         match service {
             ConfirmedServiceRequest::Read(request) => match request.variable_access_specification {
                 VariableAccessSpecification::ListOfVariable(items) => {
-                    let names: Vec<Named> = items
+                    let names: Vec<(Named, Option<String>)> = items
                         .iter()
-                        .map(|item| named(&item.variable_specification))
+                        .map(|item| {
+                            (
+                                named(&item.variable_specification),
+                                component_of(&item.alternate_access),
+                            )
+                        })
                         .collect();
                     Ok(ConfirmedServiceResponse::Read(ReadResponse {
                         variable_access_specification: None,
@@ -905,13 +1241,20 @@ impl Model for TaseModel {
             ConfirmedServiceRequest::Write(request) => {
                 let items = match request.variable_access_specification {
                     VariableAccessSpecification::ListOfVariable(items) => {
-                        let names: Vec<Named> = items
+                        let names: Vec<(Named, Option<String>)> = items
                             .iter()
-                            .map(|item| named(&item.variable_specification))
+                            .map(|item| {
+                                (
+                                    named(&item.variable_specification),
+                                    component_of(&item.alternate_access),
+                                )
+                            })
                             .collect();
                         let mut answers = Vec::with_capacity(names.len());
-                        for (name, value) in names.into_iter().zip(request.list_of_data) {
-                            answers.push(self.write_one(peer.id, &table, name, value));
+                        for ((name, component), value) in
+                            names.into_iter().zip(request.list_of_data)
+                        {
+                            answers.push(self.write_one(peer.id, &table, name, component, value));
                         }
                         answers
                     }
@@ -1117,5 +1460,79 @@ impl Model for TaseModel {
             }
         }
         outbound
+    }
+}
+
+#[cfg(test)]
+mod component_tests {
+    use super::*;
+    use igs_iso9506_mms_codec::generated::types::{
+        AlternateAccessSelectionSelectAccess, Identifier,
+    };
+
+    fn domain_name(value: &Data) -> Option<String> {
+        object_name_of(value).map(|name| name.domain_name.as_str().to_string())
+    }
+
+    #[test]
+    fn an_object_name_is_read_with_an_integer_or_an_unsigned_scope() {
+        let text = |s: &str| Data::VisibleString(s.to_string());
+        let integer = Data::Structure(vec![Data::Integer(1), text("icc1"), text("ds1")]);
+        let unsigned = Data::Structure(vec![Data::Unsigned(1), text("icc1"), text("ds1")]);
+        assert_eq!(domain_name(&integer).as_deref(), Some("icc1"));
+        assert_eq!(domain_name(&unsigned).as_deref(), Some("icc1"));
+        let unknown_scope = Data::Structure(vec![Data::Unsigned(2), text("icc1"), text("ds1")]);
+        assert!(object_name_of(&unknown_scope).is_none());
+        assert!(object_name_of(&Data::Integer(1)).is_none());
+    }
+
+    #[test]
+    fn the_component_of_an_access_is_named_by_the_selection() {
+        let selected = |name: &str| {
+            Some(AlternateAccess(vec![AlternateAccessItemItem::Unnamed(
+                AlternateAccessSelection::SelectAccess(
+                    AlternateAccessSelectionSelectAccess::Component(Identifier(name.to_string())),
+                ),
+            )]))
+        };
+        assert_eq!(
+            component_of(&selected("DataSetName")).as_deref(),
+            Some("DataSetName")
+        );
+        assert_eq!(component_of(&None), None);
+    }
+
+    #[test]
+    fn a_bit_is_set_in_its_octet_and_the_string_grows_when_it_must() {
+        let bits = BitString {
+            unused: 0,
+            bytes: vec![0x00],
+        };
+        assert_eq!(with_bit(&bits, 3).bytes, vec![0x10]);
+        let one_bit = BitString {
+            unused: 7,
+            bytes: vec![0x80],
+        };
+        let grown = with_bit(&one_bit, 9);
+        assert_eq!(grown.bytes, vec![0x80, 0x40]);
+        assert_eq!(grown.unused, 6);
+    }
+
+    #[test]
+    fn the_capabilities_of_a_tase_2_server_serve_alternate_access() {
+        let capabilities = mms_capabilities();
+        let valt = igs_iso9506_mms_codec::generated::tables::PARAMETER_SUPPORT_OPTIONS
+            .iter()
+            .find(|named| named.name == "valt")
+            .and_then(|named| usize::try_from(named.position).ok());
+        let Some(position) = valt else {
+            panic!("the table has no valt");
+        };
+        let set = capabilities
+            .parameter_cbb
+            .bytes
+            .get(position / 8)
+            .is_some_and(|octet| octet & (0x80u8 >> (position % 8)) != 0);
+        assert!(set, "valt is not served");
     }
 }

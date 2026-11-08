@@ -7,6 +7,7 @@ All notable changes to this project are recorded in this file. The format follow
 
 ### Fixed
 
+- `igs-iec-tase2`: an MMS ObjectName is read with an integer or an unsigned scope: the peers write either.
 - `igs-iec-tase2`: the two bits of a tag are read and written in the order of the standard: `Tag_hi` is the high bit of the
   code, so that CLOSE-ONLY-INHIBIT is the string `1 0`. The earlier order read and wrote the two codes swapped; an interoperability
   test with a third-party implementation found it.
@@ -14,6 +15,9 @@ All notable changes to this project are recorded in this file. The format follow
 
 ### Added
 
+- `igs-iec-tase2`: `Next_DSTransfer_Set` (503 §8.3.7): the first transfer set of the domain that no association monitors.
+- `igs-iec-tase2`: a transfer set is configured component by component (alternate access, `valt`), and started by its Status;
+  `mms_capabilities` announces alternate access for a TASE.2 server.
 - `igs-iec-tase2`: `Client::names_in_domain`, the GetNameList of the variables or the data sets of the client's domain, every
   page of the list. `igstase2-client names [--data-sets]` prints them.
 

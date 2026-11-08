@@ -46,6 +46,8 @@ The matrix covers the client (`igs-iec-tase2::TaseClient`, `igstase2-client`) an
 | A report that would take longer than its TLE is discarded | 503 §5.3.10.2.2 | no | yes | `a_report_that_would_take_longer_than_its_tle_is_discarded` |
 | Stop Transfer ends the reports | 503 §7.2.5.3.3 | yes | yes | `a_stopped_transfer_set_sends_no_further_report` |
 | A transfer set the server does not hold, or a data set the table does not show, is refused per item | 503 §7.2.5.2.3 | yes | yes | `a_transfer_set_that_the_server_does_not_hold_is_refused_per_item`, `a_zero_interval_is_refused_at_the_start_of_the_interval_condition` |
+| Next_DSTransfer_Set: the first transfer set of the domain that no association monitors | 503 §8.3.7, §6.10 | yes | yes | `test_the_example_client_of_the_peer_operates_and_reads_our_server` (bench, with the licensed peer's example client) |
+| The attributes of a transfer set written component by component (alternate access, `valt`), then started by its Status | 503 §6.9.2, §8.2.7 | yes | yes | `the_capabilities_of_a_tase_2_server_serve_alternate_access` and `test_the_example_client_of_the_peer_operates_and_reads_our_server` |
 | The check-back identifier is returned for a selectable device only | 503 §5.2.3.8 | no | yes | `the_check_back_id_is_returned_for_a_selectable_device_only` |
 | The MMS types of the points, with their bits and ranges | 802 §6.2 to §6.3, §7.1 | model | model | `the_state_of_a_point_is_bits_zero_and_one_and_keeps_its_quality`, `a_control_point_type_outside_its_range_is_refused_by_the_type_and_by_mms` |
 | The protection events and their flags | 802 §6.2.3, §7.1.3 | model | model | `the_bits_of_a_single_event_are_at_the_positions_of_the_standard` |

@@ -733,6 +733,7 @@ pub fn build(config: &Config, max_associations: usize) -> Result<Built, ConfigEr
         mms: ServerConfig {
             poll_interval: Duration::from_millis(config.server.poll_ms.max(1)),
             max_associations,
+            capabilities: igs_iec_tase2::mms_capabilities(),
             ..ServerConfig::new(LinkConfig::default())
         },
         tables,
