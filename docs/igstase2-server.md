@@ -37,13 +37,13 @@ in the order of the example `bench/device/tase2-demo.toml`:
 | --- | --- | --- |
 | `[server]` | `poll_ms` (50), `ack_timeout_s` (30), `expected_send_delay_ms` (0), `data_set_capacity` (64) | The model's poll period; the wait for the acknowledgement of a critical report; the expected send time (a report that would take longer than the TLE is discarded); the number of data sets. |
 | `[identity]` | `vendor`, `model`, `revision` | The answer to Identify. |
-| `[[domain]]` | `name` | A domain. |
+| `[[domain]]` | `name` | A domain. The empty domain (`domain = ""` in a point, a device, a data set or an access) is the VMD: its names are VMD-specific, not named in a domain. |
 | `[[point]]` | `domain`, `name`, `type`, `bits`, `value`, `writable` | A data value. `writable` is false by default. |
 | `[[data-set]]` | `domain`, `name`, `members` | A data set, configured at the start (the clients may also create some). `members` are points of the same domain. |
 | `[[transfer-set]]` | `domain`, `name` | A transfer set object. A client starts or stops it by writing it. |
 | `[[device]]` | `domain`, `name`, `class`, `closing_commands` | A device (503 §5.3.12): `class` is `sbo` or `non-sbo`; `closing_commands` are the commands that close or raise, which CLOSE-ONLY-INHIBIT refuses. Its command is simulated: an accepted Operate completes at once. |
 | `[[table]]` | `designation`, `table_id`, `domain`, `application_references`, `data_set_creation`, `initiator` | The Bilateral Table of one client (below). |
-| `[[table.access]]` | `kind`, `name`, `permissions`, `interval_ms`, `check_back_id`, `timeout_s` | What the client may do with one object of its table. A device needs `check_back_id` (the value a Select returns, an integer of 16 bits) and `timeout_s`. |
+| `[[table.access]]` | `kind`, `name`, `domain`, `permissions`, `interval_ms`, `check_back_id`, `timeout_s` | What the client may do with one object of its table. `domain` is the domain of the object when it is not that of the table. A device needs `check_back_id` (the value a Select returns, an integer of 16 bits) and `timeout_s`, and the `visibility` permission to be seen at all. |
 | `[[simulate]]` | `domain`, `name`, `kind`, `period_ms`, `min`, `max`, `step` | A change that the server makes by itself, at each period. |
 | `[[information]]` | `info_reference`, `local_reference`, `stream`, `period_ms` | An information message that the server sends at each period, with a MessageId counted from 1 (decision D-061). Its stream is the text, as UTF-8. |
 

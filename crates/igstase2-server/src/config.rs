@@ -224,6 +224,9 @@ pub struct AccessSection {
     pub kind: AccessKind,
     /// The name of the object, in the domain of the table.
     pub name: String,
+    /// The domain of the object when it is not the domain of the table; the empty domain is the VMD (a VMD-specific name).
+    #[serde(default)]
+    pub domain: Option<String>,
     /// The permitted operations: `visibility`, `get-data-value`, `set-data-value`, `get-data-value-type`, `delete-data-set`,
     /// `get-data-set-element-values`, `set-data-set-element-values`, `start-transfer`, `stop-transfer`.
     pub permissions: Vec<String>,
@@ -371,8 +374,26 @@ pub struct Built {
     pub information: Vec<InformationSource>,
 }
 
+/// The scope of an object: the domain it names, or the VMD for the empty domain (a VMD-specific name).
 fn scope_of(domain: &str) -> Scope {
-    Scope::Domain(domain.to_string())
+    if domain.is_empty() {
+        Scope::Vmd
+    } else {
+        Scope::Domain(domain.to_string())
+    }
+}
+
+/// The object of the VMD that a point of the given domain and name is: in its domain, or VMD-specific for the empty domain.
+fn target_of(domain: &str, name: &str, context: &str) -> Result<Target, ConfigError> {
+    let name = Name::new(name).map_err(|e| invalid(context, e))?;
+    if domain.is_empty() {
+        Ok(Target::vmd(name))
+    } else {
+        Ok(Target::in_domain(
+            Name::new(domain).map_err(|e| invalid(context, e))?,
+            name,
+        ))
+    }
 }
 
 fn object(domain: &str, name: &str) -> ObjectName {
@@ -487,7 +508,7 @@ pub fn build(config: &Config, max_associations: usize) -> Result<Built, ConfigEr
         .map(|domain| domain.name.as_str())
         .collect();
     let domain_known = |domain: &str, context: &str| {
-        if domains.contains(domain) {
+        if domain.is_empty() || domains.contains(domain) {
             Ok(())
         } else {
             Err(invalid(
@@ -517,10 +538,7 @@ pub fn build(config: &Config, max_associations: usize) -> Result<Built, ConfigEr
         if !points.insert(object(&point.domain, &point.name)) {
             return Err(invalid(&context, "the point is declared twice"));
         }
-        let target = Target::in_domain(
-            Name::new(&point.domain).map_err(|e| invalid(&context, e))?,
-            Name::new(&point.name).map_err(|e| invalid(&context, e))?,
-        );
+        let target = target_of(&point.domain, &point.name, &context)?;
         let (ty, value) = typed(point)?;
         let variable = MemoryVariable::new(ty, value, point.writable)
             .map_err(|e| invalid(&context, format!("{e:?}")))?;
@@ -599,7 +617,8 @@ pub fn build(config: &Config, max_associations: usize) -> Result<Built, ConfigEr
             built = built.with_data_set_creation();
         }
         for access in &table.access {
-            let object_name = object(&table.domain, &access.name);
+            let domain = access.domain.as_deref().unwrap_or(&table.domain);
+            let object_name = object(domain, &access.name);
             let context = format!("{context}: access to {}", access.name);
             let mut permitted = BTreeSet::new();
             for text in &access.permissions {
