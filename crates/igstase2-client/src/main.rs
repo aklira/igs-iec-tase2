@@ -63,6 +63,9 @@ struct Cli {
     /// The called transport selector, in hexadecimal (for example `0001`); absent by default. Some servers require it.
     #[arg(long)]
     called_tsap: Option<String>,
+    /// Proposes the application context of the 2002 edition (1.0.9506.2.3) instead of the current one, for the servers of that edition.
+    #[arg(long)]
+    legacy_application_context: bool,
     #[command(subcommand)]
     command: Command,
 }
@@ -410,6 +413,11 @@ async fn run(cli: &Cli) -> Result<(), Failure> {
                     .map(parse_selector)
                     .transpose()
                     .map_err(Failure)?,
+                application_context: if cli.legacy_application_context {
+                    igs_iso9506_mms_link::config::ApplicationContext::Legacy
+                } else {
+                    igs_iso9506_mms_link::config::ApplicationContext::Current
+                },
                 ..LinkConfig::default()
             },
             in_scope_capabilities(),
