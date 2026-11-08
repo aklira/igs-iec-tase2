@@ -43,6 +43,8 @@ jobs:
           persist-credentials: false
       - name: Take the release tooling from main
         run: git checkout origin/main -- .github/scripts
+      - name: Clone the MMS stack next to this repository (path dependency)
+        run: git clone --depth 1 https://github.com/aklira/igs-iso9506-mms.git "$GITHUB_WORKSPACE/../igs-iso9506-mms"
       - name: Require a commit included in main
         run: git merge-base --is-ancestor HEAD origin/main
       - name: Plan release
@@ -93,6 +95,8 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
           persist-credentials: false
+      - name: Clone the MMS stack next to this repository (path dependency)
+        run: git clone --depth 1 https://github.com/aklira/igs-iso9506-mms.git "$GITHUB_WORKSPACE/../igs-iso9506-mms"
       - name: Authenticate with crates.io
         id: auth
         uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6

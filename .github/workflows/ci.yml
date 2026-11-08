@@ -27,11 +27,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Checkout the MMS stack (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: aklira/igs-iso9506-mms
-          path: ../igs-iso9506-mms
+      - name: Clone the MMS stack next to this repository (path dependency)
+        run: git clone --depth 1 https://github.com/aklira/igs-iso9506-mms.git "$GITHUB_WORKSPACE/../igs-iso9506-mms"
 
       - name: Install cargo tools
         uses: taiki-e/install-action@v2
