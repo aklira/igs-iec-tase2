@@ -81,6 +81,29 @@ services:
       bench:
         ipv4_address: 172.31.110.14
 
+  # Our server, for the example client of the third-party peer (task I1): the configuration is in the git-ignored directory.
+  device-interop:
+    <<: *debian
+    command: ["/usr/local/bin/igstase2-server", "--listen", "0.0.0.0:102", "--config", "/etc/igstase2/interop-server.toml"]
+    volumes:
+      - ./device/bin/igstase2-server:/usr/local/bin/igstase2-server:ro
+      - ./third-party-peer/bin/interop-server.toml:/etc/igstase2/interop-server.toml:ro
+    ports:
+      - "127.0.0.1:10107:102"
+    networks:
+      bench:
+        ipv4_address: 172.31.110.15
+
+  # The example client of the third-party peer (task I1), for the reverse interop: it runs commands on demand.
+  peer-client-example:
+    <<: *debian
+    command: ["sleep", "infinity"]
+    volumes:
+      - ./third-party-peer/bin:/opt/peer:ro
+    networks:
+      bench:
+        ipv4_address: 172.31.110.16
+
   # The TASE.2 client under test (task T3): igstase2-client, built by device/build-tase2.sh. It runs the matrix's commands.
   # It also runs the load driver igstase2-load (task S3).
   client-tase2:

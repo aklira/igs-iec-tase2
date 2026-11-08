@@ -71,3 +71,26 @@ def test_our_client_reads_a_point_of_the_peer_server(bench):
     assert result.returncode == 0, result.stdout + result.stderr
     assert result.stdout.strip().startswith("Discrete1: "), result.stdout
     assert "error" not in result.stdout, result.stdout
+
+
+@pytest.fixture(scope="module")
+def reverse_bench():
+    """Our server, configured for the peer's example client, and that client."""
+    instance = Bench("i1-reverse.pcap")
+    instance.down()
+    instance.up("device-interop", "peer-client-example")
+    try:
+        yield instance
+    finally:
+        instance.down()
+
+
+def test_the_example_client_of_the_peer_associates_with_our_server(reverse_bench):
+    # The client's own log reports the association: it is accepted, and the client is connected. Its later requests name
+    # objects that the configuration of our server does not hold; that is not checked here.
+    result = reverse_bench.exec(
+        "peer-client-example", "timeout", "20", "stdbuf", "-o0", "-e0", "/opt/peer/example-client", "172.31.110.15", timeout=60, check=False
+    )
+    output = result.stdout + result.stderr
+    assert "association accepted" in output, output[-2000:]
+    assert "Connected." in output, output[-2000:]
