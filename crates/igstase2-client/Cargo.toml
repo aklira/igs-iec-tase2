@@ -4,7 +4,8 @@
 
 [package]
 name = "igstase2-client"
-version = "1.0.0"
+version = "1.1.0"
+readme = "README.md"
 description = "Command-line TASE.2 client: associates with a TASE.2 server and reads, writes, and monitors its points and data sets (task T2)."
 edition.workspace = true
 rust-version.workspace = true
@@ -19,9 +20,9 @@ name = "igstase2-client"
 path = "src/main.rs"
 
 [dependencies]
-igs-iec-tase2 = { path = "../igs-iec-tase2", version = "1.0.0" }
-igs-iec-tase2-link = { path = "../igs-iec-tase2-link", version = "1.0.0" }
-igs-iec-tase2-model = { path = "../igs-iec-tase2-model", version = "1.0.0" }
+igs-iec-tase2 = { path = "../igs-iec-tase2", version = "1.1.0" }
+igs-iec-tase2-link = { path = "../igs-iec-tase2-link", version = "1.1.0" }
+igs-iec-tase2-model = { path = "../igs-iec-tase2-model", version = "1.1.0" }
 igs-iso9506-mms.workspace = true
 igs-iso9506-mms-codec.workspace = true
 igs-iso9506-mms-link.workspace = true
@@ -31,4 +32,4 @@ clap = { version = "4", default-features = false, features = ["std", "derive", "
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time"] }
 
 [dev-dependencies]
-igs-iec-tase2-link = { path = "../igs-iec-tase2-link", version = "1.0.0" }
+igs-iec-tase2-link = { path = "../igs-iec-tase2-link", version = "1.1.0" }

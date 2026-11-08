@@ -5,6 +5,12 @@ All notable changes to this project are recorded in this file. The format follow
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-08
+
+### Changed
+
+- The dependencies are `igs-iso9506-mms` 1.1.0 (the called AP-title and the AE-qualifiers, and the 2002 application context).
+
 ### Fixed
 
 - `igs-iec-tase2`: an MMS ObjectName is read with an integer or an unsigned scope: the peers write either.
@@ -15,6 +21,7 @@ All notable changes to this project are recorded in this file. The format follow
 
 ### Added
 
+- `igstase2-client`: the options of the peers' configurations: `--calling-tsap`, `--called-tsap`, `--legacy-application-context`, `--called-ap-title`, `--calling-ae-qualifier` and `--called-ae-qualifier`.
 - `igs-iec-tase2`: `Next_DSTransfer_Set` (503 §8.3.7): the first transfer set of the domain that no association monitors.
 - `igs-iec-tase2`: a transfer set is configured component by component (alternate access, `valt`), and started by its Status;
   `mms_capabilities` announces alternate access for a TASE.2 server.
