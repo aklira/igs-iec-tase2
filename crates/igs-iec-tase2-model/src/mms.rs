@@ -93,6 +93,7 @@ pub fn kind(data: &Data) -> &'static str {
         Data::BooleanArray(_) => "boolean array",
         Data::ObjId(_) => "object identifier",
         Data::MMSString(_) => "MMS string",
+        Data::UtcTime(_) => "UTC time",
         Data::Unsupported { .. } => "unsupported value",
     }
 }
